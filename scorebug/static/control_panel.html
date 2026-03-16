@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VolleyScore Control Panel</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#222; color:#fff; padding:15px; margin: 0; }
+    h1 { text-align:center; font-size: 1.5rem; }
+    .section { margin-bottom:20px; padding:10px; background:#333; border-radius:6px; }
+    label { display:block; margin-bottom:5px; color:#ccc; }
+    input[type="text"], input[type="number"], button {
+      width:100%;
+      padding:10px;
+      margin-bottom:10px;
+      border-radius:4px;
+      border:none;
+      font-size:16px;
+      box-sizing: border-box;
+    }
+    button { cursor:pointer; background:#2d7dd2; color:white; }
+    button:hover { background:#3689e6; }
+    .row { display:flex; gap:15px; flex-wrap:wrap; }
+    .col { flex:1; min-width:150px; }
+
+    /* Specific CSS to remove number input arrows (spinners) */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] {
+      -moz-appearance: textfield; /* Firefox */
+      text-align: center;
+    }
+
+    /* Styling for the score/set control row */
+    .score-control-row {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 15px;
+    }
+    .score-control-row button {
+      width: 40px;
+      flex-shrink: 0;
+      padding: 10px 0;
+      margin-bottom: 0;
+    }
+    .score-control-row input {
+      margin-bottom: 0;
+    }
+
+    /* Responsive adjustments for mobile */
+    @media (max-width: 600px) {
+      .col {
+        flex: 1 1 100%; /* Force columns to take full width on small screens */
+      }
+      .score-control-row button {
+        width: 60px; /* Larger buttons for easier tapping on mobile */
+        height: 50px;
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+<h1>VolleyScore Control Panel</h1>
+
+<div class="section">
+  <div class="row">
+    <div class="col">
+      <label for="homeName">Home Team Name</label>
+      <input type="text" id="homeName" value="HOME">
+    </div>
+    <div class="col">
+      <label for="awayName">Away Team Name</label>
+      <input type="text" id="awayName" value="AWAY">
+      <label for="awayLogoFile">Upload Away Logo (PNG/JPG)</label>
+      <input type="file" id="awayLogoFile" accept="image/*">
+      <input type="hidden" id="awayLogo" value="/static/away_logo.jpg">
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col">
+      <label for="homeScore">Home Score (Points)</label>
+      <div class="score-control-row">
+        <button onclick="changeScore('home', -1)">−</button>
+        <input type="number" id="homeScore" value="0">
+        <button onclick="changeScore('home', 1)">+</button>
+      </div>
+
+      <label for="homeSets">Home Sets Won</label>
+      <div class="score-control-row">
+        <button onclick="changeSet('home', -1)">−</button>
+        <input type="number" id="homeSets" value="0">
+        <button onclick="changeSet('home', 1)">+</button>
+      </div>
+    </div>
+
+    <div class="col">
+      <label for="awayScore">Away Score (Points)</label>
+      <div class="score-control-row">
+        <button onclick="changeScore('away', -1)">−</button>
+        <input type="number" id="awayScore" value="0">
+        <button onclick="changeScore('away', 1)">+</button>
+      </div>
+
+      <label for="awaySets">Away Sets Won</label>
+      <div class="score-control-row">
+        <button onclick="changeSet('away', -1)">−</button>
+        <input type="number" id="awaySets" value="0">
+        <button onclick="changeSet('away', 1)">+</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <label>Possession (Service)</label>
+  <div class="row">
+    <button onclick="setPossession('home')">Home</button>
+    <button onclick="setPossession('none')">None</button>
+    <button onclick="setPossession('away')">Away</button>
+  </div>
+</div>
+
+<div class="section">
+  <button onclick="sendToServer()">Update OBS</button>
+</div>
+
+<div class="section" id="status">Status: Ready</div>
+
+<div class="section">
+  <button onclick="resetGame()">Reset Game</button>
+</div>
+
+<script>
+  let possession = "none";
+  // Internal trackers for game logic
+  let homeSets = 0;
+  let awaySets = 0;
+
+  window.addEventListener("load", () => {
+    // Initialize internal set trackers from inputs
+    homeSets = parseInt(document.getElementById("homeSets").value) || 0;
+    awaySets = parseInt(document.getElementById("awaySets").value) || 0;
+
+    const saved = localStorage.getItem("scoreState");
+    if (saved) {
+      try {
+        restoreState(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to restore state", e);
+      }
+    }
+  });
+
+  function restoreState(state) {
+    document.getElementById("awayName").value = state.awayName || "AWAY";
+    document.getElementById("homeName").value = state.homeName || "HOME";
+    document.getElementById("awayScore").value = state.awayScore || 0;
+    document.getElementById("homeScore").value = state.homeScore || 0;
+
+    // Restore Sets
+    document.getElementById("homeSets").value = state.homeSets || 0;
+    document.getElementById("awaySets").value = state.awaySets || 0;
+    homeSets = parseInt(state.homeSets, 10) || 0;
+    awaySets = parseInt(state.awaySets, 10) || 0;
+    document.getElementById("awayLogo").value = state.awayLogo || "/static/away_logo.jpg";
+
+    possession = state.possession || "none";
+  }
+
+  function savePersistentState() {
+    const state = {
+      awayName: document.getElementById("awayName").value,
+      homeName: document.getElementById("homeName").value,
+      awayScore: document.getElementById("awayScore").value,
+      homeScore: document.getElementById("homeScore").value,
+      homeSets: document.getElementById("homeSets").value,
+      awaySets: document.getElementById("awaySets").value,
+      possession,
+      awayLogo: document.getElementById("awayLogo").value
+    };
+    localStorage.setItem("scoreState", JSON.stringify(state));
+  }
+
+  function setPossession(team) {
+    possession = team;
+    sendToServer();
+  }
+
+  async function sendToServer() {
+    const logoFile = document.getElementById("awayLogoFile").files[0];
+
+    // Use FormData to handle both text fields and the file
+    const formData = new FormData();
+
+    // Append all standard fields
+    formData.append("awayName", document.getElementById("awayName").value);
+    formData.append("homeName", document.getElementById("homeName").value);
+    formData.append("awayScore", document.getElementById("awayScore").value);
+    formData.append("homeScore", document.getElementById("homeScore").value);
+    formData.append("homeSets", document.getElementById("homeSets").value);
+    formData.append("awaySets", document.getElementById("awaySets").value);
+    formData.append("possession", possession);
+
+    // Append file if selected, otherwise fallback to existing URL
+    if (logoFile) {
+        formData.append("awayLogoFile", logoFile);
+    } else {
+         formData.append("awayLogo", document.getElementById("awayLogo").value);
+    }
+
+    try {
+        // Send FormData
+        let res = await fetch("/update", {
+            method: "POST",
+            body: formData
+        });
+        let result = await res.json();
+
+        // If the server sends back the new logo URL, update the hidden input
+        if (result.newLogoUrl) {
+            document.getElementById("awayLogo").value = result.newLogoUrl;
+            // Clear the file input so we don't re-upload the same file on next update
+            document.getElementById("awayLogoFile").value = "";
+        }
+
+        document.getElementById("status").textContent = "Status: " + (result.status || "OK");
+
+    } catch (err) {
+        console.error(err);
+        document.getElementById("status").textContent = "Status: Error";
+    }
+    savePersistentState();
+}
+
+  // Manually change sets
+  function changeSet(team, delta) {
+    const setInput = document.getElementById(team + "Sets");
+    let newSetCount = Math.max(0, parseInt(setInput.value, 10) + delta);
+    setInput.value = newSetCount;
+
+    // Update internal tracker
+    if (team === 'home') homeSets = newSetCount;
+    if (team === 'away') awaySets = newSetCount;
+
+    sendToServer();
+  }
+
+  // Score logic with automatic set win detection
+  function changeScore(team, delta) {
+    const input = document.getElementById(team + "Score");
+    const otherTeam = team === 'home' ? 'away' : 'home';
+    const otherInput = document.getElementById(otherTeam + "Score");
+
+    let newScore = Math.max(0, parseInt(input.value, 10) + delta);
+    let otherScore = parseInt(otherInput.value, 10);
+
+    // Update score immediately
+    input.value = newScore;
+
+    if (delta > 0) {
+      possession = team;
+
+      // Determine points needed to win (25 for sets 1-4, 15 for set 5)
+      const totalSetsPlayed = homeSets + awaySets;
+      const pointsToWin = (totalSetsPlayed === 4) ? 15 : 25;
+
+      // Check for Set Win (Points limit + win by 2)
+      if (newScore >= pointsToWin && (newScore - otherScore) >= 2) {
+        // Increment sets (triggers update)
+        changeSet(team, 1);
+        
+        // Reset points
+        input.value = 0;
+        otherInput.value = 0;
+      } else {
+        sendToServer();
+      }
+    } else {
+      sendToServer();
+    }
+  }
+
+  function resetGame() {
+    document.getElementById("awayScore").value = 0;
+    document.getElementById("homeScore").value = 0;
+    document.getElementById("awaySets").value = 0;
+    document.getElementById("homeSets").value = 0;
+    homeSets = 0;
+    awaySets = 0;
+    possession = "none";
+    sendToServer();
+  }
+</script>
+</body>
+</html>

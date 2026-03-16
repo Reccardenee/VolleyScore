@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyInstaller
+build/
+dist/
+*.spec
+!server.spec
+
+# Application Data
+uploads/
+
+# IDEs
+.idea/
+.vscode/
+
+# Environment
+.env
+venv/
+env/
+
+# Other
+*.log
+*.pot
+*.pyc
+.DS_Store

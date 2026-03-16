@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VolleyScore</title>
+
+<!-- Fonts: Used for the bold team names and scores -->
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
+<!-- Icons: Using Lucide Icons for the service indicator -->
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+<style>
+/* Define the primary colors from the image (Dark Blue, Red, Yellow/Gold) */
+:root {
+ --primary-blue: #142850;   /* Dark Navy Blue - Primary background */
+ --secondary-blue: #0a1f3c; /* Slightly darker blue for gradient bottom */
+ --accent-red: #D83A56;     /* Bright Red - Home team accent/color bar */
+ --accent-gold: #F0A500;    /* Gold/Yellow - Away team accent/Sets column */
+ --secondary-gold: #B87B00;
+ --dark-background: #333;
+ --subtle-border-color: #2a406b;
+}
+
+/* --- GENERAL BODY --- */
+body {
+ background: var(--dark-background);
+ margin: 0;
+ padding: 20px;
+ display: flex;
+ flex-direction: column;
+ justify-content: center;
+ align-items: center;
+ min-height: 100vh;
+ font-family: Arial, sans-serif;
+ box-sizing: border-box;
+}
+
+.containervolley {
+  width: fit-content;
+  min-width: 1000px;
+  display: grid;
+  grid-template-columns: 150px auto 70px 100px 120px; /* Logo | Name | Service | Sets | Points */
+  grid-template-rows: auto auto auto; /* Header + Home + Away */
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* --- HEADER ROW (Labels like SETS, POINTS) --- */
+.boxheader-sets {
+  background: linear-gradient(to bottom, var(--accent-gold), var(--secondary-gold));
+  color: var(--primary-blue);
+  font-family: "Alfa Slab One", cursive;
+  font-size: 22px;
+  text-align: center;
+  font-weight: bold;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--subtle-border-color);
+}
+
+/* Points Header */
+.boxheader-points {
+  background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
+  color: white;
+  font-family: "Alfa Slab One", cursive;
+  font-size: 20px;
+  text-align: center;
+  font-weight: bold;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--subtle-border-color);
+}
+
+.boxheader-service {
+  background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
+  border-bottom: 1px solid var(--subtle-border-color);
+}
+
+.header-empty {
+  background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
+  border-bottom: 1px solid var(--subtle-border-color);
+}
+
+/* --- TITLE IN HEADER ROW --- */
+.boxheader-title {
+  background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
+  color: white;
+  font-family: "Alfa Slab One", cursive;
+  font-size: 22px;
+  text-align: center;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--subtle-border-color);
+}
+
+/* --- LOGO COLUMN (SPLIT) --- */
+.home-logo-container, .away-logo-container {
+    grid-column: 1 / 2;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Apply vertical gradient to logo column background */
+    background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
+}
+
+.home-logo-container { grid-row: 2 / 3; }
+.away-logo-container { grid-row: 3 / 4; }
+
+/* Placeholder Divs for the actual images */
+.home-logo-placeholder, .away-logo-placeholder {
+    width: 80%;
+    height: 90%;
+    border-radius: 8px;
+    background-size: contain; 
+    background-position: center;
+    background-repeat: no-repeat;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    background-image: url('/static/home_logo_placeholder.jpg');
+}
+
+/* Vertical Color Bar (Applied as a pseudo-element on the last element of the column) */
+.away-logo-container::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: -100%;
+  bottom: 0;
+  height: 200%;
+  width: 15px;
+  background: linear-gradient(to bottom,
+   var(--accent-red) 0%,
+   var(--accent-red) 50%,
+   var(--accent-gold) 50%,
+   var(--accent-gold) 100%);
+  z-index: 5;
+}
+
+
+/* --- TEAM NAMES --- */
+.boxhometeam, .boxawayteam {
+ text-align: left;
+ display: flex;
+ align-items: center;
+ padding: 10px 15px 10px 25px;
+ font-family: "Alfa Slab One", cursive;
+ font-size: 50px;
+ color: white;
+ position: relative;
+ background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
+ white-space: nowrap;
+}
+
+.boxhometeam { grid-row: 2 / 3; grid-column: 2 / 3; }
+.boxawayteam { grid-row: 3 / 4; grid-column: 2 / 3; }
+
+/* General appearance for boxes */
+.box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* Row Separator */
+.home-logo-container, .boxhometeam, .boxhomeservice, .boxhomesets, .boxhomepoints {
+ border-bottom: 1px solid var(--subtle-border-color);
+}
+
+/* --- POINTS (Score) --- */
+.boxhomepoints, .boxawaypoints {
+  background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
+  color: white;
+  font-size: 80px;
+  font-family: "Alfa Slab One", cursive;
+}
+.boxawaypoints { border-bottom-right-radius: 20px; }
+
+/* --- SETS --- */
+.boxhomesets, .boxawaysets {
+  background: linear-gradient(to bottom, var(--accent-gold), var(--secondary-gold));
+  color: var(--primary-blue);
+  font-weight: bold;
+  font-size: 70px;
+  font-family: "Alfa Slab One", cursive;
+}
+
+/* --- SERVICE INDICATORS --- */
+.boxservice {
+  position: relative;
+  background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
+}
+.service-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.3s;
+}
+.service-icon svg {
+  width: 45px;
+  height: 45px;
+  color: white;
+}
+.okservice { opacity: 1; }
+.noservice { opacity: 0; }
+</style>
+</head>
+
+<body>
+ <section id="scoreboard">
+  <div class="containervolley">
+      <!-- Header Row -->
+   <div class="box boxheader-title" style="grid-column: 1 / 3;">
+     Serie B Maschile – Girone H
+   </div>
+   <div class="box boxheader-service"></div> <!-- Empty service column -->
+   <div class="box boxheader-sets">SETS</div>
+   <div class="box boxheader-points">POINTS</div>
+   <!-- Home Logo Column (Row 1, Column 1) -->
+   <div class="home-logo-container">
+     <div class="home-logo-placeholder"></div>
+   </div>
+
+   <!-- Home Team (Row 1) -->
+   <div class="box boxhometeam" id="team_1">Ribera Volley</div>
+   <div class="box boxservice boxhomeservice">
+    <span id="homeservice" class="service-icon noservice">
+     <i data-lucide="volleyball"></i>
+    </span>
+   </div>
+   <div class="box numbers boxhomesets" id="set_1">0</div>
+   <div class="box numbers boxhomepoints" id="points_1">0</div>
+
+   <!-- Away Logo Column (Row 2, Column 1) -->
+   <div class="away-logo-container">
+     <div class="away-logo-placeholder"></div>
+   </div>
+
+   <!-- Away Team (Row 2) -->
+   <div class="box boxawayteam" id="team_2">Sciacca</div>
+   <div class="box boxservice boxawayservice">
+    <span id="awayservice" class="service-icon noservice">
+     <i data-lucide="volleyball"></i>
+    </span>
+   </div>
+   <div class="box numbers boxawaysets" id="set_2">0</div>
+   <div class="box numbers boxawaypoints" id="points_2">0</div>
+
+  </div>
+ </section>
+
+ <script>
+// Initialize Lucide icons once when the window loads
+window.onload = function() {
+  lucide.createIcons();
+  fetchScore();
+};
+
+let previousState = {};
+let isFetching = false;
+
+async function fetchScore() {
+  if (isFetching) return;
+  isFetching = true;
+  try {
+    const res = await fetch("/current");
+    const data = await res.json();
+
+    // Update team names and scores
+    if (data.homeName !== previousState.homeName) document.getElementById("team_1").textContent = data.homeName;
+    if (data.awayName !== previousState.awayName) document.getElementById("team_2").textContent = data.awayName;
+
+    if (data.homeScore !== previousState.homeScore) document.getElementById("points_1").textContent = Number(data.homeScore);
+    if (data.awayScore !== previousState.awayScore) document.getElementById("points_2").textContent = Number(data.awayScore);
+    
+    // Set Counts
+    if (data.homeSets !== previousState.homeSets) document.getElementById("set_1").textContent = Number(data.homeSets || 0);
+    if (data.awaySets !== previousState.awaySets) document.getElementById("set_2").textContent = Number(data.awaySets || 0);
+
+    // Serve icon control
+    // Update logo only if changed
+    if (data.awayLogo !== previousState.awayLogo) {
+        const awayLogoPlaceholder = document.querySelector('.away-logo-placeholder');
+        if (data.awayLogo) {
+            awayLogoPlaceholder.style.backgroundImage = `url('${data.awayLogo}')`;
+        }
+    }
+
+    if (data.possession !== previousState.possession) {
+        const homeServiceSpan = document.getElementById("homeservice");
+        const awayServiceSpan = document.getElementById("awayservice");
+
+        // Helper to toggle classes for visibility
+        const toggleService = (element, isServing) => {
+            element.classList.toggle('okservice', isServing);
+            element.classList.toggle('noservice', !isServing);
+        };
+
+        if (data.possession === "home") {
+            toggleService(homeServiceSpan, true);
+            toggleService(awayServiceSpan, false);
+        } else if (data.possession === "away") {
+            toggleService(homeServiceSpan, false);
+            toggleService(awayServiceSpan, true);
+        } else {
+            toggleService(homeServiceSpan, false);
+            toggleService(awayServiceSpan, false);
+        }
+    }
+
+    previousState = data;
+
+  } catch (err) {
+    console.error("Failed to fetch score:", err);
+  } finally {
+    isFetching = false;
+  }
+}
+
+// Auto-refresh every second
+setInterval(fetchScore, 1000); 
+
+</script>
+</body>
+</html>
