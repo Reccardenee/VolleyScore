@@ -2,6 +2,9 @@
 
 A lightweight, web-based scoreboard overlay designed for Volleyball broadcasts using OBS Studio. VolleyScore features a control panel for updating scores, sets, and service indicators in real-time, powered by a local Python Flask server.
 
+## Motivation
+This tool was built for a local volleyball team to use during OBS-based livestreams, and as a way for me to learn and practice Flask, simple frontend state management, and packaging with PyInstaller. It focuses on working, easy-to-use functionality rather than being a perfectly optimized or generalized solution.
+
 ## Features
 
 - **Web-Based Control Panel**: Control the score from the host computer or any device on the same local network (e.g., a tablet or phone).
