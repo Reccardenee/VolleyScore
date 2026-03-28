@@ -30,7 +30,10 @@ current_score = {
     "awaySets": 0,
     "homeSets": 0,
     "possession": "none",
-    "awayLogo": "/static/away_logo.jpg"
+    "awayLogo": "/static/away_logo.jpg",
+    "homeLogo": "/static/home_logo_placeholder.jpg",
+    "homePlayers": ["", "", "", "", "", ""],
+    "awayPlayers": ["", "", "", "", "", ""]
 }
 
 def allowed_file(filename):
@@ -62,6 +65,14 @@ def control_panel():
     """
     return app.send_static_file("control_panel.html")
 
+@app.route("/dual_formation")
+def dual_formation():
+    """
+    Route for side-by-side team formations.
+    Serves the dual_formation HTML file.
+    """
+    return send_from_directory("static", "dual_formation.html")
+
 @app.route("/update", methods=["POST"])
 def update():
     """
@@ -73,6 +84,7 @@ def update():
 
     # Default to the existing logo or the one provided in the hidden text field
     new_logo_url = form_data.get("awayLogo", current_score["awayLogo"])
+    new_home_logo_url = form_data.get("homeLogo", current_score["homeLogo"])
 
     # Handle File Upload if present
     if 'awayLogoFile' in request.files:
@@ -91,6 +103,22 @@ def update():
             except Exception as e:
                 print(f"Error saving file: {e}")
 
+    if 'homeLogoFile' in request.files:
+        file = request.files['homeLogoFile']
+        if file and file.filename and allowed_file(file.filename):
+            extension = os.path.splitext(file.filename)[1]
+            filename = secure_filename(f"home_logo_{uuid.uuid4().hex}{extension}")
+            save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            try:
+                file.save(save_path)
+                new_home_logo_url = f"/uploads/{filename}"
+            except Exception as e:
+                print(f"Error saving file: {e}")
+
+    # Process players
+    home_players = [form_data.get(f"homeP{i}", "") for i in range(1, 7)]
+    away_players = [form_data.get(f"awayP{i}", "") for i in range(1, 7)]
+
     # Update global score data (use current values as fallbacks)
     current_score.update({
         "awayName": form_data.get("awayName", current_score["awayName"]),
@@ -101,10 +129,13 @@ def update():
         "homeSets": int(form_data.get("homeSets", current_score["homeSets"])),
         "possession": form_data.get("possession", current_score["possession"]),
         "awayLogo": new_logo_url,
+        "homeLogo": new_home_logo_url,
+        "homePlayers": home_players,
+        "awayPlayers": away_players,
     })
 
     # Return status and new logo URL
-    return jsonify({"status": "ok", "newLogoUrl": new_logo_url})
+    return jsonify({"status": "ok", "newLogoUrl": new_logo_url, "newHomeLogoUrl": new_home_logo_url})
 
 @app.route("/current")
 def current():

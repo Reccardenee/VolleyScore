@@ -119,7 +119,7 @@ body {
 .home-logo-placeholder, .away-logo-placeholder {
     width: 80%;
     height: 90%;
-    border-radius: 8px;
+    border-radius: 15px;
     background-size: contain; 
     background-position: center;
     background-repeat: no-repeat;
@@ -287,12 +287,17 @@ async function fetchScore() {
     if (data.homeSets !== previousState.homeSets) document.getElementById("set_1").textContent = Number(data.homeSets || 0);
     if (data.awaySets !== previousState.awaySets) document.getElementById("set_2").textContent = Number(data.awaySets || 0);
 
-    // Serve icon control
-    // Update logo only if changed
     if (data.awayLogo !== previousState.awayLogo) {
         const awayLogoPlaceholder = document.querySelector('.away-logo-placeholder');
         if (data.awayLogo) {
             awayLogoPlaceholder.style.backgroundImage = `url('${data.awayLogo}')`;
+        }
+    }
+
+    if (data.homeLogo !== previousState.homeLogo) {
+        const homeLogoPlaceholder = document.querySelector('.home-logo-placeholder');
+        if (data.homeLogo) {
+            homeLogoPlaceholder.style.backgroundImage = `url('${data.homeLogo}')`;
         }
     }
 
