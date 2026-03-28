@@ -70,14 +70,14 @@
   <div class="row">
     <div class="col">
       <label for="homeName">Home Team Name</label>
-      <input type="text" id="homeName" value="HOME">
+      <input type="text" id="homeName" value="Home">
       <label for="homeLogoFile">Upload Home Logo</label>
       <input type="file" id="homeLogoFile" accept="image/*">
       <input type="hidden" id="homeLogo" value="/static/home_logo_placeholder.jpg">
     </div>
     <div class="col">
       <label for="awayName">Away Team Name</label>
-      <input type="text" id="awayName" value="AWAY">
+      <input type="text" id="awayName" value="Away">
       <label for="awayLogoFile">Upload Away Logo (PNG/JPG)</label>
       <input type="file" id="awayLogoFile" accept="image/*">
       <input type="hidden" id="awayLogo" value="/static/away_logo.jpg">
@@ -184,8 +184,8 @@
   });
 
   function restoreState(state) {
-    document.getElementById("awayName").value = state.awayName || "AWAY";
-    document.getElementById("homeName").value = state.homeName || "HOME";
+    document.getElementById("awayName").value = state.awayName || "Away";
+    document.getElementById("homeName").value = state.homeName || "Home";
     document.getElementById("awayScore").value = state.awayScore || 0;
     document.getElementById("homeScore").value = state.homeScore || 0;
 
