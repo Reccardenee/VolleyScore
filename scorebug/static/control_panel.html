@@ -71,6 +71,9 @@
     <div class="col">
       <label for="homeName">Home Team Name</label>
       <input type="text" id="homeName" value="HOME">
+      <label for="homeLogoFile">Upload Home Logo</label>
+      <input type="file" id="homeLogoFile" accept="image/*">
+      <input type="hidden" id="homeLogo" value="/static/home_logo_placeholder.jpg">
     </div>
     <div class="col">
       <label for="awayName">Away Team Name</label>
@@ -112,6 +115,30 @@
         <input type="number" id="awaySets" value="0">
         <button onclick="changeSet('away', 1)">+</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <label>Formations (Starting Six)</label>
+  <div class="row">
+    <div class="col">
+      <label>Home Players (1-6)</label>
+      <input type="text" id="homeP1" placeholder="Pos 1">
+      <input type="text" id="homeP2" placeholder="Pos 2">
+      <input type="text" id="homeP3" placeholder="Pos 3">
+      <input type="text" id="homeP4" placeholder="Pos 4">
+      <input type="text" id="homeP5" placeholder="Pos 5">
+      <input type="text" id="homeP6" placeholder="Pos 6">
+    </div>
+    <div class="col">
+      <label>Away Players (1-6)</label>
+      <input type="text" id="awayP1" placeholder="Pos 1">
+      <input type="text" id="awayP2" placeholder="Pos 2">
+      <input type="text" id="awayP3" placeholder="Pos 3">
+      <input type="text" id="awayP4" placeholder="Pos 4">
+      <input type="text" id="awayP5" placeholder="Pos 5">
+      <input type="text" id="awayP6" placeholder="Pos 6">
     </div>
   </div>
 </div>
@@ -162,6 +189,11 @@
     document.getElementById("awayScore").value = state.awayScore || 0;
     document.getElementById("homeScore").value = state.homeScore || 0;
 
+    for(let i=1; i<=6; i++) {
+        if(state.homePlayers) document.getElementById("homeP"+i).value = state.homePlayers[i-1] || "";
+        if(state.awayPlayers) document.getElementById("awayP"+i).value = state.awayPlayers[i-1] || "";
+    }
+
     // Restore Sets
     document.getElementById("homeSets").value = state.homeSets || 0;
     document.getElementById("awaySets").value = state.awaySets || 0;
@@ -181,7 +213,10 @@
       homeSets: document.getElementById("homeSets").value,
       awaySets: document.getElementById("awaySets").value,
       possession,
-      awayLogo: document.getElementById("awayLogo").value
+      awayLogo: document.getElementById("awayLogo").value,
+      homeLogo: document.getElementById("homeLogo").value,
+      homePlayers: Array.from({length:6}, (_,i) => document.getElementById("homeP"+(i+1)).value),
+      awayPlayers: Array.from({length:6}, (_,i) => document.getElementById("awayP"+(i+1)).value)
     };
     localStorage.setItem("scoreState", JSON.stringify(state));
   }
@@ -193,6 +228,7 @@
 
   async function sendToServer() {
     const logoFile = document.getElementById("awayLogoFile").files[0];
+    const homeLogoFile = document.getElementById("homeLogoFile").files[0];
 
     // Use FormData to handle both text fields and the file
     const formData = new FormData();
@@ -205,12 +241,23 @@
     formData.append("homeSets", document.getElementById("homeSets").value);
     formData.append("awaySets", document.getElementById("awaySets").value);
     formData.append("possession", possession);
+    
+    for(let i=1; i<=6; i++) {
+        formData.append("homeP"+i, document.getElementById("homeP"+i).value);
+        formData.append("awayP"+i, document.getElementById("awayP"+i).value);
+    }
 
     // Append file if selected, otherwise fallback to existing URL
     if (logoFile) {
         formData.append("awayLogoFile", logoFile);
     } else {
          formData.append("awayLogo", document.getElementById("awayLogo").value);
+    }
+
+    if (homeLogoFile) {
+        formData.append("homeLogoFile", homeLogoFile);
+    } else {
+        formData.append("homeLogo", document.getElementById("homeLogo").value);
     }
 
     try {
@@ -226,6 +273,10 @@
             document.getElementById("awayLogo").value = result.newLogoUrl;
             // Clear the file input so we don't re-upload the same file on next update
             document.getElementById("awayLogoFile").value = "";
+        }
+        if (result.newHomeLogoUrl) {
+            document.getElementById("homeLogo").value = result.newHomeLogoUrl;
+            document.getElementById("homeLogoFile").value = "";
         }
 
         document.getElementById("status").textContent = "Status: " + (result.status || "OK");
