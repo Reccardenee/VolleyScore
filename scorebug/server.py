@@ -7,13 +7,15 @@ from werkzeug.utils import secure_filename
 # Determine base directory for PyInstaller compatibility
 if getattr(sys, 'frozen', False):
     BASE_DIR = sys._MEIPASS
+    EXE_DIR = os.path.dirname(sys.executable)
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    EXE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__, static_folder=os.path.join(BASE_DIR, "static"))
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
+UPLOAD_FOLDER = os.path.join(EXE_DIR, 'uploads')
 
 # Ensure upload directory exists
 if not os.path.exists(UPLOAD_FOLDER):
