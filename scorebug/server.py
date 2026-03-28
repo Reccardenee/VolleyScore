@@ -25,8 +25,8 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Global state to store the current score
 current_score = {
-    "awayName": "AWAY",
-    "homeName": "HOME",
+    "awayName": "Away",
+    "homeName": "Home",
     "awayScore": 0,
     "homeScore": 0,
     "awaySets": 0,
