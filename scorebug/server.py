@@ -1,6 +1,7 @@
 import os
 import sys
 import uuid
+import json
 from flask import Flask, request, send_from_directory, jsonify
 from werkzeug.utils import secure_filename
 
@@ -16,6 +17,7 @@ app = Flask(__name__, static_folder=os.path.join(BASE_DIR, "static"))
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 UPLOAD_FOLDER = os.path.join(EXE_DIR, 'uploads')
+CONFIG_FILE = os.path.join(EXE_DIR, 'config.json')
 
 # Ensure upload directory exists
 if not os.path.exists(UPLOAD_FOLDER):
@@ -24,7 +26,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Global state to store the current score
-current_score = {
+DEFAULT_SCORE = {
     "awayName": "Away",
     "homeName": "Home",
     "awayScore": 0,
@@ -37,6 +39,26 @@ current_score = {
     "homePlayers": ["", "", "", "", "", ""],
     "awayPlayers": ["", "", "", "", "", ""]
 }
+
+def load_config():
+    """Load configuration from file or return default."""
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading config: {e}")
+    return DEFAULT_SCORE.copy()
+
+def save_config(config):
+    """Save configuration to file."""
+    try:
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump(config, f, indent=4)
+    except Exception as e:
+        print(f"Error saving config: {e}")
+
+current_score = load_config()
 
 def allowed_file(filename):
     """
@@ -135,6 +157,9 @@ def update():
         "homePlayers": home_players,
         "awayPlayers": away_players,
     })
+
+    # Save to disk
+    save_config(current_score)
 
     # Return status and new logo URL
     return jsonify({"status": "ok", "newLogoUrl": new_logo_url, "newHomeLogoUrl": new_home_logo_url})
