@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <title>VolleyScore Dual Formation</title>
 <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
+<!-- Socket.IO Client -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <style>
 :root {
  --primary-blue: #142850;
@@ -148,11 +150,13 @@ body {
 </div>
 
 <script>
-async function updateGraphic() {
-  try {
-    const res = await fetch("/current");
-    const data = await res.json();
+const socket = io();
 
+socket.on('score_update', function(data) {
+    updateGraphic(data);
+});
+
+function updateGraphic(data) {
     // Update Home
     document.getElementById("homeName").textContent = data.homeName;
     document.getElementById("homeLogo").style.backgroundImage = `url('${data.homeLogo}')`;
@@ -172,13 +176,7 @@ async function updateGraphic() {
         if (el) el.textContent = name || "-";
       });
     }
-  } catch (err) {
-    console.error("Fetch error:", err);
-  }
 }
-
-setInterval(updateGraphic, 1000);
-updateGraphic();
 </script>
 </body>
 </html>
