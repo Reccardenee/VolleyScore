@@ -90,6 +90,20 @@ def dual_formation():
     """
     return send_from_directory("static", "dual_formation.html")
 
+@app.route("/home_formation")
+def home_formation():
+    """
+    Route for home team formation only.
+    """
+    return send_from_directory("static", "home_formation.html")
+
+@app.route("/away_formation")
+def away_formation():
+    """
+    Route for away team formation only.
+    """
+    return send_from_directory("static", "away_formation.html")
+
 @app.route("/update", methods=["POST"])
 def update():
     """
