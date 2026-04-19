@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 import os
 import sys
 import uuid
@@ -74,7 +77,7 @@ def index():
     """
     Route for scorebug overlay (used in OBS).
     """
-    return send_from_directory("static", "scorebug.html")
+    return app.send_static_file("scorebug.html")
 
 @app.route("/control_panel")
 def control_panel():
@@ -88,21 +91,21 @@ def dual_formation():
     """
     Route for side-by-side team formations.
     """
-    return send_from_directory("static", "dual_formation.html")
+    return app.send_static_file("dual_formation.html")
 
 @app.route("/home_formation")
 def home_formation():
     """
     Route for home team formation only.
     """
-    return send_from_directory("static", "home_formation.html")
+    return app.send_static_file("home_formation.html")
 
 @app.route("/away_formation")
 def away_formation():
     """
     Route for away team formation only.
     """
-    return send_from_directory("static", "away_formation.html")
+    return app.send_static_file("away_formation.html")
 
 @app.route("/update", methods=["POST"])
 def update():
@@ -183,4 +186,4 @@ def handle_connect():
     emit('score_update', current_score)
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=8000, allow_unsafe_werkzeug=True)
+    socketio.run(app, host="0.0.0.0", port=8000)

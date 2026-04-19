@@ -1,4 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
+import sys
+sys.setrecursionlimit(5000)
 
 block_cipher = None
 
@@ -7,7 +9,13 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[('static', 'static')],
-    hiddenimports=[],
+    hiddenimports=[
+        'engineio.async_drivers.eventlet',
+        'flask_socketio',
+        'engineio',
+        'eventlet',
+        'dns.asyncresolver'
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
