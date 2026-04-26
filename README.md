@@ -1,20 +1,23 @@
 # VolleyScore
 
-A lightweight, web-based scoreboard overlay designed for Volleyball broadcasts using OBS Studio. VolleyScore features a control panel for updating scores, sets, and service indicators in real-time, powered by a local Python Flask server.
+A lightweight, web-based scoreboard overlay designed for Volleyball broadcasts using OBS Studio. VolleyScore features a control panel for updating scores, sets, and service indicators in real-time, powered by a Flask-SocketIO server.
 
 ## Motivation
-This tool was built for a local volleyball team to use during OBS-based livestreams, and as a way for me to learn and practice Flask, simple frontend state management, and packaging with PyInstaller. It focuses on working, easy-to-use functionality rather than being a perfectly optimized or generalized solution.
+This tool was built for a local volleyball team to use during OBS-based livestreams, and as a way for me to learn and practice Flask, WebSockets (Socket.IO), simple frontend state management, and packaging with PyInstaller. It focuses on working, easy-to-use functionality rather than being a perfectly optimized or generalized solution.
 
 ## Features
 
 - **Web-Based Control Panel**: Control the score from the host computer or any device on the same local network (e.g., a tablet or phone).
-- **Real-Time Overlay**: Instant updates to the OBS Browser Source.
+- **Instant Updates via WebSockets**: Real-time updates to the OBS Browser Source using Flask-SocketIO, providing low latency.
+- **Multiple Overlay Views**:
+  - **Main Scorebug**: The primary scoreboard overlay.
+  - **Dual Formation**: A side-by-side view of team starting lineups.
 - **Automatic Game Logic**:
-  - Automatically increments the Set count when a team reaches 25 points.
+  - Automatically increments the Set count when a team reaches 25 points (or 15 in the 5th set).
   - Resets points automatically after a set win.
 - **Service Indicator**: Visual indicator for which team has possession/service.
-- **Customizable Away Logo**: Upload a custom logo for the Away team directly from the control panel.
-- **Persistent State**: Scores are saved locally in the browser, so you don't lose progress if you accidentally refresh the control panel.
+- **Customizable Logos**: Upload custom logos for both Home and Away teams directly from the control panel.
+- **Persistent State**: Scores are saved to a local `config.json` file on the server and synced across all connected clients.
 - **Single File Executable**: Can be compiled into a single `.exe` file for easy distribution.
 
 ## Quick Start (Using the EXE)
@@ -49,7 +52,7 @@ If you prefer to run the Python code directly:
 
 ## Usage
 
-Once the server is running (you should see `Running on http://0.0.0.0:8000` in the console):
+Once the server is running (you should see something like `(XXXX) wsgi starting up on http://0.0.0.0:8000` in the console):
 
 ### 1. Open the Control Panel
 Open your web browser and navigate to:
@@ -79,8 +82,13 @@ Use this interface to change team names, update scores, manage sets, and upload 
    - **Custom CSS**: (Leave empty)
 5. Click **OK**.
 
+For the **Dual Formation** view, add another Browser source with:
+- **URL**: `http://localhost:8000/dual_formation`
+- **Width**: `1920`
+- **Height**: `1080`
+
 ### 3. Uploading Logos
-In the Control Panel, you can upload a PNG or JPG file for the Away team. The Home team logo is currently set statically in the CSS (defaulting to `scalia.jpg`), but can be modified in `scorebug/static/scorebug.html` or replaced in the static folder.
+In the Control Panel, you can upload PNG or JPG files for both teams. These logos are saved on the server in an `uploads` folder and will persist across restarts.
 
 ## Project Structure
 
@@ -90,8 +98,9 @@ In the Control Panel, you can upload a PNG or JPG file for the Away team. The Ho
 ├── scorebug/
 │   ├── static/
 │   │   ├── scorebug.html         # The OBS overlay
-│   │   └── control_panel.html    # The control panel
-│   └── server.py                 # The Flask server
+│   │   ├── control_panel.html    # The control panel
+│   │   └── dual_formation.html   # The formation view
+│   └── server.py                 # The Flask-SocketIO server
 ├── .gitignore
 ├── README.md
 └── requirements.txt
@@ -99,8 +108,8 @@ In the Control Panel, you can upload a PNG or JPG file for the Away team. The Ho
 
 ## Development
 
-- **Backend**: Python (Flask)
-- **Frontend**: HTML, CSS, JavaScript (Vanilla)
+- **Backend**: Python (Flask, Flask-SocketIO, Eventlet)
+- **Frontend**: HTML, CSS, JavaScript (Vanilla), Socket.IO Client
 - **Build Tool**: PyInstaller
 
 ## Contributing

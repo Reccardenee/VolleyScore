@@ -9,6 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
 <!-- Icons: Using Lucide Icons for the service indicator -->
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<!-- Socket.IO Client -->
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
 <style>
 /* Define the primary colors from the image (Dark Blue, Red, Yellow/Gold) */
@@ -263,19 +265,16 @@ body {
 // Initialize Lucide icons once when the window loads
 window.onload = function() {
   lucide.createIcons();
-  fetchScore();
 };
 
+const socket = io();
 let previousState = {};
-let isFetching = false;
 
-async function fetchScore() {
-  if (isFetching) return;
-  isFetching = true;
-  try {
-    const res = await fetch("/current");
-    const data = await res.json();
+socket.on('score_update', function(data) {
+    updateUI(data);
+});
 
+function updateUI(data) {
     // Update team names and scores
     if (data.homeName !== previousState.homeName) document.getElementById("team_1").textContent = data.homeName;
     if (data.awayName !== previousState.awayName) document.getElementById("team_2").textContent = data.awayName;
@@ -324,17 +323,7 @@ async function fetchScore() {
     }
 
     previousState = data;
-
-  } catch (err) {
-    console.error("Failed to fetch score:", err);
-  } finally {
-    isFetching = false;
-  }
 }
-
-// Auto-refresh every second
-setInterval(fetchScore, 1000); 
-
 </script>
 </body>
 </html>

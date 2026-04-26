@@ -1,7 +1,12 @@
+import eventlet
+eventlet.monkey_patch()
+
 import os
 import sys
 import uuid
+import json
 from flask import Flask, request, send_from_directory, jsonify
+from flask_socketio import SocketIO, emit
 from werkzeug.utils import secure_filename
 
 # Determine base directory for PyInstaller compatibility
@@ -13,9 +18,11 @@ else:
     EXE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__, static_folder=os.path.join(BASE_DIR, "static"))
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 UPLOAD_FOLDER = os.path.join(EXE_DIR, 'uploads')
+CONFIG_FILE = os.path.join(EXE_DIR, 'config.json')
 
 # Ensure upload directory exists
 if not os.path.exists(UPLOAD_FOLDER):
@@ -24,7 +31,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Global state to store the current score
-current_score = {
+DEFAULT_SCORE = {
     "awayName": "Away",
     "homeName": "Home",
     "awayScore": 0,
@@ -38,15 +45,29 @@ current_score = {
     "awayPlayers": ["", "", "", "", "", ""]
 }
 
+def load_config():
+    """Load configuration from file or return default."""
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading config: {e}")
+    return DEFAULT_SCORE.copy()
+
+def save_config(config):
+    """Save configuration to file."""
+    try:
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump(config, f, indent=4)
+    except Exception as e:
+        print(f"Error saving config: {e}")
+
+current_score = load_config()
+
 def allowed_file(filename):
     """
     Check if the file has an allowed extension.
-    
-    Args:
-        filename (str): The name of the file to check.
-        
-    Returns:
-        bool: True if the file has an allowed extension, False otherwise.
     """
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -55,15 +76,13 @@ def allowed_file(filename):
 def index():
     """
     Route for scorebug overlay (used in OBS).
-    Serves the main scoreboard HTML file.
     """
-    return send_from_directory("static", "scorebug.html")
+    return app.send_static_file("scorebug.html")
 
 @app.route("/control_panel")
 def control_panel():
     """
     Route for control panel.
-    Serves the control panel HTML file.
     """
     return app.send_static_file("control_panel.html")
 
@@ -71,36 +90,42 @@ def control_panel():
 def dual_formation():
     """
     Route for side-by-side team formations.
-    Serves the dual_formation HTML file.
     """
-    return send_from_directory("static", "dual_formation.html")
+    return app.send_static_file("dual_formation.html")
+
+@app.route("/home_formation")
+def home_formation():
+    """
+    Route for home team formation only.
+    """
+    return app.send_static_file("home_formation.html")
+
+@app.route("/away_formation")
+def away_formation():
+    """
+    Route for away team formation only.
+    """
+    return app.send_static_file("away_formation.html")
 
 @app.route("/update", methods=["POST"])
 def update():
     """
     Endpoint to update score from control panel.
-    Handles form data submission and file uploads for logos.
     """
     global current_score
     form_data = request.form
 
-    # Default to the existing logo or the one provided in the hidden text field
     new_logo_url = form_data.get("awayLogo", current_score["awayLogo"])
     new_home_logo_url = form_data.get("homeLogo", current_score["homeLogo"])
 
-    # Handle File Upload if present
     if 'awayLogoFile' in request.files:
         file = request.files['awayLogoFile']
         if file and file.filename and allowed_file(file.filename):
-            # Generate a unique secure filename
             extension = os.path.splitext(file.filename)[1]
             filename = secure_filename(f"away_logo_{uuid.uuid4().hex}{extension}")
-
-            # Save the file
             save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             try:
                 file.save(save_path)
-                # Update the URL to point to the new file
                 new_logo_url = f"/uploads/{filename}"
             except Exception as e:
                 print(f"Error saving file: {e}")
@@ -117,11 +142,9 @@ def update():
             except Exception as e:
                 print(f"Error saving file: {e}")
 
-    # Process players
     home_players = [form_data.get(f"homeP{i}", "") for i in range(1, 7)]
     away_players = [form_data.get(f"awayP{i}", "") for i in range(1, 7)]
 
-    # Update global score data (use current values as fallbacks)
     current_score.update({
         "awayName": form_data.get("awayName", current_score["awayName"]),
         "homeName": form_data.get("homeName", current_score["homeName"]),
@@ -136,14 +159,17 @@ def update():
         "awayPlayers": away_players,
     })
 
-    # Return status and new logo URL
+    save_config(current_score)
+    
+    # Emit update to all connected clients
+    socketio.emit('score_update', current_score)
+
     return jsonify({"status": "ok", "newLogoUrl": new_logo_url, "newHomeLogoUrl": new_home_logo_url})
 
 @app.route("/current")
 def current():
     """
-    Endpoint to provide current score to overlay.
-    Returns the current score as JSON.
+    Endpoint to provide current score to overlay (fallback/initial load).
     """
     return jsonify(current_score)
 
@@ -154,5 +180,10 @@ def uploaded_file(filename):
     """
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+@socketio.on('connect')
+def handle_connect():
+    """Send current state to client upon connection."""
+    emit('score_update', current_score)
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000)
+    socketio.run(app, host="0.0.0.0", port=8000)
