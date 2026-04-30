@@ -168,18 +168,17 @@
   let homeSets = 0;
   let awaySets = 0;
 
-  window.addEventListener("load", () => {
+  window.addEventListener("load", async () => {
     // Initialize internal set trackers from inputs
     homeSets = parseInt(document.getElementById("homeSets").value) || 0;
     awaySets = parseInt(document.getElementById("awaySets").value) || 0;
 
-    const saved = localStorage.getItem("scoreState");
-    if (saved) {
-      try {
-        restoreState(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to restore state", e);
-      }
+    try {
+        const response = await fetch('/current');
+        const currentState = await response.json();
+        restoreState(currentState);
+    } catch (e) {
+        console.error("Failed to fetch initial state from server", e);
     }
   });
 
@@ -192,6 +191,10 @@
     for(let i=1; i<=6; i++) {
         if(state.homePlayers) document.getElementById("homeP"+i).value = state.homePlayers[i-1] || "";
         if(state.awayPlayers) document.getElementById("awayP"+i).value = state.awayPlayers[i-1] || "";
+    }
+
+    if (state.homeLogo) {
+        document.getElementById("homeLogo").value = state.homeLogo;
     }
 
     // Restore Sets

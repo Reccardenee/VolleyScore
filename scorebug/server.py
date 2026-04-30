@@ -1,5 +1,5 @@
-import eventlet
-eventlet.monkey_patch()
+import gevent.monkey
+gevent.monkey.patch_all()
 
 import os
 import sys
@@ -115,8 +115,12 @@ def update():
     global current_score
     form_data = request.form
 
-    new_logo_url = form_data.get("awayLogo", current_score["awayLogo"])
-    new_home_logo_url = form_data.get("homeLogo", current_score["homeLogo"])
+    def get_val(key, current_val):
+        val = form_data.get(key)
+        return val if val and val.strip() != "" else current_val
+
+    new_logo_url = get_val("awayLogo", current_score["awayLogo"])
+    new_home_logo_url = get_val("homeLogo", current_score["homeLogo"])
 
     if 'awayLogoFile' in request.files:
         file = request.files['awayLogoFile']
@@ -142,17 +146,17 @@ def update():
             except Exception as e:
                 print(f"Error saving file: {e}")
 
-    home_players = [form_data.get(f"homeP{i}", "") for i in range(1, 7)]
-    away_players = [form_data.get(f"awayP{i}", "") for i in range(1, 7)]
+    home_players = [get_val(f"homeP{i}", current_score["homePlayers"][i-1]) for i in range(1, 7)]
+    away_players = [get_val(f"awayP{i}", current_score["awayPlayers"][i-1]) for i in range(1, 7)]
 
     current_score.update({
-        "awayName": form_data.get("awayName", current_score["awayName"]),
-        "homeName": form_data.get("homeName", current_score["homeName"]),
-        "awayScore": int(form_data.get("awayScore", current_score["awayScore"])),
-        "homeScore": int(form_data.get("homeScore", current_score["homeScore"])),
-        "awaySets": int(form_data.get("awaySets", current_score["awaySets"])),
-        "homeSets": int(form_data.get("homeSets", current_score["homeSets"])),
-        "possession": form_data.get("possession", current_score["possession"]),
+        "awayName": get_val("awayName", current_score["awayName"]),
+        "homeName": get_val("homeName", current_score["homeName"]),
+        "awayScore": int(get_val("awayScore", current_score["awayScore"])),
+        "homeScore": int(get_val("homeScore", current_score["homeScore"])),
+        "awaySets": int(get_val("awaySets", current_score["awaySets"])),
+        "homeSets": int(get_val("homeSets", current_score["homeSets"])),
+        "possession": get_val("possession", current_score["possession"]),
         "awayLogo": new_logo_url,
         "homeLogo": new_home_logo_url,
         "homePlayers": home_players,
@@ -186,4 +190,13 @@ def handle_connect():
     emit('score_update', current_score)
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=8000)
+    print("VolleyScore Server starting...")
+    print("-" * 40)
+    print(f"Control Panel: http://localhost:8000/control_panel")
+    print("-" * 40)
+    try:
+        # log_output=False reduces console noise; set to True if debugging
+        socketio.run(app, host="0.0.0.0", port=8000, log_output=False)
+    except KeyboardInterrupt:
+        print("\nShutting down VolleyScore Server...")
+        sys.exit(0)
