@@ -3,6 +3,7 @@ gevent.monkey.patch_all()
 
 import os
 import sys
+import signal
 import uuid
 import json
 from flask import Flask, request, send_from_directory, jsonify
@@ -190,13 +191,15 @@ def handle_connect():
     emit('score_update', current_score)
 
 if __name__ == "__main__":
+    def handle_exit(sig, frame):
+        print("\nShutting down VolleyScore Server...")
+        os._exit(0)
+
+    signal.signal(signal.SIGINT, handle_exit)
+
     print("VolleyScore Server starting...")
     print("-" * 40)
     print(f"Control Panel: http://localhost:8000/control_panel")
     print("-" * 40)
-    try:
-        # log_output=False reduces console noise; set to True if debugging
-        socketio.run(app, host="0.0.0.0", port=8000, log_output=False)
-    except KeyboardInterrupt:
-        print("\nShutting down VolleyScore Server...")
-        sys.exit(0)
+
+    socketio.run(app, host="0.0.0.0", port=8000, log_output=False)

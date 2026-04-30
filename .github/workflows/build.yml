@@ -28,7 +28,7 @@ jobs:
     - name: Build with PyInstaller
       run: |
         cd scorebug
-        pyinstaller server.spec
+        pyinstaller --clean server.spec
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
