@@ -10,10 +10,14 @@ a = Analysis(
     binaries=[],
     datas=[('static', 'static')],
     hiddenimports=[
-        'engineio.async_drivers.eventlet',
+        'engineio.async_drivers.gevent',
+        'geventwebsocket',
         'flask_socketio',
         'engineio',
-        'eventlet',
+        'gevent.monkey',
+        'gevent.hub',
+        'gevent.event',
+        'gevent.timeout',
         'dns.asyncresolver'
     ],
     hookspath=[],
