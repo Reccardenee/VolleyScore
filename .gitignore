@@ -26,3 +26,4 @@ env/
 *.pot
 *.pyc
 .DS_Store
+/scorebug/config.json
