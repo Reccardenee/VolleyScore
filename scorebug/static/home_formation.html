@@ -13,6 +13,10 @@
  --accent-red: #D83A56;
  --accent-gold: #F0A500;
  --subtle-border-color: #2a406b;
+
+ /* Dynamic Colors - Default values (will be updated by JS) */
+ --home-primary-color: #0000FF;
+ --home-secondary-color: #AAAAFF;
 }
 
 body {
@@ -59,7 +63,7 @@ body {
 }
 
 /* Home specific header */
-.home .header { background: linear-gradient(to right, var(--accent-red), var(--primary-blue)); border-color: var(--accent-gold); }
+.home .header { background: linear-gradient(to right, var(--home-primary-color), var(--primary-blue)); border-color: var(--home-secondary-color); }
 
 .team-logo {
   width: 60px;
@@ -101,7 +105,7 @@ body {
   position: absolute;
   top: -8px;
   left: 15px;
-  background: var(--accent-gold);
+  background: var(--home-secondary-color); /* Dynamic home secondary color */
   color: var(--primary-blue);
   font-family: "Alfa Slab One", cursive;
   font-size: 11px;
@@ -148,6 +152,10 @@ socket.on('score_update', function(data) {
 });
 
 function updateGraphic(data) {
+    const root = document.documentElement;
+    root.style.setProperty('--home-primary-color', data.homeColorPrimary);
+    root.style.setProperty('--home-secondary-color', data.homeColorSecondary);
+
     // Update Home
     document.getElementById("homeName").textContent = data.homeName;
     document.getElementById("homeLogo").style.backgroundImage = `url('${data.homeLogo}')`;

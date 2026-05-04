@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VolleyScore Formations Control</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#222; color:#fff; padding:15px; margin: 0; }
+    h1 { text-align:center; font-size: 1.5rem; }
+    .section { margin-bottom:20px; padding:10px; background:#333; border-radius:6px; }
+    label { display:block; margin-bottom:5px; color:#ccc; }
+    input[type="text"], button {
+      width:100%;
+      padding:10px;
+      margin-bottom:10px;
+      border-radius:4px;
+      border:none;
+      font-size:16px;
+      box-sizing: border-box;
+    }
+    button { cursor:pointer; background:#2d7dd2; color:white; }
+    button:hover { background:#3689e6; }
+    .row { display:flex; gap:15px; flex-wrap:wrap; }
+    .col { flex:1; min-width:150px; }
+
+    .back-button {
+        background: #555;
+        margin-bottom: 20px;
+    }
+    .back-button:hover {
+        background: #777;
+    }
+  </style>
+</head>
+<body>
+<button class="back-button" onclick="window.location.href='/control_panel'">Back to Control Panel</button>
+<h1>VolleyScore Formations Control</h1>
+
+<div class="section">
+  <label>Formations (Starting Six)</label>
+  <div class="row">
+    <div class="col">
+      <label>Home Players (1-6)</label>
+      <input type="text" id="homeP1" placeholder="Pos 1">
+      <input type="text" id="homeP2" placeholder="Pos 2">
+      <input type="text" id="homeP3" placeholder="Pos 3">
+      <input type="text" id="homeP4" placeholder="Pos 4">
+      <input type="text" id="homeP5" placeholder="Pos 5">
+      <input type="text" id="homeP6" placeholder="Pos 6">
+    </div>
+    <div class="col">
+      <label>Away Players (1-6)</label>
+      <input type="text" id="awayP1" placeholder="Pos 1">
+      <input type="text" id="awayP2" placeholder="Pos 2">
+      <input type="text" id="awayP3" placeholder="Pos 3">
+      <input type="text" id="awayP4" placeholder="Pos 4">
+      <input type="text" id="awayP5" placeholder="Pos 5">
+      <input type="text" id="awayP6" placeholder="Pos 6">
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <button onclick="sendToServer()">Update Formations</button>
+</div>
+
+<div class="section" id="status">Status: Ready</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+<script>
+  const socket = io();
+
+  socket.on('connect', () => {
+      console.log('Connected to WebSocket');
+  });
+
+  socket.on('score_update', (data) => {
+      console.log('Score update received:', data);
+      restoreState(data);
+  });
+
+  window.addEventListener("load", async () => {
+    try {
+        const response = await fetch('/current');
+        const currentState = await response.json();
+        restoreState(currentState);
+    } catch (e) {
+        console.error("Failed to fetch initial state from server", e);
+    }
+  });
+
+  function restoreState(state) {
+    for(let i=1; i<=6; i++) {
+        if(state.homePlayers) document.getElementById("homeP"+i).value = state.homePlayers[i-1] || "";
+        if(state.awayPlayers) document.getElementById("awayP"+i).value = state.awayPlayers[i-1] || "";
+    }
+  }
+
+  async function sendToServer() {
+    const formData = new FormData();
+
+    for(let i=1; i<=6; i++) {
+        formData.append("homeP"+i, document.getElementById("homeP"+i).value);
+        formData.append("awayP"+i, document.getElementById("awayP"+i).value);
+    }
+
+    // Append other necessary fields to ensure the server update function works correctly
+    // These values will be ignored by the server if they are empty, but need to be present
+    // The server's update function expects all fields, even if they are empty strings.
+    formData.append("awayName", "");
+    formData.append("homeName", "");
+    formData.append("awayScore", "0"); // Must be a number
+    formData.append("homeScore", "0"); // Must be a number
+    formData.append("homeSets", "0");   // Must be a number
+    formData.append("awaySets", "0");   // Must be a number
+    formData.append("possession", "none");
+    formData.append("awayLogo", "");
+    formData.append("homeLogo", "");
+    formData.append("previousSetScores", "[]");
+    formData.append("awayColorPrimary", "");
+    formData.append("awayColorSecondary", "");
+    formData.append("homeColorPrimary", "");
+    formData.append("homeColorSecondary", "");
+
+    try {
+        let res = await fetch("/update", {
+            method: "POST",
+            body: formData
+        });
+        let result = await res.json();
+
+        document.getElementById("status").textContent = "Status: " + (result.status || "OK");
+
+    } catch (err) {
+        console.error(err);
+        document.getElementById("status").textContent = "Status: Error";
+    }
+  }
+</script>
+</body>
+</html>

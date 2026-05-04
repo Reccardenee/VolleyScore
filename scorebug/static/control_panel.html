@@ -50,6 +50,18 @@
       margin-bottom: 0;
     }
 
+    /* QR Code Styling */
+    .qr-code-container {
+        text-align: center;
+        margin-top: 20px;
+    }
+    .qr-code-container img {
+        width: 200px; /* Adjust size as needed */
+        height: 200px;
+        border: 5px solid white;
+        border-radius: 5px;
+    }
+
     /* Responsive adjustments for mobile */
     @media (max-width: 600px) {
       .col {
@@ -67,23 +79,6 @@
 <h1>VolleyScore Control Panel</h1>
 
 <div class="section">
-  <div class="row">
-    <div class="col">
-      <label for="homeName">Home Team Name</label>
-      <input type="text" id="homeName" value="Home">
-      <label for="homeLogoFile">Upload Home Logo</label>
-      <input type="file" id="homeLogoFile" accept="image/*">
-      <input type="hidden" id="homeLogo" value="/static/home_logo_placeholder.jpg">
-    </div>
-    <div class="col">
-      <label for="awayName">Away Team Name</label>
-      <input type="text" id="awayName" value="Away">
-      <label for="awayLogoFile">Upload Away Logo (PNG/JPG)</label>
-      <input type="file" id="awayLogoFile" accept="image/*">
-      <input type="hidden" id="awayLogo" value="/static/away_logo.jpg">
-    </div>
-  </div>
-
   <div class="row">
     <div class="col">
       <label for="homeScore">Home Score (Points)</label>
@@ -120,27 +115,12 @@
 </div>
 
 <div class="section">
-  <label>Formations (Starting Six)</label>
-  <div class="row">
-    <div class="col">
-      <label>Home Players (1-6)</label>
-      <input type="text" id="homeP1" placeholder="Pos 1">
-      <input type="text" id="homeP2" placeholder="Pos 2">
-      <input type="text" id="homeP3" placeholder="Pos 3">
-      <input type="text" id="homeP4" placeholder="Pos 4">
-      <input type="text" id="homeP5" placeholder="Pos 5">
-      <input type="text" id="homeP6" placeholder="Pos 6">
+    <h2>Previous Set Scores</h2>
+    <div id="previousSetScoresContainer">
+        <!-- Previous set scores will be added here dynamically -->
+        <p>No sets completed yet.</p>
     </div>
-    <div class="col">
-      <label>Away Players (1-6)</label>
-      <input type="text" id="awayP1" placeholder="Pos 1">
-      <input type="text" id="awayP2" placeholder="Pos 2">
-      <input type="text" id="awayP3" placeholder="Pos 3">
-      <input type="text" id="awayP4" placeholder="Pos 4">
-      <input type="text" id="awayP5" placeholder="Pos 5">
-      <input type="text" id="awayP6" placeholder="Pos 6">
-    </div>
-  </div>
+    <button onclick="addPreviousSetScore()">Add Set Score</button>
 </div>
 
 <div class="section">
@@ -162,17 +142,37 @@
   <button onclick="resetGame()">Reset Game</button>
 </div>
 
+<div class="section">
+    <h2>Other Controls</h2>
+    <button onclick="window.location.href='/team_settings_control'">Manage Team Settings</button>
+    <button onclick="window.location.href='/formations_control'">Manage Formations</button>
+</div>
+
+<div class="section qr-code-container">
+    <h2>Remote Access (Scan QR for Control Panel)</h2>
+    <img src="/qrcode_image" alt="QR Code for Control Panel" />
+    <p>Scan this QR code with your phone to access the control panel remotely.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
 <script>
   let possession = "none";
-  // Internal trackers for game logic
   let homeSets = 0;
   let awaySets = 0;
 
-  window.addEventListener("load", async () => {
-    // Initialize internal set trackers from inputs
-    homeSets = parseInt(document.getElementById("homeSets").value) || 0;
-    awaySets = parseInt(document.getElementById("awaySets").value) || 0;
+  const socket = io();
 
+  socket.on('connect', () => {
+      console.log('Connected to WebSocket');
+  });
+
+  socket.on('score_update', (data) => {
+      console.log('Score update received:', data);
+      restoreState(data);
+  });
+
+  window.addEventListener("load", async () => {
+    // Fetch initial state from server
     try {
         const response = await fetch('/current');
         const currentState = await response.json();
@@ -183,104 +183,115 @@
   });
 
   function restoreState(state) {
-    document.getElementById("awayName").value = state.awayName || "Away";
-    document.getElementById("homeName").value = state.homeName || "Home";
+    // Only restore score and sets, as other fields are on different pages
     document.getElementById("awayScore").value = state.awayScore || 0;
     document.getElementById("homeScore").value = state.homeScore || 0;
-
-    for(let i=1; i<=6; i++) {
-        if(state.homePlayers) document.getElementById("homeP"+i).value = state.homePlayers[i-1] || "";
-        if(state.awayPlayers) document.getElementById("awayP"+i).value = state.awayPlayers[i-1] || "";
-    }
-
-    if (state.homeLogo) {
-        document.getElementById("homeLogo").value = state.homeLogo;
-    }
-
-    // Restore Sets
     document.getElementById("homeSets").value = state.homeSets || 0;
     document.getElementById("awaySets").value = state.awaySets || 0;
     homeSets = parseInt(state.homeSets, 10) || 0;
     awaySets = parseInt(state.awaySets, 10) || 0;
-    document.getElementById("awayLogo").value = state.awayLogo || "/static/away_logo.jpg";
-
     possession = state.possession || "none";
+
+    updatePreviousSetScoresUI(state.previousSetScores || []);
   }
 
-  function savePersistentState() {
-    const state = {
-      awayName: document.getElementById("awayName").value,
-      homeName: document.getElementById("homeName").value,
-      awayScore: document.getElementById("awayScore").value,
-      homeScore: document.getElementById("homeScore").value,
-      homeSets: document.getElementById("homeSets").value,
-      awaySets: document.getElementById("awaySets").value,
-      possession,
-      awayLogo: document.getElementById("awayLogo").value,
-      homeLogo: document.getElementById("homeLogo").value,
-      homePlayers: Array.from({length:6}, (_,i) => document.getElementById("homeP"+(i+1)).value),
-      awayPlayers: Array.from({length:6}, (_,i) => document.getElementById("awayP"+(i+1)).value)
-    };
-    localStorage.setItem("scoreState", JSON.stringify(state));
+  function updatePreviousSetScoresUI(scores) {
+    const container = document.getElementById("previousSetScoresContainer");
+    container.innerHTML = ''; // Clear existing entries
+
+    if (scores.length === 0) {
+        container.innerHTML = '<p>No sets completed yet.</p>';
+        return;
+    }
+
+    scores.forEach((set, index) => {
+        const div = document.createElement('div');
+        div.style.display = 'flex';
+        div.style.gap = '5px';
+        div.style.marginBottom = '5px';
+        div.innerHTML = `
+            <label>Set ${index + 1}:</label>
+            <input type="number" value="${set.home}" style="width: 60px;" data-set-index="${index}" data-team="home" onchange="updatePreviousSetScore(this)">
+            -
+            <input type="number" value="${set.away}" style="width: 60px;" data-set-index="${index}" data-team="away" onchange="updatePreviousSetScore(this)">
+            <button onclick="removePreviousSetScore(${index})" style="width: auto; padding: 5px 10px; margin-bottom: 0; background: #d9534f;">Remove</button>
+        `;
+        container.appendChild(div);
+    });
   }
 
-  function setPossession(team) {
-    possession = team;
+  function addPreviousSetScore() {
+    const currentScores = getCurrentPreviousSetScores();
+    currentScores.push({ home: 0, away: 0 });
+    updatePreviousSetScoresUI(currentScores);
     sendToServer();
   }
 
-  async function sendToServer() {
-    const logoFile = document.getElementById("awayLogoFile").files[0];
-    const homeLogoFile = document.getElementById("homeLogoFile").files[0];
+  function updatePreviousSetScore(inputElement) {
+    const index = parseInt(inputElement.dataset.setIndex);
+    const team = inputElement.dataset.team;
+    const value = parseInt(inputElement.value) || 0;
 
-    // Use FormData to handle both text fields and the file
+    const currentScores = getCurrentPreviousSetScores();
+    if (currentScores[index]) {
+        currentScores[index][team] = value;
+    }
+    sendToServer();
+  }
+
+  function removePreviousSetScore(index) {
+    const currentScores = getCurrentPreviousSetScores();
+    currentScores.splice(index, 1);
+    updatePreviousSetScoresUI(currentScores);
+    sendToServer();
+  }
+
+  function getCurrentPreviousSetScores() {
+    const container = document.getElementById("previousSetScoresContainer");
+    const inputs = container.querySelectorAll('input[type="number"]');
+    const scores = [];
+    let tempSet = {};
+    inputs.forEach((input, idx) => {
+        if (idx % 2 === 0) { // Home score
+            tempSet = { home: parseInt(input.value) || 0 };
+        } else { // Away score
+            tempSet.away = parseInt(input.value) || 0;
+            scores.push(tempSet);
+        }
+    });
+    return scores;
+  }
+
+  async function sendToServer() {
     const formData = new FormData();
 
-    // Append all standard fields
-    formData.append("awayName", document.getElementById("awayName").value);
-    formData.append("homeName", document.getElementById("homeName").value);
+    // Only append fields managed by this control panel
     formData.append("awayScore", document.getElementById("awayScore").value);
     formData.append("homeScore", document.getElementById("homeScore").value);
     formData.append("homeSets", document.getElementById("homeSets").value);
     formData.append("awaySets", document.getElementById("awaySets").value);
     formData.append("possession", possession);
-    
-    for(let i=1; i<=6; i++) {
-        formData.append("homeP"+i, document.getElementById("homeP"+i).value);
-        formData.append("awayP"+i, document.getElementById("awayP"+i).value);
-    }
+    formData.append("previousSetScores", JSON.stringify(getCurrentPreviousSetScores()));
 
-    // Append file if selected, otherwise fallback to existing URL
-    if (logoFile) {
-        formData.append("awayLogoFile", logoFile);
-    } else {
-         formData.append("awayLogo", document.getElementById("awayLogo").value);
-    }
-
-    if (homeLogoFile) {
-        formData.append("homeLogoFile", homeLogoFile);
-    } else {
-        formData.append("homeLogo", document.getElementById("homeLogo").value);
-    }
+    // Append placeholders for other fields that are now on different pages
+    // The server's update function expects all fields, even if they are empty strings.
+    formData.append("awayName", "");
+    formData.append("homeName", "");
+    formData.append("awayLogo", "");
+    formData.append("homeLogo", "");
+    formData.append("homePlayers", JSON.stringify(["", "", "", "", "", ""]));
+    formData.append("awayPlayers", JSON.stringify(["", "", "", "", "", ""]));
+    formData.append("awayColorPrimary", "");
+    formData.append("awayColorSecondary", "");
+    formData.append("homeColorPrimary", "");
+    formData.append("homeColorSecondary", "");
 
     try {
-        // Send FormData
         let res = await fetch("/update", {
             method: "POST",
             body: formData
         });
         let result = await res.json();
-
-        // If the server sends back the new logo URL, update the hidden input
-        if (result.newLogoUrl) {
-            document.getElementById("awayLogo").value = result.newLogoUrl;
-            // Clear the file input so we don't re-upload the same file on next update
-            document.getElementById("awayLogoFile").value = "";
-        }
-        if (result.newHomeLogoUrl) {
-            document.getElementById("homeLogo").value = result.newHomeLogoUrl;
-            document.getElementById("homeLogoFile").value = "";
-        }
 
         document.getElementById("status").textContent = "Status: " + (result.status || "OK");
 
@@ -288,23 +299,19 @@
         console.error(err);
         document.getElementById("status").textContent = "Status: Error";
     }
-    savePersistentState();
-}
+  }
 
-  // Manually change sets
   function changeSet(team, delta) {
     const setInput = document.getElementById(team + "Sets");
     let newSetCount = Math.max(0, parseInt(setInput.value, 10) + delta);
     setInput.value = newSetCount;
 
-    // Update internal tracker
     if (team === 'home') homeSets = newSetCount;
     if (team === 'away') awaySets = newSetCount;
 
     sendToServer();
   }
 
-  // Score logic with automatic set win detection
   function changeScore(team, delta) {
     const input = document.getElementById(team + "Score");
     const otherTeam = team === 'home' ? 'away' : 'home';
@@ -313,22 +320,17 @@
     let newScore = Math.max(0, parseInt(input.value, 10) + delta);
     let otherScore = parseInt(otherInput.value, 10);
 
-    // Update score immediately
     input.value = newScore;
 
     if (delta > 0) {
       possession = team;
 
-      // Determine points needed to win (25 for sets 1-4, 15 for set 5)
       const totalSetsPlayed = homeSets + awaySets;
       const pointsToWin = (totalSetsPlayed === 4) ? 15 : 25;
 
-      // Check for Set Win (Points limit + win by 2)
       if (newScore >= pointsToWin && (newScore - otherScore) >= 2) {
-        // Increment sets (triggers update)
         changeSet(team, 1);
         
-        // Reset points
         input.value = 0;
         otherInput.value = 0;
       } else {
@@ -347,6 +349,8 @@
     homeSets = 0;
     awaySets = 0;
     possession = "none";
+    // Clear previous set scores
+    updatePreviousSetScoresUI([]);
     sendToServer();
   }
 </script>

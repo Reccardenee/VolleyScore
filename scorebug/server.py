@@ -6,9 +6,14 @@ import sys
 import signal
 import uuid
 import json
-from flask import Flask, request, send_from_directory, jsonify
+import csv
+from datetime import datetime
+from flask import Flask, request, send_from_directory, jsonify, Response
 from flask_socketio import SocketIO, emit
 from werkzeug.utils import secure_filename
+import qrcode
+import socket
+from io import BytesIO
 
 # Determine base directory for PyInstaller compatibility
 if getattr(sys, 'frozen', False):
@@ -24,10 +29,14 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 UPLOAD_FOLDER = os.path.join(EXE_DIR, 'uploads')
 CONFIG_FILE = os.path.join(EXE_DIR, 'config.json')
+LOG_FOLDER = os.path.join(EXE_DIR, 'logs')
+LOG_FILE = os.path.join(LOG_FOLDER, 'match_report.csv')
 
-# Ensure upload directory exists
+# Ensure upload and log directories exist
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+if not os.path.exists(LOG_FOLDER):
+    os.makedirs(LOG_FOLDER)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -43,18 +52,25 @@ DEFAULT_SCORE = {
     "awayLogo": "/static/away_logo.jpg",
     "homeLogo": "/static/home_logo_placeholder.jpg",
     "homePlayers": ["", "", "", "", "", ""],
-    "awayPlayers": ["", "", "", "", "", ""]
+    "awayPlayers": ["", "", "", "", "", ""],
+    "previousSetScores": [], # New: Store previous set scores
+    "awayColorPrimary": "#FF0000", # New: Default primary color for away team
+    "awayColorSecondary": "#FFAAAA", # New: Default secondary color for away team
+    "homeColorPrimary": "#0000FF", # New: Default primary color for home team
+    "homeColorSecondary": "#AAAAFF", # New: Default secondary color for home team
 }
 
 def load_config():
     """Load configuration from file or return default."""
+    config = DEFAULT_SCORE.copy()
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, 'r') as f:
-                return json.load(f)
+                loaded_config = json.load(f)
+                config.update(loaded_config) # Merge loaded config with defaults
         except Exception as e:
             print(f"Error loading config: {e}")
-    return DEFAULT_SCORE.copy()
+    return config
 
 def save_config(config):
     """Save configuration to file."""
@@ -72,6 +88,59 @@ def allowed_file(filename):
     """
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def log_score_event(old_score_state, new_score_state):
+    """
+    Logs score changes to a CSV file.
+    """
+    timestamp = datetime.now().isoformat()
+    log_entry = {
+        "timestamp": timestamp,
+        "homeName": new_score_state["homeName"],
+        "awayName": new_score_state["awayName"],
+        "oldHomeScore": old_score_state["homeScore"],
+        "newHomeScore": new_score_state["homeScore"],
+        "oldAwayScore": old_score_state["awayScore"],
+        "newAwayScore": new_score_state["awayScore"],
+        "oldHomeSets": old_score_state["homeSets"],
+        "newHomeSets": new_score_state["homeSets"],
+        "oldAwaySets": old_score_state["awaySets"],
+        "newAwaySets": new_score_state["awaySets"],
+        "possession": new_score_state["possession"],
+        "event": "score_update" # Can be expanded for other events
+    }
+
+    # Determine which team scored, if any
+    if new_score_state["homeScore"] > old_score_state["homeScore"]:
+        log_entry["scoredTeam"] = new_score_state["homeName"]
+    elif new_score_state["awayScore"] > old_score_state["awayScore"]:
+        log_entry["scoredTeam"] = new_score_state["awayName"]
+    else:
+        log_entry["scoredTeam"] = "None"
+
+    file_exists = os.path.exists(LOG_FILE)
+    with open(LOG_FILE, 'a', newline='') as csvfile:
+        fieldnames = log_entry.keys()
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        if not file_exists:
+            writer.writeheader() # Write header only if file is new
+        writer.writerow(log_entry)
+    print(f"Logged score event: {log_entry}")
+
+def get_local_ip():
+    """
+    Get the local IP address of the machine.
+    """
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80)) # Connect to a public DNS server
+        ip_address = s.getsockname()[0]
+        s.close()
+        return ip_address
+    except Exception:
+        return "127.0.0.1" # Fallback to localhost
+
 
 @app.route("/")
 def index():
@@ -108,6 +177,53 @@ def away_formation():
     """
     return app.send_static_file("away_formation.html")
 
+@app.route("/scorebug_sets")
+def scorebug_sets():
+    """
+    Route for scorebug with all sets always visible.
+    """
+    return app.send_static_file("scorebug_sets.html")
+
+@app.route("/formations_control")
+def formations_control():
+    """
+    Route for formations control panel.
+    """
+    return app.send_static_file("formations_control.html")
+
+@app.route("/team_settings_control")
+def team_settings_control():
+    """
+    Route for team settings control panel.
+    """
+    return app.send_static_file("team_settings_control.html")
+
+@app.route("/qrcode_image")
+def qrcode_image():
+    """
+    Generates and serves a QR code for the control panel URL.
+    """
+    local_ip = get_local_ip()
+    control_panel_url = f"http://{local_ip}:8000/control_panel"
+    
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(control_panel_url)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    buffer = BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+    
+    return Response(buffer.getvalue(), mimetype="image/png")
+
+
 @app.route("/update", methods=["POST"])
 def update():
     """
@@ -116,8 +232,13 @@ def update():
     global current_score
     form_data = request.form
 
+    old_current_score = current_score.copy()
+
     def get_val(key, current_val):
         val = form_data.get(key)
+        # For colors, ensure a default if empty string is passed
+        if key.endswith("ColorPrimary") or key.endswith("ColorSecondary"):
+            return val if val and val.strip() != "" else current_val
         return val if val and val.strip() != "" else current_val
 
     new_logo_url = get_val("awayLogo", current_score["awayLogo"])
@@ -150,6 +271,16 @@ def update():
     home_players = [get_val(f"homeP{i}", current_score["homePlayers"][i-1]) for i in range(1, 7)]
     away_players = [get_val(f"awayP{i}", current_score["awayPlayers"][i-1]) for i in range(1, 7)]
 
+    # Handle previous set scores (expecting a JSON string from the frontend)
+    previous_set_scores_str = form_data.get("previousSetScores")
+    if previous_set_scores_str:
+        try:
+            previous_set_scores = json.loads(previous_set_scores_str)
+        except json.JSONDecodeError:
+            previous_set_scores = current_score["previousSetScores"] # Fallback to current if invalid
+    else:
+        previous_set_scores = current_score["previousSetScores"]
+
     current_score.update({
         "awayName": get_val("awayName", current_score["awayName"]),
         "homeName": get_val("homeName", current_score["homeName"]),
@@ -162,11 +293,21 @@ def update():
         "homeLogo": new_home_logo_url,
         "homePlayers": home_players,
         "awayPlayers": away_players,
+        "previousSetScores": previous_set_scores, # Update previous set scores
+        "awayColorPrimary": get_val("awayColorPrimary", current_score["awayColorPrimary"]),
+        "awayColorSecondary": get_val("awayColorSecondary", current_score["awayColorSecondary"]),
+        "homeColorPrimary": get_val("homeColorPrimary", current_score["homeColorPrimary"]),
+        "homeColorSecondary": get_val("homeColorSecondary", current_score["homeColorSecondary"]),
     })
 
-    save_config(current_score)
+    # Log score change only if score actually changed
+    if (current_score["homeScore"] != old_current_score["homeScore"] or
+        current_score["awayScore"] != old_current_score["awayScore"] or
+        current_score["homeSets"] != old_current_score["homeSets"] or
+        current_score["awaySets"] != old_current_score["awaySets"]):
+        log_score_event(old_current_score, current_score)
     
-    # Emit update to all connected clients
+    save_config(current_score)
     socketio.emit('score_update', current_score)
 
     return jsonify({"status": "ok", "newLogoUrl": new_logo_url, "newHomeLogoUrl": new_home_logo_url})
@@ -175,6 +316,7 @@ def update():
 def current():
     """
     Endpoint to provide current score to overlay (fallback/initial load).
+    Returns the live score.
     """
     return jsonify(current_score)
 
@@ -199,7 +341,7 @@ if __name__ == "__main__":
 
     print("VolleyScore Server starting...")
     print("-" * 40)
-    print(f"Control Panel: http://localhost:8000/control_panel")
+    print(f"Control Panel: http://{get_local_ip()}:8000/control_panel")
     print("-" * 40)
 
     socketio.run(app, host="0.0.0.0", port=8000, log_output=False)
