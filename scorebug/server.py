@@ -30,7 +30,13 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 UPLOAD_FOLDER = os.path.join(EXE_DIR, 'uploads')
 CONFIG_FILE = os.path.join(EXE_DIR, 'config.json')
 LOG_FOLDER = os.path.join(EXE_DIR, 'logs')
-LOG_FILE = os.path.join(LOG_FOLDER, 'match_report.csv')
+
+def get_daily_log_file():
+    """Returns the log file path for the current day."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    return os.path.join(LOG_FOLDER, f'match_report_{today}.csv')
+
+LOG_FILE = get_daily_log_file()
 
 # Ensure upload and log directories exist
 if not os.path.exists(UPLOAD_FOLDER):
@@ -119,8 +125,10 @@ def log_score_event(old_score_state, new_score_state):
     else:
         log_entry["scoredTeam"] = "None"
 
-    file_exists = os.path.exists(LOG_FILE)
-    with open(LOG_FILE, 'a', newline='') as csvfile:
+    # Get the daily log file path (in case day changed while server was running)
+    current_log_file = get_daily_log_file()
+    file_exists = os.path.exists(current_log_file)
+    with open(current_log_file, 'a', newline='') as csvfile:
         fieldnames = log_entry.keys()
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
