@@ -10,11 +10,17 @@ This tool was built for a local volleyball team to use during OBS-based livestre
 - **Web-Based Control Panel**: Control the score from the host computer or any device on the same local network (e.g., a tablet or phone).
 - **Instant Updates via WebSockets**: Real-time updates to the OBS Browser Source using Flask-SocketIO, providing low latency.
 - **Multiple Overlay Views**:
-  - **Main Scorebug**: The primary scoreboard overlay.
-  - **Dual Formation**: A side-by-side view of team starting lineups.
+  - **Main Scorebug** (`scorebug.html`): The primary scoreboard overlay showing current score and sets won.
+  - **Sets Scorebug** (`scorebug_sets.html`): Displays all 5 sets with alternating orange/blue themes. Shows live score in the current set column and completed set scores in their respective columns.
+  - **Home Formation** (`home_formation.html`): Home team starting lineup view.
+  - **Away Formation** (`away_formation.html`): Away team starting lineup view.
+  - **Dual Formation** (`dual_formation.html`): Side-by-side view of both team starting lineups.
 - **Automatic Game Logic**:
-  - Automatically increments the Set count when a team reaches 25 points (or 15 in the 5th set).
+  - Automatically increments the Set count when a team reaches 25 points (or 15 in the 5th set) with at least a 2-point difference.
+  - Tracks which set is currently being played (`currentSet`).
+  - Records completed set scores to `previousSetScores` for display in the sets scorebug.
   - Resets points automatically after a set win.
+- **Custom Team Colors**: Configure primary and secondary colors for each team. These colors are used for the vertical bars next to team logos and in the formation header gradients.
 - **Service Indicator**: Visual indicator for which team has possession/service.
 - **Customizable Logos**: Upload custom logos for both Home and Away teams directly from the control panel.
 - **Persistent State**: Scores are saved to a local `config.json` file on the server and synced across all connected clients.
@@ -69,26 +75,50 @@ Open your web browser and navigate to:
 
 > **Note:** When you first run the server, Windows Firewall might ask for permission. You must **allow access** for other devices on your network to be able to connect.
 
-Use this interface to change team names, update scores, manage sets, and upload logos.
+Use this interface to change team names, update scores, manage sets, upload logos, and configure team colors.
 
 ### 2. Add to OBS Studio
 1. Open OBS Studio.
 2. Under **Sources**, click the `+` icon and select **Browser**.
 3. Name it "Volleyball Scoreboard".
 4. Configure the settings:
-   - **URL**: `http://localhost:8000`
+   - **URL**: `http://localhost:8000/scorebug.html`
    - **Width**: `1050` (The board is 1000px wide, extra space prevents scrollbars)
-   - **Height**: `400`
+   - **Height**: `300`
    - **Custom CSS**: (Leave empty)
 5. Click **OK**.
 
-For the **Dual Formation** view, add another Browser source with:
-- **URL**: `http://localhost:8000/dual_formation`
+#### Additional Overlay Views
+
+**Sets Scorebug** (shows all sets):
+- **URL**: `http://localhost:8000/scorebug_sets.html`
+- **Width**: `1050`
+- **Height**: `350`
+
+**Home Formation**:
+- **URL**: `http://localhost:8000/home_formation.html`
+- **Width**: `960`
+- **Height**: `1080`
+
+**Away Formation**:
+- **URL**: `http://localhost:8000/away_formation.html`
+- **Width**: `960`
+- **Height**: `1080`
+
+**Dual Formation** (both teams side by side):
+- **URL**: `http://localhost:8000/dual_formation.html`
 - **Width**: `1920`
 - **Height**: `1080`
 
-### 3. Uploading Logos
-In the Control Panel, you can upload PNG or JPG files for both teams. These logos are saved on the server in an `uploads` folder and will persist across restarts.
+### 3. Uploading Logos and Colors
+In the Control Panel, you can:
+- Upload PNG or JPG files for both teams. These logos are saved on the server in an `uploads` folder and will persist across restarts.
+- Configure primary and secondary colors for each team using color pickers. These colors will appear in the formation headers and logo bars.
+
+### 4. Manual Set Adjustment
+The control panel allows manual set adjustment. You can increment/decrement sets manually using the +/- buttons next to the sets input fields. This is useful if you need to correct the set count due to an error or special situation.
+
+The server will also automatically increment sets when a team reaches 25 points (or 15 in the 5th set) with at least a 2-point lead.
 
 ## Project Structure
 
@@ -97,18 +127,39 @@ In the Control Panel, you can upload PNG or JPG files for both teams. These logo
 ├── .github/workflows/build.yml   # GitHub Actions workflow for building the EXE
 ├── scorebug/
 │   ├── static/
-│   │   ├── scorebug.html         # The OBS overlay
+│   │   ├── scorebug.html         # Main scoreboard overlay
+│   │   ├── scorebug_sets.html    # All sets scoreboard overlay
 │   │   ├── control_panel.html    # The control panel
-│   │   └── dual_formation.html   # The formation view
+│   │   ├── home_formation.html   # Home team lineup view
+│   │   ├── away_formation.html   # Away team lineup view
+│   │   └── dual_formation.html   # Both teams lineup view
 │   └── server.py                 # The Flask-SocketIO server
 ├── .gitignore
 ├── README.md
 └── requirements.txt
 ```
 
+## How Set Auto-Completion Works
+
+When a set is won:
+1. A team reaches 25 points (or 15 in the 5th set)
+2. The winning team has at least a 2-point lead
+3. The server automatically:
+   - Records the set score to `previousSetScores`
+   - Increments the winning team's set count
+   - Updates `currentSet` to the next set number (max 5)
+   - Resets the score to 0-0 for the new set
+   - Emits the updated state to all connected clients
+
+The Sets Scorebug (`scorebug_sets.html`) uses this information to display:
+- The current set's live score in the active set column
+- Completed set scores in their respective columns
+- 0-0 for sets not yet played
+- Alternating orange (sets 1,3,5) and blue (sets 2,4) color themes
+
 ## Development
 
-- **Backend**: Python (Flask, Flask-SocketIO, Eventlet)
+- **Backend**: Python (Flask, Flask-SocketIO, Gevent)
 - **Frontend**: HTML, CSS, JavaScript (Vanilla), Socket.IO Client
 - **Build Tool**: PyInstaller
 
