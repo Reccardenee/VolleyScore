@@ -96,6 +96,18 @@ body {
   align-items: center;
   justify-content: center;
   border-bottom: 1px solid var(--subtle-border-color);
+  position: relative;
+}
+
+.pin-display {
+  position: absolute;
+  right: 10px;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+  background: rgba(255,255,255,0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 2px;
 }
 
 /* --- LOGO COLUMN (SPLIT) --- */
@@ -265,8 +277,9 @@ body {
  <section id="scoreboard">
   <div class="containervolley">
       <!-- Header Row -->
-   <div class="box boxheader-title" style="grid-column: 1 / 3;">
-     Serie B Maschile – Girone H
+   <div class="box boxheader-title" style="grid-column: 1 / 3;" id="matchTitle">
+     Volleyball Match
+     <span class="pin-display" id="pinDisplay"></span>
    </div>
    <div class="box boxheader-service"></div>
 
@@ -378,6 +391,11 @@ function animateScoreChange(elementId, newValue) {
 
 
 function updateUI(data) {
+    // Update match title
+    if (data.matchTitle !== previousState.matchTitle) {
+        document.getElementById("matchTitle").childNodes[0].textContent = data.matchTitle || "Volleyball Match";
+    }
+
     // Update team names
     if (data.homeName !== previousState.homeName) document.getElementById("team_1").textContent = data.homeName;
     if (data.awayName !== previousState.awayName) document.getElementById("team_2").textContent = data.awayName;
@@ -475,6 +493,14 @@ function updateUI(data) {
     root.style.setProperty('--home-secondary-color', data.homeColorSecondary);
     root.style.setProperty('--away-primary-color', data.awayColorPrimary);
     root.style.setProperty('--away-secondary-color', data.awayColorSecondary);
+
+    // Update PIN display
+    const pinDisplay = document.getElementById("pinDisplay");
+    if (data.pin) {
+        pinDisplay.textContent = "PIN: " + data.pin;
+    } else {
+        pinDisplay.textContent = "";
+    }
 
     previousState = data;
 }

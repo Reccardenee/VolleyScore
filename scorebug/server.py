@@ -54,17 +54,19 @@ DEFAULT_SCORE = {
     "homeScore": 0,
     "awaySets": 0,
     "homeSets": 0,
-    "currentSet": 1,  # Track which set is currently being played
+    "currentSet": 1,
     "possession": "none",
     "awayLogo": "/static/away_logo.jpg",
     "homeLogo": "/static/home_logo_placeholder.jpg",
     "homePlayers": ["", "", "", "", "", ""],
     "awayPlayers": ["", "", "", "", "", ""],
-    "previousSetScores": [], # Store previous set scores
+    "previousSetScores": [],
     "awayColorPrimary": "#FF0000",
     "awayColorSecondary": "#FFAAAA",
     "homeColorPrimary": "#0000FF",
     "homeColorSecondary": "#AAAAFF",
+    "matchTitle": "Volleyball Match",
+    "pin": "",
 }
 
 def load_config():
@@ -207,6 +209,13 @@ def team_settings_control():
     """
     return app.send_static_file("team_settings_control.html")
 
+@app.route("/control_panel_unified")
+def control_panel_unified():
+    """
+    Route for unified control panel.
+    """
+    return app.send_static_file("control_panel_unified.html")
+
 @app.route("/qrcode_image")
 def qrcode_image():
     """
@@ -290,6 +299,31 @@ def update():
     else:
         previous_set_scores = current_score["previousSetScores"]
 
+    # PIN verification - reject updates if PIN doesn't match (unless setting/changing PIN)
+    submitted_pin = form_data.get("pin", "")
+    is_setting_pin = form_data.get("isSettingPin", "false") == "true"
+    current_pin = current_score.get("pin", "")
+
+    # Allow if: no PIN set, PIN matches, or setting/changing PIN with correct current PIN
+    if current_pin and submitted_pin != current_pin and not is_setting_pin:
+        return jsonify({"status": "error", "message": "Invalid PIN"}), 403
+
+    # If setting/changing PIN, validate current PIN first
+    if is_setting_pin:
+        new_pin = form_data.get("newPin", "")
+        confirm_pin = form_data.get("confirmPin", "")
+
+        if current_pin and submitted_pin != current_pin:
+            return jsonify({"status": "error", "message": "Current PIN is incorrect"}), 403
+
+        if new_pin != confirm_pin:
+            return jsonify({"status": "error", "message": "New PINs do not match"}), 403
+
+        if len(new_pin) != 4 or not new_pin.isdigit():
+            return jsonify({"status": "error", "message": "PIN must be exactly 4 digits"}), 403
+
+        current_score["pin"] = new_pin
+
     current_score.update({
         "awayName": get_val("awayName", current_score["awayName"]),
         "homeName": get_val("homeName", current_score["homeName"]),
@@ -307,6 +341,7 @@ def update():
         "awayColorSecondary": get_val("awayColorSecondary", current_score["awayColorSecondary"]),
         "homeColorPrimary": get_val("homeColorPrimary", current_score["homeColorPrimary"]),
         "homeColorSecondary": get_val("homeColorSecondary", current_score["homeColorSecondary"]),
+        "matchTitle": get_val("matchTitle", current_score["matchTitle"]),
     })
 
     # Check if set is complete (25 points, or 15 for tie-break set 5)
@@ -358,7 +393,13 @@ def update():
     save_config(current_score)
     socketio.emit('score_update', current_score)
 
-    return jsonify({"status": "ok", "newLogoUrl": new_logo_url, "newHomeLogoUrl": new_home_logo_url})
+    return jsonify({
+        "status": "ok",
+        "newLogoUrl": new_logo_url,
+        "newHomeLogoUrl": new_home_logo_url,
+        "pinSet": bool(current_score.get("pin")),
+        "isSettingPin": form_data.get("isSettingPin", "false") == "true"
+    })
 
 @app.route("/current")
 def current():

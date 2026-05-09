@@ -10,7 +10,7 @@
     h1 { text-align:center; font-size: 1.5rem; }
     .section { margin-bottom:20px; padding:10px; background:#333; border-radius:6px; }
     label { display:block; margin-bottom:5px; color:#ccc; }
-    input[type="text"], input[type="number"], button {
+    input[type="text"], input[type="number"], input[type="password"], button {
       width:100%;
       padding:10px;
       margin-bottom:10px;
@@ -74,9 +74,96 @@
         font-size: 20px;
       }
     }
+
+    /* PIN Modal */
+    #pinModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    #pinModalContent {
+      background: #333;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+    #pinModalContent h2 {
+      margin-top: 0;
+    }
+    #pinModalContent input {
+      text-align: center;
+      font-size: 24px;
+      letter-spacing: 5px;
+    }
+    #pinModalContent .error {
+      color: #ff6b6b;
+      margin-top: 10px;
+    }
+    .disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    /* Reset Confirmation Modal */
+    #resetConfirmModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    #resetModalContent {
+      background: #333;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+    #resetModalContent h2 {
+      margin-top: 0;
+    }
+    #resetModalContent button:first-of-type {
+      background: #d9534f;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
+<div id="pinModal">
+  <div id="pinModalContent">
+    <h2 id="pinModalTitle">Enter PIN</h2>
+    <p id="pinModalMessage">Enter the 4-digit PIN to control the scoreboard</p>
+    <input type="password" id="pinInput" maxlength="4" placeholder="----">
+    <button onclick="verifyPin()">Submit</button>
+    <p id="pinError" class="error"></p>
+  </div>
+</div>
+
+<div id="resetConfirmModal">
+  <div id="resetModalContent">
+    <h2>Reset Game?</h2>
+    <p>This will clear all scores, sets, and match history.</p>
+    <p style="color: #ff6b6b;">This cannot be undone.</p>
+    <button onclick="confirmReset()">Yes, Reset</button>
+    <button onclick="closeResetModal()" style="background:#666;">Cancel</button>
+  </div>
+</div>
+
 <h1>VolleyScore Control Panel</h1>
 
 <div class="section">
@@ -155,11 +242,19 @@
     <p>Scan this QR code with your phone to access the control panel remotely.</p>
 </div>
 
+<div class="section">
+    <button onclick="window.location.href='/control_panel_unified'" style="background:#555;">Switch to Unified Control Panel</button>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
 <script>
+  const PIN_STORAGE_KEY = 'volleyScorePin';
+
   let possession = "none";
   let homeSets = 0;
   let awaySets = 0;
+  let serverPin = "";
+  let isAuthenticated = false;
 
   const socket = io();
 
@@ -169,17 +264,72 @@
 
   socket.on('score_update', (data) => {
       console.log('Score update received:', data);
+
+      // Check if PIN changed on server
+      if (data.pin && data.pin !== serverPin) {
+          serverPin = data.pin;
+          const storedPin = localStorage.getItem(PIN_STORAGE_KEY);
+          if (storedPin !== serverPin) {
+              // PIN changed or doesn't match stored - require re-auth
+              isAuthenticated = false;
+              document.getElementById("pinModal").style.display = "flex";
+              document.getElementById("pinModalTitle").textContent = "Enter PIN";
+              document.getElementById("pinModalMessage").textContent = "Enter the 4-digit PIN to control the scoreboard";
+          }
+      }
+
       restoreState(data);
   });
 
   window.addEventListener("load", async () => {
-    // Fetch initial state from server
     try {
         const response = await fetch('/current');
         const currentState = await response.json();
+        serverPin = currentState.pin || "";
+
+        // Check localStorage for saved PIN
+        const storedPin = localStorage.getItem(PIN_STORAGE_KEY);
+
+        if (serverPin) {
+            // PIN is set on server
+            if (storedPin === serverPin) {
+                // Stored PIN matches server PIN - auto authenticate
+                isAuthenticated = true;
+            } else {
+                // No stored PIN or doesn't match - show modal
+                document.getElementById("pinModal").style.display = "flex";
+                document.getElementById("pinModalTitle").textContent = "Enter PIN";
+                document.getElementById("pinModalMessage").textContent = "Enter the 4-digit PIN to control the scoreboard";
+            }
+        } else {
+            // No PIN set on server - allow access
+            isAuthenticated = true;
+        }
+
         restoreState(currentState);
     } catch (e) {
         console.error("Failed to fetch initial state from server", e);
+    }
+  });
+
+  function verifyPin() {
+    const input = document.getElementById("pinInput").value;
+
+    if (input === serverPin) {
+        isAuthenticated = true;
+        document.getElementById("pinModal").style.display = "none";
+        document.getElementById("pinError").textContent = "";
+        // Save PIN to localStorage
+        localStorage.setItem(PIN_STORAGE_KEY, input);
+    } else {
+        document.getElementById("pinError").textContent = "Incorrect PIN";
+        document.getElementById("pinInput").value = "";
+    }
+  }
+
+  document.getElementById("pinInput").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+        verifyPin();
     }
   });
 
@@ -264,6 +414,11 @@
   }
 
   async function sendToServer() {
+    if (!isAuthenticated) {
+        alert("Please enter the PIN first");
+        return;
+    }
+
     const formData = new FormData();
 
     // Only append fields managed by this control panel
@@ -274,8 +429,12 @@
     formData.append("possession", possession);
     formData.append("previousSetScores", JSON.stringify(getCurrentPreviousSetScores()));
 
+    // Append PIN if set
+    if (serverPin) {
+        formData.append("pin", serverPin);
+    }
+
     // Append placeholders for other fields that are now on different pages
-    // The server's update function expects all fields, even if they are empty strings.
     formData.append("awayName", "");
     formData.append("homeName", "");
     formData.append("awayLogo", "");
@@ -286,6 +445,7 @@
     formData.append("awayColorSecondary", "");
     formData.append("homeColorPrimary", "");
     formData.append("homeColorSecondary", "");
+    formData.append("matchTitle", "");
 
     try {
         let res = await fetch("/update", {
@@ -293,6 +453,12 @@
             body: formData
         });
         let result = await res.json();
+
+        if (result.status === "error") {
+            document.getElementById("status").textContent = "Status: " + result.message;
+            alert(result.message);
+            return;
+        }
 
         document.getElementById("status").textContent = "Status: " + (result.status || "OK");
 
@@ -332,6 +498,18 @@
   }
 
   function resetGame() {
+    if (!isAuthenticated) {
+        alert("Please enter the PIN first");
+        return;
+    }
+    document.getElementById("resetConfirmModal").style.display = "flex";
+  }
+
+  function closeResetModal() {
+    document.getElementById("resetConfirmModal").style.display = "none";
+  }
+
+  function confirmReset() {
     document.getElementById("awayScore").value = 0;
     document.getElementById("homeScore").value = 0;
     document.getElementById("awaySets").value = 0;
@@ -339,9 +517,10 @@
     homeSets = 0;
     awaySets = 0;
     possession = "none";
-    // Clear previous set scores
     updatePreviousSetScoresUI([]);
     sendToServer();
+    closeResetModal();
+    document.getElementById("status").textContent = "Status: Game reset";
   }
 </script>
 </body>

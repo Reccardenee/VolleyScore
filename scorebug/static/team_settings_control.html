@@ -45,6 +45,12 @@
 <h1>VolleyScore Team Settings</h1>
 
 <div class="section">
+  <h2>Match Info</h2>
+  <label for="matchTitle">Match Title</label>
+  <input type="text" id="matchTitle" value="Volleyball Match">
+</div>
+
+<div class="section">
   <div class="row">
     <div class="col">
       <label for="homeName">Home Team Name</label>
@@ -72,13 +78,39 @@
 </div>
 
 <div class="section">
-  <button onclick="sendToServer()">Update Team Settings</button>
+  <h2>PIN Protection</h2>
+  <div id="pinSection">
+    <p id="pinStatus">PIN is not set</p>
+    <button onclick="showPinSetup()">Set PIN</button>
+  </div>
+  <div id="pinSetupSection" style="display:none;">
+    <div id="currentPinSection">
+      <label for="currentPin">Current PIN (if changing)</label>
+      <input type="password" id="currentPin" maxlength="4" placeholder="Enter current PIN">
+    </div>
+    <label for="newPin">New PIN (4 digits)</label>
+    <input type="password" id="newPin" maxlength="4" placeholder="Enter new PIN">
+    <label for="confirmPin">Confirm New PIN</label>
+    <input type="password" id="confirmPin" maxlength="4" placeholder="Confirm new PIN">
+    <button onclick="savePin()">Save PIN</button>
+    <button onclick="cancelPinSetup()" style="background:#666; margin-top:10px;">Cancel</button>
+  </div>
 </div>
+
+<div class="section">
+    <button onclick="sendToServer()">Update Team Settings</button>
+  </div>
+
+  <div class="section">
+    <button onclick="window.location.href='/control_panel_unified'" style="background:#555;">Switch to Unified Control Panel</button>
+  </div>
 
 <div class="section" id="status">Status: Ready</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
 <script>
+  let currentPin = "";
+
   const socket = io();
 
   socket.on('connect', () => {
@@ -103,6 +135,7 @@
   function restoreState(state) {
     document.getElementById("awayName").value = state.awayName || "Away";
     document.getElementById("homeName").value = state.homeName || "Home";
+    document.getElementById("matchTitle").value = state.matchTitle || "Volleyball Match";
 
     if (state.homeLogo) {
         document.getElementById("homeLogo").value = state.homeLogo;
@@ -115,9 +148,70 @@
     document.getElementById("awayColorSecondary").value = state.awayColorSecondary || "#FFAAAA";
     document.getElementById("homeColorPrimary").value = state.homeColorPrimary || "#0000FF";
     document.getElementById("homeColorSecondary").value = state.homeColorSecondary || "#AAAAFF";
+
+    // Update PIN status
+    const pinStatus = document.getElementById("pinStatus");
+    const pinSection = document.getElementById("pinSection");
+    if (state.pin) {
+        pinStatus.textContent = "PIN is set";
+        pinSection.querySelector("button").textContent = "Change PIN";
+    } else {
+        pinStatus.textContent = "PIN is not set";
+        pinSection.querySelector("button").textContent = "Set PIN";
+    }
+    currentPin = state.pin || "";
   }
 
-  async function sendToServer() {
+  function showPinSetup() {
+    document.getElementById("pinSection").style.display = "none";
+    document.getElementById("pinSetupSection").style.display = "block";
+
+    const currentPinSection = document.getElementById("currentPinSection");
+    if (currentPin) {
+        currentPinSection.style.display = "block";
+    } else {
+        currentPinSection.style.display = "none";
+    }
+
+    document.getElementById("currentPin").value = "";
+    document.getElementById("newPin").value = "";
+    document.getElementById("confirmPin").value = "";
+  }
+
+  function cancelPinSetup() {
+    document.getElementById("pinSection").style.display = "block";
+    document.getElementById("pinSetupSection").style.display = "none";
+  }
+
+  async function savePin() {
+    const currentPinInput = document.getElementById("currentPin").value;
+    const newPin = document.getElementById("newPin").value;
+    const confirmPin = document.getElementById("confirmPin").value;
+
+    if (!currentPin && currentPinInput) {
+        alert("No current PIN set, leave blank if setting PIN for the first time");
+        return;
+    }
+
+    if (currentPin && currentPinInput !== currentPin) {
+        alert("Current PIN is incorrect");
+        return;
+    }
+
+    if (!/^\d{4}$/.test(newPin)) {
+        alert("New PIN must be exactly 4 digits");
+        return;
+    }
+
+    if (newPin !== confirmPin) {
+        alert("New PINs do not match");
+        return;
+    }
+
+    await sendToServer(true, newPin, confirmPin);
+  }
+
+  async function sendToServer(isSettingPin = false, newPin = "", confirmPin = "") {
     const logoFile = document.getElementById("awayLogoFile").files[0];
     const homeLogoFile = document.getElementById("homeLogoFile").files[0];
 
@@ -125,12 +219,23 @@
 
     formData.append("awayName", document.getElementById("awayName").value);
     formData.append("homeName", document.getElementById("homeName").value);
+    formData.append("matchTitle", document.getElementById("matchTitle").value);
 
     // Append color values
     formData.append("awayColorPrimary", document.getElementById("awayColorPrimary").value);
     formData.append("awayColorSecondary", document.getElementById("awayColorSecondary").value);
     formData.append("homeColorPrimary", document.getElementById("homeColorPrimary").value);
     formData.append("homeColorSecondary", document.getElementById("homeColorSecondary").value);
+
+    // PIN fields
+    if (isSettingPin) {
+        formData.append("isSettingPin", "true");
+        formData.append("pin", currentPin || "");
+        formData.append("newPin", newPin);
+        formData.append("confirmPin", confirmPin);
+    } else if (currentPin) {
+        formData.append("pin", currentPin);
+    }
 
     if (logoFile) {
         formData.append("awayLogoFile", logoFile);
@@ -145,7 +250,6 @@
     }
 
     // Append other necessary fields to ensure the server update function works correctly
-    // These values will be ignored by the server if they are empty, but need to be present
     formData.append("awayScore", "0");
     formData.append("homeScore", "0");
     formData.append("homeSets", "0");
@@ -162,6 +266,12 @@
         });
         let result = await res.json();
 
+        if (result.status === "error") {
+            document.getElementById("status").textContent = "Status: " + result.message;
+            alert(result.message);
+            return;
+        }
+
         if (result.newLogoUrl) {
             document.getElementById("awayLogo").value = result.newLogoUrl;
             document.getElementById("awayLogoFile").value = "";
@@ -171,7 +281,13 @@
             document.getElementById("homeLogoFile").value = "";
         }
 
-        document.getElementById("status").textContent = "Status: " + (result.status || "OK");
+        if (isSettingPin) {
+            currentPin = newPin;
+            cancelPinSetup();
+            document.getElementById("status").textContent = "Status: PIN saved successfully";
+        } else {
+            document.getElementById("status").textContent = "Status: " + (result.status || "OK");
+        }
 
     } catch (err) {
         console.error(err);
