@@ -48,16 +48,17 @@ DEFAULT_SCORE = {
     "homeScore": 0,
     "awaySets": 0,
     "homeSets": 0,
+    "currentSet": 1,  # Track which set is currently being played
     "possession": "none",
     "awayLogo": "/static/away_logo.jpg",
     "homeLogo": "/static/home_logo_placeholder.jpg",
     "homePlayers": ["", "", "", "", "", ""],
     "awayPlayers": ["", "", "", "", "", ""],
-    "previousSetScores": [], # New: Store previous set scores
-    "awayColorPrimary": "#FF0000", # New: Default primary color for away team
-    "awayColorSecondary": "#FFAAAA", # New: Default secondary color for away team
-    "homeColorPrimary": "#0000FF", # New: Default primary color for home team
-    "homeColorSecondary": "#AAAAFF", # New: Default secondary color for home team
+    "previousSetScores": [], # Store previous set scores
+    "awayColorPrimary": "#FF0000",
+    "awayColorSecondary": "#FFAAAA",
+    "homeColorPrimary": "#0000FF",
+    "homeColorSecondary": "#AAAAFF",
 }
 
 def load_config():
@@ -293,12 +294,42 @@ def update():
         "homeLogo": new_home_logo_url,
         "homePlayers": home_players,
         "awayPlayers": away_players,
-        "previousSetScores": previous_set_scores, # Update previous set scores
+        "previousSetScores": previous_set_scores,
         "awayColorPrimary": get_val("awayColorPrimary", current_score["awayColorPrimary"]),
         "awayColorSecondary": get_val("awayColorSecondary", current_score["awayColorSecondary"]),
         "homeColorPrimary": get_val("homeColorPrimary", current_score["homeColorPrimary"]),
         "homeColorSecondary": get_val("homeColorSecondary", current_score["homeColorSecondary"]),
     })
+
+    # Check if set is complete (25 points, or 15 for tie-break set 5)
+    set_complete = False
+    winning_score = 15 if current_score["currentSet"] == 5 else 25
+    
+    if current_score["homeScore"] >= winning_score or current_score["awayScore"] >= winning_score:
+        # Check for minimum 2 point difference
+        if abs(current_score["homeScore"] - current_score["awayScore"]) >= 2:
+            set_complete = True
+    
+    if set_complete:
+        # Record the completed set score
+        current_score["previousSetScores"].append({
+            "home": current_score["homeScore"],
+            "away": current_score["awayScore"]
+        })
+        
+        # Increment sets won
+        if current_score["homeScore"] > current_score["awayScore"]:
+            current_score["homeSets"] += 1
+        else:
+            current_score["awaySets"] += 1
+        
+        # Move to next set (max 5 sets)
+        if current_score["currentSet"] < 5:
+            current_score["currentSet"] += 1
+        
+        # Reset scores for new set
+        current_score["homeScore"] = 0
+        current_score["awayScore"] = 0
 
     # Log score change only if score actually changed
     if (current_score["homeScore"] != old_current_score["homeScore"] or

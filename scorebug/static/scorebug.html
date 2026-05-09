@@ -53,7 +53,7 @@ body {
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  margin-bottom: 20px; /* Space for previous set scores */
+  margin-bottom: 10px;
 }
 
 /* --- HEADER ROW (Labels like SETS, POINTS) --- */
@@ -247,60 +247,7 @@ body {
 .okservice { opacity: 1; }
 .noservice { opacity: 0; }
 
-/* Previous Set Scores */
-.previous-sets-container {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 10px;
-    padding: 10px;
-    background: var(--primary-blue);
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    color: white;
-    font-family: Arial, sans-serif;
-    font-size: 1.2em;
-    min-width: 1000px;
-    width: fit-content;
-    /* Initially hidden, will be toggled by JS */
-    opacity: 0;
-    max-height: 0;
-    overflow: hidden;
-    transition: opacity 0.3s ease-out, max-height 0.3s ease-out;
-}
 
-.previous-sets-container.visible {
-    opacity: 1;
-    max-height: 100px; /* Sufficient height to show content */
-}
-
-.previous-set-score {
-    padding: 5px 10px;
-    border-radius: 5px;
-    background: var(--secondary-blue);
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.previous-set-score span {
-    font-weight: bold;
-}
-
-/* Toggle button for previous sets */
-.toggle-previous-sets-btn {
-    background: #2d7dd2;
-    color: white;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-top: 10px;
-    font-size: 1em;
-}
-.toggle-previous-sets-btn:hover {
-    background: #3689e6;
-}
 
 </style>
 </head>
@@ -345,14 +292,8 @@ body {
    <div class="box numbers boxawaysets" id="set_2"><span class="score-anim-number is-current">0</span></div>
    <div class="box numbers boxawaypoints" id="points_2"><span class="score-anim-number is-current">0</span></div>
 
-  </div>
-
-  <button class="toggle-previous-sets-btn" onclick="togglePreviousSets()">Show Previous Sets</button>
-  <div class="previous-sets-container" id="previousSetsDisplay">
-      <!-- Previous set scores will be dynamically inserted here -->
-      No sets completed yet.
-  </div>
- </section>
+</div>
+</section>
 
  <script>
 // Initialize Lucide icons once when the window loads
@@ -362,7 +303,6 @@ window.onload = function() {
 
 const socket = io();
 let previousState = {};
-let previousSetsVisible = false;
 
 socket.on('score_update', function(data) {
     updateUI(data);
@@ -474,41 +414,7 @@ function updateUI(data) {
     root.style.setProperty('--away-primary-color', data.awayColorPrimary);
     root.style.setProperty('--away-secondary-color', data.awayColorSecondary);
 
-    // Update previous set scores display
-    updatePreviousSetScoresDisplay(data.previousSetScores || []);
-
     previousState = data;
-}
-
-function updatePreviousSetScoresDisplay(scores) {
-    const container = document.getElementById("previousSetsDisplay");
-    container.innerHTML = ''; // Clear existing entries
-
-    if (scores.length === 0) {
-        container.textContent = 'No sets completed yet.';
-        return;
-    }
-
-    scores.forEach((set, index) => {
-        const div = document.createElement('div');
-        div.className = 'previous-set-score';
-        div.innerHTML = `S${index + 1}: <span>${set.home}</span> - <span>${set.away}</span>`;
-        container.appendChild(div);
-    });
-}
-
-function togglePreviousSets() {
-    const container = document.getElementById("previousSetsDisplay");
-    const button = document.querySelector(".toggle-previous-sets-btn");
-    previousSetsVisible = !previousSetsVisible;
-
-    if (previousSetsVisible) {
-        container.classList.add('visible');
-        button.textContent = "Hide Previous Sets";
-    } else {
-        container.classList.remove('visible');
-        button.textContent = "Show Previous Sets";
-    }
 }
 
 // Initial load of data (if any)
