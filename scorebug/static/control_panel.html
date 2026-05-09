@@ -324,18 +324,7 @@
 
     if (delta > 0) {
       possession = team;
-
-      const totalSetsPlayed = homeSets + awaySets;
-      const pointsToWin = (totalSetsPlayed === 4) ? 15 : 25;
-
-      if (newScore >= pointsToWin && (newScore - otherScore) >= 2) {
-        changeSet(team, 1);
-        
-        input.value = 0;
-        otherInput.value = 0;
-      } else {
-        sendToServer();
-      }
+      sendToServer();
     } else {
       sendToServer();
     }

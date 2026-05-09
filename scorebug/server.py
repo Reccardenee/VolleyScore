@@ -305,23 +305,32 @@ def update():
     set_complete = False
     winning_score = 15 if current_score["currentSet"] == 5 else 25
     
-    if current_score["homeScore"] >= winning_score or current_score["awayScore"] >= winning_score:
-        # Check for minimum 2 point difference
-        if abs(current_score["homeScore"] - current_score["awayScore"]) >= 2:
-            set_complete = True
+    # Only check for set completion if scores are > 0 (prevents double-processing after reset)
+    if current_score["homeScore"] > 0 and current_score["awayScore"] > 0:
+        if current_score["homeScore"] >= winning_score or current_score["awayScore"] >= winning_score:
+            # Check for minimum 2 point difference
+            if abs(current_score["homeScore"] - current_score["awayScore"]) >= 2:
+                set_complete = True
     
     if set_complete:
+        # Store the old sets values BEFORE resetting (to detect if client already counted this set)
+        old_home_sets = old_current_score.get("homeSets", 0)
+        old_away_sets = old_current_score.get("awaySets", 0)
+        
         # Record the completed set score
         current_score["previousSetScores"].append({
             "home": current_score["homeScore"],
             "away": current_score["awayScore"]
         })
         
-        # Increment sets won
+        # Only increment sets if client hasn't already done it
+        # (compare with old sets, not current, because current might have client's manual value)
         if current_score["homeScore"] > current_score["awayScore"]:
-            current_score["homeSets"] += 1
+            if current_score["homeSets"] == old_home_sets:
+                current_score["homeSets"] += 1
         else:
-            current_score["awaySets"] += 1
+            if current_score["awaySets"] == old_away_sets:
+                current_score["awaySets"] += 1
         
         # Move to next set (max 5 sets)
         if current_score["currentSet"] < 5:
