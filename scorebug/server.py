@@ -67,6 +67,17 @@ DEFAULT_SCORE = {
     "homeColorSecondary": "#AAAAFF",
     "matchTitle": "Volleyball Match",
     "pin": "",
+    # Match Timer
+    "timerStarted": False,
+    "timerPaused": False,
+    "timerStartTimestamp": None,
+    "timerPausedTimestamp": None,
+    "accumulatedTime": 0,
+    # Timeouts (resets to 2 each new set)
+    "homeTimeouts": 2,
+    "awayTimeouts": 2,
+    # Score History (last 5 points)
+    "scoreHistory": [],
 }
 
 def load_config():
@@ -163,51 +174,9 @@ def index():
 @app.route("/control_panel")
 def control_panel():
     """
-    Route for control panel.
+    Route for control panel (unified).
     """
-    return app.send_static_file("control_panel.html")
-
-@app.route("/dual_formation")
-def dual_formation():
-    """
-    Route for side-by-side team formations.
-    """
-    return app.send_static_file("dual_formation.html")
-
-@app.route("/home_formation")
-def home_formation():
-    """
-    Route for home team formation only.
-    """
-    return app.send_static_file("home_formation.html")
-
-@app.route("/away_formation")
-def away_formation():
-    """
-    Route for away team formation only.
-    """
-    return app.send_static_file("away_formation.html")
-
-@app.route("/scorebug_sets")
-def scorebug_sets():
-    """
-    Route for scorebug with all sets always visible.
-    """
-    return app.send_static_file("scorebug_sets.html")
-
-@app.route("/formations_control")
-def formations_control():
-    """
-    Route for formations control panel.
-    """
-    return app.send_static_file("formations_control.html")
-
-@app.route("/team_settings_control")
-def team_settings_control():
-    """
-    Route for team settings control panel.
-    """
-    return app.send_static_file("team_settings_control.html")
+    return app.send_static_file("control_panel_unified.html")
 
 @app.route("/control_panel_unified")
 def control_panel_unified():
@@ -215,6 +184,27 @@ def control_panel_unified():
     Route for unified control panel.
     """
     return app.send_static_file("control_panel_unified.html")
+
+@app.route("/match_timer")
+def match_timer():
+    """
+    Route for match timer overlay.
+    """
+    return app.send_static_file("match_timer.html")
+
+@app.route("/timeouts")
+def timeouts_overlay():
+    """
+    Route for timeouts overlay.
+    """
+    return app.send_static_file("timeouts.html")
+
+@app.route("/score_history")
+def score_history():
+    """
+    Route for score history overlay.
+    """
+    return app.send_static_file("score_history.html")
 
 @app.route("/qrcode_image")
 def qrcode_image():
@@ -389,6 +379,28 @@ def update():
         current_score["homeSets"] != old_current_score["homeSets"] or
         current_score["awaySets"] != old_current_score["awaySets"]):
         log_score_event(old_current_score, current_score)
+
+        # Start timer on first point scored (with 60 second grace period)
+        if not current_score["timerStarted"]:
+            if current_score["homeScore"] > 0 or current_score["awayScore"] > 0:
+                current_score["timerStarted"] = True
+                current_score["timerStartTimestamp"] = datetime.now().timestamp()
+                current_score["accumulatedTime"] = 60  # 60 second grace period
+
+        # Add to score history
+        if current_score["homeScore"] > 0 or current_score["awayScore"] > 0:
+            current_score["scoreHistory"].append({
+                "homeScore": current_score["homeScore"],
+                "awayScore": current_score["awayScore"]
+            })
+            # Keep only last 5
+            if len(current_score["scoreHistory"]) > 5:
+                current_score["scoreHistory"] = current_score["scoreHistory"][-5:]
+
+    # Reset timeouts when currentSet changes
+    if current_score["currentSet"] != old_current_score.get("currentSet", 1):
+        current_score["homeTimeouts"] = 2
+        current_score["awayTimeouts"] = 2
     
     save_config(current_score)
     socketio.emit('score_update', current_score)
@@ -408,6 +420,55 @@ def current():
     Returns the live score.
     """
     return jsonify(current_score)
+
+@app.route("/timer_control", methods=["POST"])
+def timer_control():
+    """
+    Endpoint to control the match timer (pause, resume, reset).
+    """
+    global current_score
+    action = request.form.get("action", "")
+
+    if action == "pause":
+        current_score["timerPaused"] = True
+        current_score["timerPausedTimestamp"] = datetime.now().timestamp()
+    elif action == "resume":
+        if current_score["timerPaused"] and current_score["timerPausedTimestamp"]:
+            # Add elapsed time before pause to accumulated
+            current_score["accumulatedTime"] += (datetime.now().timestamp() - current_score["timerPausedTimestamp"])
+        current_score["timerPaused"] = False
+        current_score["timerPausedTimestamp"] = None
+    elif action == "reset":
+        current_score["timerStarted"] = False
+        current_score["timerPaused"] = False
+        current_score["timerStartTimestamp"] = None
+        current_score["timerPausedTimestamp"] = None
+        current_score["accumulatedTime"] = 0
+        current_score["scoreHistory"] = []
+
+    save_config(current_score)
+    socketio.emit('score_update', current_score)
+
+    return jsonify({"status": "ok"})
+
+@app.route("/timeout_control", methods=["POST"])
+def timeout_control():
+    """
+    Endpoint to update timeout counts.
+    """
+    global current_score
+    team = request.form.get("team", "")
+    change = int(request.form.get("change", 0))
+
+    if team == "home":
+        current_score["homeTimeouts"] = max(0, min(2, current_score["homeTimeouts"] + change))
+    elif team == "away":
+        current_score["awayTimeouts"] = max(0, min(2, current_score["awayTimeouts"] + change))
+
+    save_config(current_score)
+    socketio.emit('score_update', current_score)
+
+    return jsonify({"status": "ok"})
 
 @app.route("/uploads/<filename>")
 def uploaded_file(filename):

@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VolleyScore Unified Control Panel</title>
+  <link rel="icon" type="image/x-icon" href="/static/icon.ico">
+  <style>
+    body { font-family: Arial, sans-serif; background:#222; color:#fff; padding:15px; margin: 0; }
+    h1 { text-align:center; font-size: 1.5rem; }
+    h2 { font-size: 1.2rem; margin-top: 0; }
+    .section { margin-bottom:20px; padding:10px; background:#333; border-radius:6px; }
+    label { display:block; margin-bottom:5px; color:#ccc; }
+    input[type="text"], input[type="number"], input[type="password"], button, input[type="color"] {
+      width:100%;
+      padding:10px;
+      margin-bottom:10px;
+      border-radius:4px;
+      border:none;
+      font-size:16px;
+      box-sizing: border-box;
+    }
+    button { cursor:pointer; background:#2d7dd2; color:white; }
+    button:hover { background:#3689e6; }
+    .row { display:flex; gap:15px; flex-wrap:wrap; }
+    .col { flex:1; min-width:150px; }
+
+    /* Specific CSS to remove number input arrows (spinners) */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+      text-align: center;
+    }
+
+    /* Styling for the score/set control row */
+    .score-control-row {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 15px;
+    }
+    .score-control-row button {
+      width: 40px;
+      flex-shrink: 0;
+      padding: 10px 0;
+      margin-bottom: 0;
+    }
+    .score-control-row input {
+      margin-bottom: 0;
+    }
+
+    /* QR Code Styling */
+    .qr-code-container {
+        text-align: center;
+        margin-top: 20px;
+    }
+    .qr-code-container img {
+        width: 200px;
+        height: 200px;
+        border: 5px solid white;
+        border-radius: 5px;
+    }
+
+    /* Responsive adjustments for mobile */
+    @media (max-width: 600px) {
+      .col {
+        flex: 1 1 100%;
+      }
+      .score-control-row button {
+        width: 60px;
+        height: 50px;
+        font-size: 20px;
+      }
+    }
+
+    /* PIN Modal */
+    #pinModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    #pinModalContent, #resetModalContent {
+      background: #333;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+    #pinModalContent h2, #resetModalContent h2 {
+      margin-top: 0;
+    }
+    #pinModalContent input {
+      text-align: center;
+      font-size: 24px;
+      letter-spacing: 5px;
+    }
+    #pinModalContent .error, #resetModalContent .error {
+      color: #ff6b6b;
+      margin-top: 10px;
+    }
+
+    /* Reset Modal specific */
+    #resetConfirmModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    #resetConfirmModal button:first-of-type {
+      background: #d9534f;
+      margin-bottom: 10px;
+    }
+
+    /* Tab styling */
+    .tab-nav {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #444;
+      padding-bottom: 10px;
+    }
+    .tab-nav button {
+      flex: 1;
+      padding: 12px;
+      background: #444;
+      font-weight: bold;
+    }
+    .tab-nav button.active {
+      background: #2d7dd2;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Color picker specific styling */
+    input[type="color"] {
+        height: 40px;
+        padding: 0;
+        border: 1px solid #555;
+    }
+
+    /* Link to other control */
+    .control-link {
+      background: #555;
+      margin-top: 20px;
+    }
+
+    .back-button {
+        background: #555;
+        margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+<!-- PIN Modal -->
+<div id="pinModal">
+  <div id="pinModalContent">
+    <h2 id="pinModalTitle">Enter PIN</h2>
+    <p id="pinModalMessage">Enter the 4-digit PIN to control the scoreboard</p>
+    <input type="password" id="pinInput" maxlength="4" placeholder="----">
+    <button onclick="verifyPin()">Submit</button>
+    <p id="pinError" class="error"></p>
+  </div>
+</div>
+
+<!-- Reset Confirmation Modal -->
+<div id="resetConfirmModal">
+  <div id="resetModalContent">
+    <h2>Reset Game?</h2>
+    <p>This will clear all scores, sets, and match history.</p>
+    <p style="color: #ff6b6b;">This cannot be undone.</p>
+    <button onclick="confirmReset()">Yes, Reset</button>
+    <button onclick="closeResetModal()" style="background:#666;">Cancel</button>
+  </div>
+</div>
+
+<h1>VolleyScore Unified Control Panel</h1>
+
+<div class="tab-nav">
+  <button id="tabScore" class="active" onclick="switchTab('score')">Score</button>
+  <button id="tabTeams" onclick="switchTab('teams')">Teams</button>
+  <button id="tabFormations" onclick="switchTab('formations')">Formations</button>
+</div>
+
+<!-- SCORE TAB -->
+<div id="tab-content-score" class="tab-content active">
+  <div class="section">
+    <div class="row">
+      <div class="col">
+        <label for="homeScore">Home Score (Points)</label>
+        <div class="score-control-row">
+          <button onclick="changeScore('home', -1)">−</button>
+          <input type="number" id="homeScore" value="0">
+          <button onclick="changeScore('home', 1)">+</button>
+        </div>
+
+        <label for="homeSets">Home Sets Won</label>
+        <div class="score-control-row">
+          <button onclick="changeSet('home', -1)">−</button>
+          <input type="number" id="homeSets" value="0">
+          <button onclick="changeSet('home', 1)">+</button>
+        </div>
+      </div>
+
+      <div class="col">
+        <label for="awayScore">Away Score (Points)</label>
+        <div class="score-control-row">
+          <button onclick="changeScore('away', -1)">−</button>
+          <input type="number" id="awayScore" value="0">
+          <button onclick="changeScore('away', 1)">+</button>
+        </div>
+
+        <label for="awaySets">Away Sets Won</label>
+        <div class="score-control-row">
+          <button onclick="changeSet('away', -1)">−</button>
+          <input type="number" id="awaySets" value="0">
+          <button onclick="changeSet('away', 1)">+</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Previous Set Scores</h2>
+    <div id="previousSetScoresContainer">
+      <p>No sets completed yet.</p>
+    </div>
+    <button onclick="addPreviousSetScore()">Add Set Score</button>
+  </div>
+
+  <div class="section">
+    <label>Possession (Service)</label>
+    <div class="row">
+      <button onclick="setPossession('home')">Home</button>
+      <button onclick="setPossession('none')">None</button>
+      <button onclick="setPossession('away')">Away</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <button onclick="sendToServer()">Update OBS</button>
+  </div>
+
+  <div class="section" id="status">Status: Ready</div>
+
+  <div class="section">
+    <button onclick="showResetModal()">Reset Game</button>
+  </div>
+
+  <div class="qr-code-container">
+    <h2>Remote Access (Scan QR for Control Panel)</h2>
+    <img src="/qrcode_image" alt="QR Code for Control Panel" />
+    <p>Scan this QR code with your phone to access the control panel remotely.</p>
+  </div>
+</div>
+
+<!-- TEAMS TAB -->
+<div id="tab-content-teams" class="tab-content">
+  <div class="section">
+    <h2>Match Info</h2>
+    <label for="matchTitle">Match Title</label>
+    <input type="text" id="matchTitle" value="Volleyball Match">
+  </div>
+
+  <div class="section">
+    <div class="row">
+      <div class="col">
+        <label for="homeName">Home Team Name</label>
+        <input type="text" id="homeName" value="Home">
+        <label for="homeLogoFile">Upload Home Logo</label>
+        <input type="file" id="homeLogoFile" accept="image/*">
+        <input type="hidden" id="homeLogo" value="/static/home_logo_placeholder.jpg">
+        <label for="homeColorPrimary">Home Primary Color</label>
+        <input type="color" id="homeColorPrimary" value="#0000FF">
+        <label for="homeColorSecondary">Home Secondary Color</label>
+        <input type="color" id="homeColorSecondary" value="#AAAAFF">
+      </div>
+      <div class="col">
+        <label for="awayName">Away Team Name</label>
+        <input type="text" id="awayName" value="Away">
+        <label for="awayLogoFile">Upload Away Logo (PNG/JPG)</label>
+        <input type="file" id="awayLogoFile" accept="image/*">
+        <input type="hidden" id="awayLogo" value="/static/away_logo.jpg">
+        <label for="awayColorPrimary">Away Primary Color</label>
+        <input type="color" id="awayColorPrimary" value="#FF0000">
+        <label for="awayColorSecondary">Away Secondary Color</label>
+        <input type="color" id="awayColorSecondary" value="#FFAAAA">
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>PIN Protection</h2>
+    <div id="pinSection">
+      <p id="pinStatus">PIN is not set</p>
+      <button onclick="showPinSetup()">Set PIN</button>
+    </div>
+    <div id="pinSetupSection" style="display:none;">
+      <div id="currentPinSection">
+        <label for="currentPin">Current PIN (if changing)</label>
+        <input type="password" id="currentPin" maxlength="4" placeholder="Enter current PIN">
+      </div>
+      <label for="newPin">New PIN (4 digits)</label>
+      <input type="password" id="newPin" maxlength="4" placeholder="Enter new PIN">
+      <label for="confirmPin">Confirm New PIN</label>
+      <input type="password" id="confirmPin" maxlength="4" placeholder="Confirm new PIN">
+      <button onclick="savePin()">Save PIN</button>
+      <button onclick="cancelPinSetup()" style="background:#666; margin-top:10px;">Cancel</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <button onclick="sendToServer()">Update Team Settings</button>
+  </div>
+
+  <div class="section" id="teamStatus">Status: Ready</div>
+</div>
+
+<!-- FORMATIONS TAB -->
+<div id="tab-content-formations" class="tab-content">
+  <div class="section">
+    <label>Formations (Starting Six)</label>
+    <div class="row">
+      <div class="col">
+        <label>Home Players (1-6)</label>
+        <input type="text" id="homeP1" placeholder="Pos 1">
+        <input type="text" id="homeP2" placeholder="Pos 2">
+        <input type="text" id="homeP3" placeholder="Pos 3">
+        <input type="text" id="homeP4" placeholder="Pos 4">
+        <input type="text" id="homeP5" placeholder="Pos 5">
+        <input type="text" id="homeP6" placeholder="Pos 6">
+      </div>
+      <div class="col">
+        <label>Away Players (1-6)</label>
+        <input type="text" id="awayP1" placeholder="Pos 1">
+        <input type="text" id="awayP2" placeholder="Pos 2">
+        <input type="text" id="awayP3" placeholder="Pos 3">
+        <input type="text" id="awayP4" placeholder="Pos 4">
+        <input type="text" id="awayP5" placeholder="Pos 5">
+        <input type="text" id="awayP6" placeholder="Pos 6">
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <button onclick="sendToServer()">Update Formations</button>
+  </div>
+
+  <div class="section" id="formationStatus">Status: Ready</div>
+</div>
+
+<!-- MATCH CONTROLS SECTION -->
+<div class="section">
+  <h2>Match Controls</h2>
+
+  <!-- Timer -->
+  <div style="margin-bottom: 20px; padding: 15px; background: #444; border-radius: 8px;">
+    <label>Match Timer (starts automatically on first point)</label>
+    <div id="timerDisplay" style="font-size: 32px; font-weight: bold; color: #2d7dd2; margin: 10px 0;">00:00</div>
+    <div class="row">
+      <button onclick="timerControl('pause')">Pause</button>
+      <button onclick="timerControl('resume')">Resume</button>
+      <button onclick="timerControl('reset')" style="background:#d9534f;">Reset</button>
+    </div>
+  </div>
+
+  <!-- Timeouts -->
+  <div style="margin-bottom: 20px; padding: 15px; background: #444; border-radius: 8px;">
+    <label>Timeouts (reset each set)</label>
+    <div class="row">
+      <div class="col">
+        <span id="homeTeamNameDisplay">Home</span> Timeouts:
+        <span id="homeTimeoutDotsDisplay">●●</span>
+        <span id="homeTimeoutCountDisplay">(2/2)</span>
+        <div class="score-control-row" style="justify-content: center; margin-top: 5px;">
+          <button onclick="timeoutChange('home', -1)" style="width:35px;">−</button>
+          <button onclick="timeoutChange('home', 1)" style="width:35px;">+</button>
+        </div>
+      </div>
+      <div class="col">
+        <span id="awayTeamNameDisplay">Away</span> Timeouts:
+        <span id="awayTimeoutDotsDisplay">●●</span>
+        <span id="awayTimeoutCountDisplay">(2/2)</span>
+        <div class="score-control-row" style="justify-content: center; margin-top: 5px;">
+          <button onclick="timeoutChange('away', -1)" style="width:35px;">−</button>
+          <button onclick="timeoutChange('away', 1)" style="width:35px;">+</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+<script>
+  // State variables
+  let possession = "none";
+  let homeSets = 0;
+  let awaySets = 0;
+  let serverPin = "";
+  let currentPin = "";
+  let isAuthenticated = false;
+
+  const PIN_STORAGE_KEY = 'volleyScorePin';
+
+  const socket = io();
+
+  socket.on('connect', () => {
+      console.log('Connected to WebSocket');
+  });
+
+  socket.on('score_update', (data) => {
+      console.log('Score update received:', data);
+
+      // Check if PIN changed on server
+      if (data.pin && data.pin !== serverPin) {
+          serverPin = data.pin;
+          const storedPin = localStorage.getItem(PIN_STORAGE_KEY);
+          if (storedPin !== serverPin) {
+              isAuthenticated = false;
+              document.getElementById("pinModal").style.display = "flex";
+              document.getElementById("pinModalTitle").textContent = "Enter PIN";
+              document.getElementById("pinModalMessage").textContent = "Enter the 4-digit PIN to control the scoreboard";
+          }
+      }
+
+      restoreState(data);
+  });
+
+  window.addEventListener("load", async () => {
+    try {
+        const response = await fetch('/current');
+        const currentState = await response.json();
+        serverPin = currentState.pin || "";
+
+        // Check localStorage for saved PIN
+        const storedPin = localStorage.getItem(PIN_STORAGE_KEY);
+
+        if (serverPin) {
+            if (storedPin === serverPin) {
+                isAuthenticated = true;
+            } else {
+                document.getElementById("pinModal").style.display = "flex";
+                document.getElementById("pinModalTitle").textContent = "Enter PIN";
+                document.getElementById("pinModalMessage").textContent = "Enter the 4-digit PIN to control the scoreboard";
+            }
+        } else {
+            isAuthenticated = true;
+        }
+
+        restoreState(currentState);
+    } catch (e) {
+        console.error("Failed to fetch initial state from server", e);
+    }
+  });
+
+  // Tab switching
+  function switchTab(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-nav button').forEach(el => el.classList.remove('active'));
+
+    // Show selected tab
+    document.getElementById('tab-content-' + tabName).classList.add('active');
+    document.getElementById('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.add('active');
+  }
+
+  // PIN functions
+  function verifyPin() {
+    const input = document.getElementById("pinInput").value;
+
+    if (input === serverPin) {
+        isAuthenticated = true;
+        document.getElementById("pinModal").style.display = "none";
+        document.getElementById("pinError").textContent = "";
+        localStorage.setItem(PIN_STORAGE_KEY, input);
+    } else {
+        document.getElementById("pinError").textContent = "Incorrect PIN";
+        document.getElementById("pinInput").value = "";
+    }
+  }
+
+  document.getElementById("pinInput").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+        verifyPin();
+    }
+  });
+
+  // Timer functions
+  let timerInterval = null;
+  let timerState = {
+    timerStarted: false,
+    timerPaused: false,
+    timerStartTimestamp: null,
+    timerPausedTimestamp: null,
+    accumulatedTime: 0
+  };
+
+  function startTimerDisplay() {
+    if (timerInterval) clearInterval(timerInterval);
+    updateTimerDisplay();
+    timerInterval = setInterval(updateTimerDisplay, 1000);
+  }
+
+  function updateTimerDisplay() {
+    const display = document.getElementById("timerDisplay");
+    if (!timerState.timerStarted) {
+      display.textContent = "00:00";
+      return;
+    }
+
+    let totalSeconds;
+    // Python timestamp is in seconds, JavaScript Date.now() is in milliseconds
+    // Server stores accumulatedTime in seconds
+    if (timerState.timerPaused && timerState.timerPausedTimestamp) {
+      // Timer is paused - calculate accumulated time up to pause point
+      totalSeconds = timerState.accumulatedTime + Math.floor(timerState.timerPausedTimestamp - timerState.timerStartTimestamp);
+    } else if (timerState.timerStartTimestamp) {
+      // Timer is running - add elapsed time since start
+      totalSeconds = timerState.accumulatedTime + Math.floor(Date.now() / 1000 - timerState.timerStartTimestamp);
+    } else {
+      totalSeconds = timerState.accumulatedTime;
+    }
+
+    if (totalSeconds < 0) totalSeconds = 0;
+
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    display.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  function timerControl(action) {
+    if (!isAuthenticated) {
+      alert("Please enter the PIN first");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("action", action);
+    if (serverPin) formData.append("pin", serverPin);
+
+    fetch("/timer_control", { method: "POST", body: formData })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === "error") {
+          alert(data.message);
+        }
+      });
+  }
+
+  // Timeout functions
+  function timeoutChange(team, delta) {
+    if (!isAuthenticated) {
+      alert("Please enter the PIN first");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("team", team);
+    formData.append("change", delta);
+    if (serverPin) formData.append("pin", serverPin);
+
+    fetch("/timeout_control", { method: "POST", body: formData })
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === "error") {
+          alert(data.message);
+        }
+      });
+  }
+
+  function updateTimeoutUI(data) {
+    document.getElementById("homeTeamNameDisplay").textContent = data.homeName || "Home";
+    document.getElementById("awayTeamNameDisplay").textContent = data.awayName || "Away";
+
+    const homeCount = data.homeTimeouts !== undefined ? data.homeTimeouts : 2;
+    const awayCount = data.awayTimeouts !== undefined ? data.awayTimeouts : 2;
+
+    // filled (●) = used, empty (○) = remaining
+    const homeUsed = 2 - homeCount;
+    const awayUsed = 2 - awayCount;
+
+    document.getElementById("homeTimeoutDotsDisplay").textContent = "●".repeat(homeUsed) + "○".repeat(homeCount);
+    document.getElementById("awayTimeoutDotsDisplay").textContent = "●".repeat(awayUsed) + "○".repeat(awayCount);
+    document.getElementById("homeTimeoutCountDisplay").textContent = `(${homeCount}/2)`;
+    document.getElementById("awayTimeoutCountDisplay").textContent = `(${awayCount}/2)`;
+  }
+
+  function updateScoreHistoryUI(data) {
+    const list = document.getElementById("scoreHistoryList");
+    const history = data.scoreHistory || [];
+
+    if (history.length === 0) {
+      list.innerHTML = "<li>No points scored yet</li>";
+      return;
+    }
+
+    let lastHomeScore = 0;
+    let lastAwayScore = 0;
+    let items = [];
+
+    history.forEach((entry, index) => {
+      const homeScored = entry.homeScore > lastHomeScore;
+      const teamName = homeScored ? (data.homeName || "Home") : (data.awayName || "Away");
+      const scoreText = teamName + " " + entry.homeScore + " - " + entry.awayScore;
+
+      // Create li element properly
+      const li = document.createElement("li");
+      li.textContent = scoreText;
+      items.push(li);
+
+      lastHomeScore = entry.homeScore;
+      lastAwayScore = entry.awayScore;
+    });
+
+    // Clear and add items in reverse order (newest first)
+    list.innerHTML = "";
+    for (let i = items.length - 1; i >= 0; i--) {
+      list.appendChild(items[i]);
+    }
+  }
+
+  function showPinSetup() {
+    document.getElementById("pinSection").style.display = "none";
+    document.getElementById("pinSetupSection").style.display = "block";
+
+    const currentPinSection = document.getElementById("currentPinSection");
+    if (currentPin) {
+        currentPinSection.style.display = "block";
+    } else {
+        currentPinSection.style.display = "none";
+    }
+
+    document.getElementById("currentPin").value = "";
+    document.getElementById("newPin").value = "";
+    document.getElementById("confirmPin").value = "";
+  }
+
+  function cancelPinSetup() {
+    document.getElementById("pinSection").style.display = "block";
+    document.getElementById("pinSetupSection").style.display = "none";
+  }
+
+  function savePin() {
+    const currentPinInput = document.getElementById("currentPin").value;
+    const newPin = document.getElementById("newPin").value;
+    const confirmPin = document.getElementById("confirmPin").value;
+
+    if (!currentPin && currentPinInput) {
+        alert("No current PIN set, leave blank if setting PIN for the first time");
+        return;
+    }
+
+    if (currentPin && currentPinInput !== currentPin) {
+        alert("Current PIN is incorrect");
+        return;
+    }
+
+    if (!/^\d{4}$/.test(newPin)) {
+        alert("New PIN must be exactly 4 digits");
+        return;
+    }
+
+    if (newPin !== confirmPin) {
+        alert("New PINs do not match");
+        return;
+    }
+
+    sendToServer(true, newPin, confirmPin);
+  }
+
+  // Reset confirmation
+  function showResetModal() {
+    if (!isAuthenticated) {
+        alert("Please enter the PIN first");
+        return;
+    }
+    document.getElementById("resetConfirmModal").style.display = "flex";
+  }
+
+  function closeResetModal() {
+    document.getElementById("resetConfirmModal").style.display = "none";
+  }
+
+  function confirmReset() {
+    document.getElementById("awayScore").value = 0;
+    document.getElementById("homeScore").value = 0;
+    document.getElementById("awaySets").value = 0;
+    document.getElementById("homeSets").value = 0;
+    homeSets = 0;
+    awaySets = 0;
+    possession = "none";
+    updatePreviousSetScoresUI([]);
+    sendToServer();
+    closeResetModal();
+    document.getElementById("status").textContent = "Status: Game reset";
+  }
+
+  // State restoration
+  function restoreState(state) {
+    // Score controls
+    document.getElementById("awayScore").value = state.awayScore || 0;
+    document.getElementById("homeScore").value = state.homeScore || 0;
+    document.getElementById("homeSets").value = state.homeSets || 0;
+    document.getElementById("awaySets").value = state.awaySets || 0;
+    homeSets = parseInt(state.homeSets, 10) || 0;
+    awaySets = parseInt(state.awaySets, 10) || 0;
+    possession = state.possession || "none";
+
+    // Previous set scores
+    updatePreviousSetScoresUI(state.previousSetScores || []);
+
+    // Team settings
+    document.getElementById("awayName").value = state.awayName || "Away";
+    document.getElementById("homeName").value = state.homeName || "Home";
+    document.getElementById("matchTitle").value = state.matchTitle || "Volleyball Match";
+
+    if (state.homeLogo) {
+        document.getElementById("homeLogo").value = state.homeLogo;
+    }
+    if (state.awayLogo) {
+        document.getElementById("awayLogo").value = state.awayLogo;
+    }
+
+    document.getElementById("awayColorPrimary").value = state.awayColorPrimary || "#FF0000";
+    document.getElementById("awayColorSecondary").value = state.awayColorSecondary || "#FFAAAA";
+    document.getElementById("homeColorPrimary").value = state.homeColorPrimary || "#0000FF";
+    document.getElementById("homeColorSecondary").value = state.homeColorSecondary || "#AAAAFF";
+
+    // PIN status
+    const pinStatus = document.getElementById("pinStatus");
+    const pinSection = document.getElementById("pinSection");
+    if (state.pin) {
+        pinStatus.textContent = "PIN is set";
+        pinSection.querySelector("button").textContent = "Change PIN";
+    } else {
+        pinStatus.textContent = "PIN is not set";
+        pinSection.querySelector("button").textContent = "Set PIN";
+    }
+    currentPin = state.pin || "";
+
+    // Formations
+    for(let i=1; i<=6; i++) {
+        if(state.homePlayers) document.getElementById("homeP"+i).value = state.homePlayers[i-1] || "";
+        if(state.awayPlayers) document.getElementById("awayP"+i).value = state.awayPlayers[i-1] || "";
+    }
+
+    // Timer state
+    timerState = {
+        timerStarted: state.timerStarted || false,
+        timerPaused: state.timerPaused || false,
+        timerStartTimestamp: state.timerStartTimestamp,
+        timerPausedTimestamp: state.timerPausedTimestamp,
+        accumulatedTime: state.accumulatedTime || 0
+    };
+    if (state.timerStarted) {
+        startTimerDisplay();
+    }
+
+    // Timeouts and score history
+    updateTimeoutUI(state);
+    updateScoreHistoryUI(state);
+  }
+
+  // Previous set scores functions
+  function updatePreviousSetScoresUI(scores) {
+    const container = document.getElementById("previousSetScoresContainer");
+    container.innerHTML = '';
+
+    if (scores.length === 0) {
+        container.innerHTML = '<p>No sets completed yet.</p>';
+        return;
+    }
+
+    scores.forEach((set, index) => {
+        const div = document.createElement('div');
+        div.style.display = 'flex';
+        div.style.gap = '5px';
+        div.style.marginBottom = '5px';
+        div.innerHTML = `
+            <label>Set ${index + 1}:</label>
+            <input type="number" value="${set.home}" style="width: 60px;" data-set-index="${index}" data-team="home" onchange="updatePreviousSetScore(this)">
+            -
+            <input type="number" value="${set.away}" style="width: 60px;" data-set-index="${index}" data-team="away" onchange="updatePreviousSetScore(this)">
+            <button onclick="removePreviousSetScore(${index})" style="width: auto; padding: 5px 10px; margin-bottom: 0; background: #d9534f;">Remove</button>
+        `;
+        container.appendChild(div);
+    });
+  }
+
+  function addPreviousSetScore() {
+    const currentScores = getCurrentPreviousSetScores();
+    currentScores.push({ home: 0, away: 0 });
+    updatePreviousSetScoresUI(currentScores);
+    sendToServer();
+  }
+
+  function updatePreviousSetScore(inputElement) {
+    const index = parseInt(inputElement.dataset.setIndex);
+    const team = inputElement.dataset.team;
+    const value = parseInt(inputElement.value) || 0;
+
+    const currentScores = getCurrentPreviousSetScores();
+    if (currentScores[index]) {
+        currentScores[index][team] = value;
+    }
+    sendToServer();
+  }
+
+  function removePreviousSetScore(index) {
+    const currentScores = getCurrentPreviousSetScores();
+    currentScores.splice(index, 1);
+    updatePreviousSetScoresUI(currentScores);
+    sendToServer();
+  }
+
+  function getCurrentPreviousSetScores() {
+    const container = document.getElementById("previousSetScoresContainer");
+    const inputs = container.querySelectorAll('input[type="number"]');
+    const scores = [];
+    let tempSet = {};
+    inputs.forEach((input, idx) => {
+        if (idx % 2 === 0) {
+            tempSet = { home: parseInt(input.value) || 0 };
+        } else {
+            tempSet.away = parseInt(input.value) || 0;
+            scores.push(tempSet);
+        }
+    });
+    return scores;
+  }
+
+  // Score control functions
+  function changeSet(team, delta) {
+    const setInput = document.getElementById(team + "Sets");
+    let newSetCount = Math.max(0, parseInt(setInput.value, 10) + delta);
+    setInput.value = newSetCount;
+
+    if (team === 'home') homeSets = newSetCount;
+    if (team === 'away') awaySets = newSetCount;
+
+    sendToServer();
+  }
+
+  function changeScore(team, delta) {
+    const input = document.getElementById(team + "Score");
+    input.value = Math.max(0, parseInt(input.value, 10) + delta);
+
+    if (delta > 0) {
+      possession = team;
+    }
+    sendToServer();
+  }
+
+  function setPossession(team) {
+    possession = team;
+    sendToServer();
+  }
+
+  // Send to server
+  async function sendToServer(isSettingPin = false, newPin = "", confirmPin = "") {
+    if (!isAuthenticated && !isSettingPin) {
+        alert("Please enter the PIN first");
+        return;
+    }
+
+    const formData = new FormData();
+
+    // Score data
+    formData.append("awayScore", document.getElementById("awayScore").value);
+    formData.append("homeScore", document.getElementById("homeScore").value);
+    formData.append("homeSets", document.getElementById("homeSets").value);
+    formData.append("awaySets", document.getElementById("awaySets").value);
+    formData.append("possession", possession);
+    formData.append("previousSetScores", JSON.stringify(getCurrentPreviousSetScores()));
+
+    // Team settings
+    formData.append("awayName", document.getElementById("awayName").value);
+    formData.append("homeName", document.getElementById("homeName").value);
+    formData.append("matchTitle", document.getElementById("matchTitle").value);
+
+    // Colors
+    formData.append("awayColorPrimary", document.getElementById("awayColorPrimary").value);
+    formData.append("awayColorSecondary", document.getElementById("awayColorSecondary").value);
+    formData.append("homeColorPrimary", document.getElementById("homeColorPrimary").value);
+    formData.append("homeColorSecondary", document.getElementById("homeColorSecondary").value);
+
+    // Logos
+    const logoFile = document.getElementById("awayLogoFile").files[0];
+    const homeLogoFile = document.getElementById("homeLogoFile").files[0];
+
+    if (logoFile) {
+        formData.append("awayLogoFile", logoFile);
+    } else {
+        formData.append("awayLogo", document.getElementById("awayLogo").value);
+    }
+
+    if (homeLogoFile) {
+        formData.append("homeLogoFile", homeLogoFile);
+    } else {
+        formData.append("homeLogo", document.getElementById("homeLogo").value);
+    }
+
+    // Formations
+    for(let i=1; i<=6; i++) {
+        formData.append("homeP"+i, document.getElementById("homeP"+i).value);
+        formData.append("awayP"+i, document.getElementById("awayP"+i).value);
+    }
+    formData.append("homePlayers", JSON.stringify([...Array(6)].map((_,i) => document.getElementById("homeP"+(i+1)).value)));
+    formData.append("awayPlayers", JSON.stringify([...Array(6)].map((_,i) => document.getElementById("awayP"+(i+1)).value)));
+
+    // PIN
+    if (isSettingPin) {
+        formData.append("isSettingPin", "true");
+        formData.append("pin", currentPin || "");
+        formData.append("newPin", newPin);
+        formData.append("confirmPin", confirmPin);
+    } else if (serverPin) {
+        formData.append("pin", serverPin);
+    }
+
+    try {
+        let res = await fetch("/update", {
+            method: "POST",
+            body: formData
+        });
+        let result = await res.json();
+
+        if (result.status === "error") {
+            document.getElementById("status").textContent = "Status: " + result.message;
+            document.getElementById("teamStatus").textContent = "Status: " + result.message;
+            document.getElementById("formationStatus").textContent = "Status: " + result.message;
+            alert(result.message);
+            return;
+        }
+
+        if (result.newLogoUrl) {
+            document.getElementById("awayLogo").value = result.newLogoUrl;
+            document.getElementById("awayLogoFile").value = "";
+        }
+        if (result.newHomeLogoUrl) {
+            document.getElementById("homeLogo").value = result.newHomeLogoUrl;
+            document.getElementById("homeLogoFile").value = "";
+        }
+
+        if (isSettingPin) {
+            currentPin = newPin;
+            serverPin = newPin;
+            localStorage.setItem(PIN_STORAGE_KEY, newPin);
+            cancelPinSetup();
+            document.getElementById("teamStatus").textContent = "Status: PIN saved successfully";
+        } else {
+            document.getElementById("status").textContent = "Status: " + (result.status || "OK");
+            document.getElementById("teamStatus").textContent = "Status: " + (result.status || "OK");
+            document.getElementById("formationStatus").textContent = "Status: " + (result.status || "OK");
+        }
+
+    } catch (err) {
+        console.error(err);
+        document.getElementById("status").textContent = "Status: Error";
+        document.getElementById("teamStatus").textContent = "Status: Error";
+        document.getElementById("formationStatus").textContent = "Status: Error";
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Score History</title>
+  <link rel="icon" type="image/x-icon" href="/static/icon.ico">
+
+  <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+  <style>
+    :root {
+      --primary-blue: #142850;
+      --secondary-blue: #0a1f3c;
+      --accent-gold: #F0A500;
+      --secondary-gold: #B87B00;
+    }
+
+    body {
+      background: rgba(0,0,0,0);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+
+    .history-container {
+      background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
+      border-radius: 15px;
+      padding: 20px;
+      min-width: 400px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .history-label {
+      font-family: "Alfa Slab One", cursive;
+      font-size: 22px;
+      color: white;
+      text-align: center;
+      margin-bottom: 15px;
+      letter-spacing: 1px;
+    }
+
+    .history-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      margin-bottom: 5px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 8px;
+      font-size: 22px;
+      font-family: "Alfa Slab One", cursive;
+    }
+
+    .history-item.home-scored {
+      border-left: 5px solid var(--accent-gold);
+    }
+
+    .history-item.away-scored {
+      border-left: 5px solid #D83A56;
+    }
+
+    .history-item .team-name {
+      font-size: 20px;
+    }
+
+    .history-item.home-scored .team-name {
+      color: var(--accent-gold);
+    }
+
+    .history-item.away-scored .team-name {
+      color: #D83A56;
+    }
+
+    .history-item .score {
+      color: white;
+    }
+
+    .empty-message {
+      color: rgba(255,255,255,0.5);
+      text-align: center;
+      font-size: 16px;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="history-container">
+    <div class="history-label">LAST 5 POINTS</div>
+    <ul class="history-list" id="historyList">
+      <li class="empty-message">No points scored yet</li>
+    </ul>
+  </div>
+
+  <script>
+    const socket = io();
+
+    let previousScores = { home: 0, away: 0 };
+
+    socket.on('score_update', function(data) {
+      updateUI(data);
+    });
+
+    function updateUI(data) {
+      const list = document.getElementById("historyList");
+      const history = data.scoreHistory || [];
+
+      if (history.length === 0) {
+        list.innerHTML = '<li class="empty-message">No points scored yet</li>';
+        return;
+      }
+
+      // Determine scoring team for each entry
+      const items = [];
+      let lastHomeScore = 0;
+      let lastAwayScore = 0;
+
+      history.forEach((entry, index) => {
+        const homeScored = entry.homeScore > lastHomeScore;
+        const awayScored = entry.awayScore > lastAwayScore;
+
+        const teamName = homeScored ? (data.homeName || "Home") : (data.awayName || "Away");
+        const teamClass = homeScored ? "home-scored" : "away-scored";
+
+        items.push(`
+          <li class="history-item ${teamClass}">
+            <span class="team-name">${teamName}</span>
+            <span class="score">${entry.homeScore} - ${entry.awayScore}</span>
+          </li>
+        `);
+
+        lastHomeScore = entry.homeScore;
+        lastAwayScore = entry.awayScore;
+      });
+
+      // Reverse to show newest first
+      list.innerHTML = items.reverse().join("");
+    }
+
+    socket.on('connect', () => {
+      fetch('/current').then(r => r.json()).then(updateUI);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Timeouts</title>
+  <link rel="icon" type="image/x-icon" href="/static/icon.ico">
+
+  <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+  <style>
+    :root {
+      --primary-blue: #142850;
+      --secondary-blue: #0a1f3c;
+      --accent-gold: #F0A500;
+      --secondary-gold: #B87B00;
+      --home-primary: #0000FF;
+      --away-primary: #FF0000;
+    }
+
+    body {
+      background: rgba(0,0,0,0);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+
+    .timeout-container {
+      background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
+      border-radius: 15px;
+      padding: 25px 40px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      min-width: 450px;
+    }
+
+    .timeout-label {
+      font-family: "Alfa Slab One", cursive;
+      font-size: 22px;
+      color: white;
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+    }
+
+    .teams-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .team-timeouts {
+      flex: 1;
+      padding: 15px;
+      margin: 0 10px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+    }
+
+    .team-name {
+      font-family: "Alfa Slab One", cursive;
+      font-size: 28px;
+      color: white;
+      margin-bottom: 15px;
+    }
+
+    .team-timeouts:first-child .team-name {
+      color: var(--home-primary);
+    }
+
+    .team-timeouts:last-child .team-name {
+      color: var(--away-primary);
+    }
+
+    .timeout-dots {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .timeout-dot {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 3px solid white;
+    }
+
+    .timeout-dot.used {
+      background: white;
+    }
+
+    .timeout-dot.available {
+      background: transparent;
+    }
+
+    .timeout-count {
+      font-size: 18px;
+      color: rgba(255,255,255,0.8);
+      font-weight: bold;
+    }
+
+    .vs {
+      font-family: "Alfa Slab One", cursive;
+      font-size: 30px;
+      color: var(--accent-gold);
+    }
+  </style>
+</head>
+<body>
+  <div class="timeout-container">
+    <div class="timeout-label">TIMEOUTS</div>
+    <div class="teams-row">
+      <div class="team-timeouts">
+        <div class="team-name" id="homeTeamName">Home</div>
+        <div class="timeout-dots" id="homeTimeoutDots">
+          <div class="timeout-dot available" id="homeDot1"></div>
+          <div class="timeout-dot available" id="homeDot2"></div>
+        </div>
+        <div class="timeout-count" id="homeTimeoutCount">(2/2)</div>
+      </div>
+      <div class="vs">-</div>
+      <div class="team-timeouts">
+        <div class="team-name" id="awayTeamName">Away</div>
+        <div class="timeout-dots" id="awayTimeoutDots">
+          <div class="timeout-dot available" id="awayDot1"></div>
+          <div class="timeout-dot available" id="awayDot2"></div>
+        </div>
+        <div class="timeout-count" id="awayTimeoutCount">(2/2)</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+
+    socket.on('score_update', function(data) {
+      updateUI(data);
+    });
+
+    function updateUI(data) {
+      // Update team names
+      document.getElementById("homeTeamName").textContent = data.homeName || "Home";
+      document.getElementById("awayTeamName").textContent = data.awayName || "Away";
+
+      // Update home timeouts
+      const homeTimeouts = data.homeTimeouts !== undefined ? data.homeTimeouts : 2;
+      updateTimeoutDots("home", homeTimeouts);
+
+      // Update away timeouts
+      const awayTimeouts = data.awayTimeouts !== undefined ? data.awayTimeouts : 2;
+      updateTimeoutDots("away", awayTimeouts);
+
+      // Update root colors
+      const root = document.documentElement;
+      root.style.setProperty('--home-primary-color', data.homeColorPrimary || '#0000FF');
+      root.style.setProperty('--away-primary-color', data.awayColorPrimary || '#FF0000');
+    }
+
+    function updateTimeoutDots(team, count) {
+      const dot1 = document.getElementById(team + "Dot1");
+      const dot2 = document.getElementById(team + "Dot2");
+      const countDisplay = document.getElementById(team + "TimeoutCount");
+
+      // filled (used) = used, available (empty) = remaining
+      const used = 2 - count;
+
+      dot1.className = "timeout-dot " + (used >= 1 ? "used" : "available");
+      dot2.className = "timeout-dot " + (used >= 2 ? "used" : "available");
+
+      countDisplay.textContent = `(${count}/2)`;
+    }
+
+    socket.on('connect', () => {
+      fetch('/current').then(r => r.json()).then(updateUI);
+    });
+  </script>
+</body>
+</html>

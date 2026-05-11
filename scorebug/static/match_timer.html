@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match Timer</title>
+  <link rel="icon" type="image/x-icon" href="/static/icon.ico">
+
+  <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+  <style>
+    :root {
+      --primary-blue: #142850;
+      --secondary-blue: #0a1f3c;
+      --accent-gold: #F0A500;
+      --secondary-gold: #B87B00;
+    }
+
+    body {
+      background: rgba(0,0,0,0);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+
+    .timer-container {
+      background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
+      border-radius: 15px;
+      padding: 20px 40px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .timer-display {
+      font-family: "Alfa Slab One", cursive;
+      font-size: 80px;
+      color: white;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timer-label {
+      font-family: "Alfa Slab One", cursive;
+      font-size: 20px;
+      color: var(--accent-gold);
+      letter-spacing: 2px;
+      margin-top: 10px;
+    }
+
+    .timer-status {
+      font-size: 14px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="timer-container">
+    <div class="timer-display" id="timerDisplay">00:00</div>
+    <div class="timer-label">MATCH TIME</div>
+    <div class="timer-status" id="timerStatus"></div>
+  </div>
+
+  <script>
+    const socket = io();
+
+    let timerState = {
+      timerStarted: false,
+      timerPaused: false,
+      timerStartTimestamp: null,
+      timerPausedTimestamp: null,
+      accumulatedTime: 0
+    };
+
+    let displayInterval = null;
+
+    socket.on('score_update', function(data) {
+      const oldState = {...timerState};
+      timerState = {
+        timerStarted: data.timerStarted,
+        timerPaused: data.timerPaused,
+        timerStartTimestamp: data.timerStartTimestamp,
+        timerPausedTimestamp: data.timerPausedTimestamp,
+        accumulatedTime: data.accumulatedTime
+      };
+
+      if (!oldState.timerStarted && data.timerStarted) {
+        startDisplayTimer();
+      } else if (oldState.timerStarted && !data.timerStarted) {
+        stopDisplayTimer();
+      }
+    });
+
+    function startDisplayTimer() {
+      if (displayInterval) clearInterval(displayInterval);
+      updateTimerDisplay();
+      displayInterval = setInterval(updateTimerDisplay, 1000);
+    }
+
+    function stopDisplayTimer() {
+      if (displayInterval) {
+        clearInterval(displayInterval);
+        displayInterval = null;
+      }
+    }
+
+    function updateTimerDisplay() {
+      const display = document.getElementById("timerDisplay");
+      const status = document.getElementById("timerStatus");
+
+      if (!timerState.timerStarted) {
+        display.textContent = "00:00";
+        status.textContent = "Ready";
+        return;
+      }
+
+      if (timerState.timerPaused && timerState.timerPausedTimestamp) {
+        const currentElapsed = timerState.accumulatedTime + (timerState.timerPausedTimestamp - timerState.timerStartTimestamp);
+        const totalSeconds = Math.floor(currentElapsed);
+        display.textContent = formatTime(totalSeconds);
+        status.textContent = "Paused";
+        return;
+      }
+
+      if (timerState.timerStartTimestamp) {
+        const currentElapsed = timerState.accumulatedTime + (Date.now() / 1000 - timerState.timerStartTimestamp);
+        const totalSeconds = Math.floor(currentElapsed);
+        display.textContent = formatTime(totalSeconds);
+        status.textContent = "";
+      }
+    }
+
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    socket.on('connect', () => {
+      console.log('Connected to WebSocket');
+      fetch('/current').then(r => r.json()).then(data => {
+        timerState = {
+          timerStarted: data.timerStarted,
+          timerPaused: data.timerPaused,
+          timerStartTimestamp: data.timerStartTimestamp,
+          timerPausedTimestamp: data.timerPausedTimestamp,
+          accumulatedTime: data.accumulatedTime
+        };
+        if (data.timerStarted) {
+          startDisplayTimer();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
