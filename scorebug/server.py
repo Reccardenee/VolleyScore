@@ -470,6 +470,152 @@ def timeout_control():
 
     return jsonify({"status": "ok"})
 
+@app.route("/export_config")
+def export_config():
+    """
+    Export current configuration as JSON file download.
+    """
+    response = Response(
+        json.dumps(current_score, indent=4),
+        mimetype='application/json',
+        headers={'Content-Disposition': 'attachment;filename=config.json'}
+    )
+    return response
+
+@app.route("/import_config", methods=["POST"])
+def import_config():
+    """
+    Import configuration from JSON file upload.
+    """
+    global current_score
+
+    if 'configFile' not in request.files:
+        return jsonify({"status": "error", "message": "No file uploaded"}), 400
+
+    file = request.files['configFile']
+    if file.filename == '':
+        return jsonify({"status": "error", "message": "No file selected"}), 400
+
+    try:
+        config_data = json.load(file)
+
+        # Validate required fields exist
+        required_fields = ['homeName', 'awayName']
+        for field in required_fields:
+            if field not in config_data:
+                return jsonify({"status": "error", "message": f"Invalid config file: missing {field}"}), 400
+
+        # Update current score with imported config
+        current_score = config_data
+        save_config(current_score)
+        socketio.emit('score_update', current_score)
+
+        return jsonify({"status": "ok", "message": "Config imported successfully"})
+    except json.JSONDecodeError:
+        return jsonify({"status": "error", "message": "Invalid JSON file"}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/reset_config", methods=["POST"])
+def reset_config():
+    """
+    Reset configuration to defaults.
+    """
+    global current_score
+
+    current_score = DEFAULT_SCORE.copy()
+    save_config(current_score)
+    socketio.emit('score_update', current_score)
+
+    return jsonify({"status": "ok", "message": "Config reset to defaults"})
+
+@app.route("/export_match_json")
+def export_match_json():
+    """
+    Export match data as JSON file.
+    """
+    # Calculate match duration
+    match_duration = ""
+    if current_score.get("timerStarted"):
+        if current_score.get("timerPaused") and current_score.get("timerPausedTimestamp"):
+            total_seconds = current_score.get("accumulatedTime", 0) + \
+                (current_score["timerPausedTimestamp"] - current_score.get("timerStartTimestamp", 0))
+        elif current_score.get("timerStartTimestamp"):
+            total_seconds = current_score.get("accumulatedTime", 0) + \
+                (datetime.now().timestamp() - current_score.get("timerStartTimestamp", 0))
+        else:
+            total_seconds = current_score.get("accumulatedTime", 0)
+
+        mins = int(total_seconds // 60)
+        secs = int(total_seconds % 60)
+        match_duration = f"{mins:02d}:{secs:02d}"
+
+    export_data = {
+        "matchTitle": current_score.get("matchTitle", "Volleyball Match"),
+        "homeTeam": current_score.get("homeName", "Home"),
+        "awayTeam": current_score.get("awayName", "Away"),
+        "date": datetime.now().strftime("%Y-%m-%d"),
+        "homeColorPrimary": current_score.get("homeColorPrimary", "#0000FF"),
+        "awayColorPrimary": current_score.get("awayColorPrimary", "#FF0000"),
+        "previousSetScores": current_score.get("previousSetScores", []),
+        "scoreHistory": current_score.get("scoreHistory", []),
+        "finalScore": {
+            "homeSets": current_score.get("homeSets", 0),
+            "awaySets": current_score.get("awaySets", 0),
+            "homePoints": current_score.get("homeScore", 0),
+            "awayPoints": current_score.get("awayScore", 0)
+        },
+        "homeTimeoutsUsed": 2 - current_score.get("homeTimeouts", 2),
+        "awayTimeoutsUsed": 2 - current_score.get("awayTimeouts", 2),
+        "matchDuration": match_duration
+    }
+
+    response = Response(
+        json.dumps(export_data, indent=4),
+        mimetype='application/json',
+        headers={'Content-Disposition': 'attachment;filename=match_export.json'}
+    )
+    return response
+
+@app.route("/export_match_csv")
+def export_match_csv():
+    """
+    Export match data as CSV file.
+    """
+    history = current_score.get("scoreHistory", [])
+
+    csv_lines = ["Point,Home Score,Away Score,Scoring Team"]
+
+    last_home = 0
+    last_away = 0
+    point_num = 1
+
+    for entry in history:
+        home_scored = entry.get("homeScore", 0) > last_home
+        scoring_team = current_score.get("homeName", "Home") if home_scored else current_score.get("awayName", "Away")
+
+        csv_lines.append(f"{point_num},{entry.get('homeScore', 0)},{entry.get('awayScore', 0)},{scoring_team}")
+
+        last_home = entry.get("homeScore", 0)
+        last_away = entry.get("awayScore", 0)
+        point_num += 1
+
+    csv_content = "\n".join(csv_lines)
+
+    response = Response(
+        csv_content,
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment;filename=match_export.csv'}
+    )
+    return response
+
+@app.route("/export_match")
+def export_match():
+    """
+    Route for match export page.
+    """
+    return app.send_static_file("export_match.html")
+
 @app.route("/uploads/<filename>")
 def uploaded_file(filename):
     """
