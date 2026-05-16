@@ -3,1113 +3,1748 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VolleyScore Unified Control Panel</title>
+  <title>VolleyScore Control Panel</title>
   <link rel="icon" type="image/x-icon" href="/static/icon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
   <style>
-    body { font-family: Arial, sans-serif; background:#222; color:#fff; padding:15px; margin: 0; }
-    h1 { text-align:center; font-size: 1.5rem; }
-    h2 { font-size: 1.2rem; margin-top: 0; }
-    .section { margin-bottom:20px; padding:10px; background:#333; border-radius:6px; }
-    label { display:block; margin-bottom:5px; color:#ccc; }
-    input[type="text"], input[type="number"], input[type="password"], button, input[type="color"] {
-      width:100%;
-      padding:10px;
-      margin-bottom:10px;
-      border-radius:4px;
-      border:none;
-      font-size:16px;
+    /* ============================================
+       CSS VARIABLES - Design System
+       ============================================ */
+    :root {
+      --bg-primary: #1a1a2e;
+      --bg-secondary: #16213e;
+      --bg-surface: #1f1f38;
+      --bg-card: #252540;
+      --border-color: #3a3a5c;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0b0;
+      --text-muted: #6b6b80;
+      --accent-blue: #4a90e2;
+      --accent-blue-hover: #5da0f2;
+      --accent-gold: #f0a500;
+      --success: #22c55e;
+      --warning: #f97316;
+      --danger: #ef4444;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.2);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --transition: 0.2s ease;
+    }
+
+    /* ============================================
+       BASE STYLES
+       ============================================ */
+    * {
       box-sizing: border-box;
-    }
-    button { cursor:pointer; background:#2d7dd2; color:white; }
-    button:hover { background:#3689e6; }
-    .row { display:flex; gap:15px; flex-wrap:wrap; }
-    .col { flex:1; min-width:150px; }
-
-    /* Specific CSS to remove number input arrows (spinners) */
-    input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button {
-      -webkit-appearance: none;
       margin: 0;
-    }
-    input[type=number] {
-      -moz-appearance: textfield;
-      text-align: center;
+      padding: 0;
     }
 
-    /* Styling for the score/set control row */
-    .score-control-row {
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    h1 {
+      font-family: "Alfa Slab One", cursive;
+      font-size: 1.5rem;
+      color: var(--text-primary);
+    }
+
+    h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ============================================
+       LAYOUT
+       ============================================ */
+    .app-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* ============================================
+       HEADER
+       ============================================ */
+    .header {
       display: flex;
-      gap: 5px;
-      margin-bottom: 15px;
-    }
-    .score-control-row button {
-      width: 40px;
-      flex-shrink: 0;
-      padding: 10px 0;
-      margin-bottom: 0;
-    }
-    .score-control-row input {
-      margin-bottom: 0;
-    }
-
-    /* QR Code Styling */
-    .qr-code-container {
-        text-align: center;
-        margin-top: 20px;
-    }
-    .qr-code-container img {
-        width: 200px;
-        height: 200px;
-        border: 5px solid white;
-        border-radius: 5px;
-    }
-
-    /* Responsive adjustments for mobile */
-    @media (max-width: 600px) {
-      .col {
-        flex: 1 1 100%;
-      }
-      .score-control-row button {
-        width: 60px;
-        height: 50px;
-        font-size: 20px;
-      }
-    }
-
-    /* PIN Modal */
-    #pinModal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.8);
-      justify-content: center;
       align-items: center;
-      z-index: 1000;
-    }
-    #pinModalContent, #resetModalContent {
-      background: #333;
-      padding: 30px;
-      border-radius: 10px;
-      text-align: center;
-      max-width: 400px;
-      width: 90%;
-    }
-    #pinModalContent h2, #resetModalContent h2 {
-      margin-top: 0;
-    }
-    #pinModalContent input {
-      text-align: center;
-      font-size: 24px;
-      letter-spacing: 5px;
-    }
-    #pinModalContent .error, #resetModalContent .error {
-      color: #ff6b6b;
-      margin-top: 10px;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
     }
 
-    /* Reset Modal specific */
-    #resetConfirmModal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.8);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    #resetConfirmModal button:first-of-type {
-      background: #d9534f;
-      margin-bottom: 10px;
-    }
-
-    /* Tab styling */
-    .tab-nav {
+    .header-left {
       display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      border-bottom: 2px solid #444;
-      padding-bottom: 10px;
+      align-items: center;
+      gap: 16px;
     }
-    .tab-nav button {
+
+    .logo {
+      font-family: "Alfa Slab One", cursive;
+      font-size: 1.25rem;
+      color: var(--accent-gold);
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .connection-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--danger);
+      transition: var(--transition);
+    }
+
+    .connection-dot.connected {
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    /* ============================================
+       SCORE SUMMARY BAR
+       ============================================ */
+    .score-summary {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      padding: 16px 24px;
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+      margin-bottom: 16px;
+    }
+
+    .summary-teams {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .summary-team {
+      font-family: "Alfa Slab One", cursive;
+      font-size: 1.5rem;
+      min-width: 100px;
+    }
+
+    .summary-team.home { text-align: right; color: var(--accent-blue); }
+    .summary-team.away { text-align: left; color: var(--danger); }
+
+    .summary-score {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: "Alfa Slab One", cursive;
+      font-size: 2rem;
+    }
+
+    .summary-score .home-score { color: var(--accent-blue); }
+    .summary-score .away-score { color: var(--danger); }
+    .summary-score .separator { color: var(--text-muted); }
+
+    .summary-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .summary-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ============================================
+       TABS
+       ============================================ */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+      background: var(--bg-surface);
+      padding: 4px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+
+    .tab-btn {
       flex: 1;
-      padding: 12px;
-      background: #444;
-      font-weight: bold;
+      padding: 12px 16px;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
     }
-    .tab-nav button.active {
-      background: #2d7dd2;
+
+    .tab-btn:hover {
+      background: var(--bg-card);
+      color: var(--text-primary);
     }
+
+    .tab-btn.active {
+      background: var(--accent-blue);
+      color: white;
+    }
+
     .tab-content {
       display: none;
     }
+
     .tab-content.active {
       display: block;
     }
 
-    /* Color picker specific styling */
-    input[type="color"] {
-        height: 40px;
-        padding: 0;
-        border: 1px solid #555;
+    /* ============================================
+       CARDS & SECTIONS
+       ============================================ */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 16px;
     }
 
-    /* Link to other control */
-    .control-link {
-      background: #555;
-      margin-top: 20px;
+    .card-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .back-button {
-        background: #555;
-        margin-bottom: 20px;
+    .card-title::before {
+      content: '';
+      width: 3px;
+      height: 14px;
+      background: var(--accent-blue);
+      border-radius: 2px;
+    }
+
+    /* ============================================
+       FORM ELEMENTS
+       ============================================ */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-size: 1rem;
+      transition: var(--transition);
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+    }
+
+    .form-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    /* ============================================
+       BUTTONS
+       ============================================ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      min-height: 44px;
+    }
+
+    .btn:focus {
+      outline: 2px solid var(--accent-blue);
+      outline-offset: 2px;
+    }
+
+    .btn-primary {
+      background: var(--accent-blue);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-blue-hover);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border-color);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-block {
+      width: 100%;
+    }
+
+    .btn-sm {
+      padding: 8px 14px;
+      font-size: 0.75rem;
+      min-height: auto;
+    }
+
+    .btn-icon {
+      width: 44px;
+      padding: 0;
+      font-size: 1.25rem;
+    }
+
+    /* ============================================
+       SCORE CONTROLS
+       ============================================ */
+    .score-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .team-score-control {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    .team-score-control h3 {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .team-score-control.home h3 { color: var(--accent-blue); }
+    .team-score-control.away h3 { color: var(--danger); }
+
+    .score-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .score-row label {
+      flex: 1;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .score-row .score-input {
+      width: 60px;
+      text-align: center;
+      font-family: "Alfa Slab One", cursive;
+      font-size: 1.5rem;
+      padding: 8px;
+    }
+
+    .score-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-sm);
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    /* ============================================
+       POSSESSION TOGGLE
+       ============================================ */
+    .possession-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .possession-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .possession-btn.home { background: rgba(74, 144, 226, 0.2); color: var(--accent-blue); }
+    .possession-btn.home.active { background: var(--accent-blue); color: white; }
+    .possession-btn.none { background: var(--bg-card); color: var(--text-secondary); }
+    .possession-btn.none.active { background: var(--text-muted); color: white; }
+    .possession-btn.away { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+    .possession-btn.away.active { background: var(--danger); color: white; }
+
+    /* ============================================
+       TIMER DISPLAY
+       ============================================ */
+    .timer-display {
+      font-family: "Alfa Slab One", cursive;
+      font-size: 3rem;
+      text-align: center;
+      color: var(--accent-gold);
+      padding: 20px;
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      margin-bottom: 16px;
+    }
+
+    .timer-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .timer-controls .btn {
+      flex: 1;
+    }
+
+    /* ============================================
+       TIMEOUTS
+       ============================================ */
+    .timeout-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .timeout-team {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .timeout-team h4 {
+      font-size: 0.875rem;
+      margin-bottom: 8px;
+    }
+
+    .timeout-team.home h4 { color: var(--accent-blue); }
+    .timeout-team.away h4 { color: var(--danger); }
+
+    .timeout-dots {
+      font-size: 1.5rem;
+      margin-bottom: 8px;
+      letter-spacing: 4px;
+    }
+
+    .timeout-count {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .timeout-btns {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    /* ============================================
+       TEAM SETTINGS
+       ============================================ */
+    .team-settings {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .team-config {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    .team-config.home {
+      border-left: 3px solid var(--accent-blue);
+    }
+
+    .team-config.away {
+      border-left: 3px solid var(--danger);
+    }
+
+    .team-config h3 {
+      font-size: 0.875rem;
+      margin-bottom: 12px;
+    }
+
+    .color-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .color-group {
+      flex: 1;
+    }
+
+    .color-input {
+      width: 100%;
+      height: 40px;
+      padding: 4px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface);
+      cursor: pointer;
+    }
+
+    /* ============================================
+       GRID LAYOUT
+       ============================================ */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    /* ============================================
+       MODALS
+       ============================================ */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .modal h2 {
+      font-size: 1.125rem;
+      margin-bottom: 12px;
+    }
+
+    .modal p {
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+      font-size: 0.875rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .modal-actions .btn {
+      flex: 1;
+    }
+
+    .modal input[type="password"] {
+      text-align: center;
+      font-size: 1.5rem;
+      letter-spacing: 8px;
+      margin-bottom: 16px;
+    }
+
+    .modal .error {
+      color: var(--danger);
+      font-size: 0.875rem;
+      margin-top: 8px;
+    }
+
+    /* ============================================
+       OBS URLs
+       ============================================ */
+    .obs-urls {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    .obs-urls h3 {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .obs-url {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.875rem;
+    }
+
+    .obs-url:last-child {
+      border-bottom: none;
+    }
+
+    .obs-url code {
+      font-family: monospace;
+      color: var(--accent-blue);
+      font-size: 0.8rem;
+    }
+
+    /* ============================================
+       QR CODE
+       ============================================ */
+    .qr-container {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .qr-container img {
+      width: 180px;
+      height: 180px;
+      border: 4px solid var(--border-color);
+      border-radius: var(--radius-md);
+    }
+
+    .qr-container p {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 12px;
+    }
+
+    /* ============================================
+       RESPONSIVE
+       ============================================ */
+    @media (max-width: 767px) {
+      .score-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .team-settings {
+        grid-template-columns: 1fr;
+      }
+
+      .timeout-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-meta {
+        display: none;
+      }
+
+      .tabs {
+        flex-wrap: wrap;
+      }
+
+      .tab-btn {
+        flex: 1 1 45%;
+      }
+    }
+
+    /* ============================================
+       PREVIOUS SETS
+       ============================================ */
+    .previous-sets {
+      margin-top: 16px;
+    }
+
+    .set-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      background: var(--bg-card);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+    }
+
+    .set-item .set-label {
+      font-weight: 600;
+      color: var(--text-secondary);
+      min-width: 50px;
+    }
+
+    .set-item input {
+      width: 50px;
+      text-align: center;
+    }
+
+    /* ============================================
+       SCORE HISTORY
+       ============================================ */
+    .score-history-list {
+      list-style: none;
+    }
+
+    .score-history-list li {
+      padding: 8px 12px;
+      background: var(--bg-card);
+      border-radius: var(--radius-sm);
+      margin-bottom: 6px;
+      font-size: 0.875rem;
+    }
+
+    /* ============================================
+       PIN SETUP
+       ============================================ */
+    .pin-section {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    .pin-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .pin-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.875rem;
+    }
+
+    .pin-indicator.active {
+      color: var(--success);
+    }
+
+    .pin-indicator.inactive {
+      color: var(--text-muted);
+    }
+
+    .pin-form {
+      display: none;
+    }
+
+    .pin-form.active {
+      display: block;
     }
   </style>
 </head>
 <body>
-<!-- PIN Modal -->
-<div id="pinModal">
-  <div id="pinModalContent">
-    <h2 id="pinModalTitle">Enter PIN</h2>
-    <p id="pinModalMessage">Enter the 4-digit PIN to control the scoreboard</p>
-    <input type="password" id="pinInput" maxlength="4" placeholder="----">
-    <button onclick="verifyPin()">Submit</button>
-    <p id="pinError" class="error"></p>
-  </div>
-</div>
-
-<!-- Reset Confirmation Modal -->
-<div id="resetConfirmModal">
-  <div id="resetModalContent">
-    <h2>Reset Game?</h2>
-    <p>This will clear all scores, sets, and match history.</p>
-    <p style="color: #ff6b6b;">This cannot be undone.</p>
-    <button onclick="confirmReset()">Yes, Reset</button>
-    <button onclick="closeResetModal()" style="background:#666;">Cancel</button>
-  </div>
-</div>
-
-<h1>VolleyScore Unified Control Panel</h1>
-
-<div class="tab-nav">
-  <button id="tabScore" class="active" onclick="switchTab('score')">Score</button>
-  <button id="tabTeams" onclick="switchTab('teams')">Teams</button>
-  <button id="tabFormations" onclick="switchTab('formations')">Formations</button>
-  <button id="tabBackup" onclick="switchTab('backup')">Backup</button>
-</div>
-
-<!-- SCORE TAB -->
-<div id="tab-content-score" class="tab-content active">
-  <div class="section">
-    <div class="row">
-      <div class="col">
-        <label for="homeScore">Home Score (Points)</label>
-        <div class="score-control-row">
-          <button onclick="changeScore('home', -1)">−</button>
-          <input type="number" id="homeScore" value="0">
-          <button onclick="changeScore('home', 1)">+</button>
-        </div>
-
-        <label for="homeSets">Home Sets Won</label>
-        <div class="score-control-row">
-          <button onclick="changeSet('home', -1)">−</button>
-          <input type="number" id="homeSets" value="0">
-          <button onclick="changeSet('home', 1)">+</button>
-        </div>
-      </div>
-
-      <div class="col">
-        <label for="awayScore">Away Score (Points)</label>
-        <div class="score-control-row">
-          <button onclick="changeScore('away', -1)">−</button>
-          <input type="number" id="awayScore" value="0">
-          <button onclick="changeScore('away', 1)">+</button>
-        </div>
-
-        <label for="awaySets">Away Sets Won</label>
-        <div class="score-control-row">
-          <button onclick="changeSet('away', -1)">−</button>
-          <input type="number" id="awaySets" value="0">
-          <button onclick="changeSet('away', 1)">+</button>
+  <div class="app-container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <span class="logo">VolleyScore</span>
+        <div class="connection-status">
+          <div class="connection-dot" id="connectionDot"></div>
+          <span id="connectionText">Connecting...</span>
         </div>
       </div>
     </div>
-  </div>
 
-  <div class="section">
-    <h2>Previous Set Scores</h2>
-    <div id="previousSetScoresContainer">
-      <p>No sets completed yet.</p>
-    </div>
-    <button onclick="addPreviousSetScore()">Add Set Score</button>
-  </div>
-
-  <div class="section">
-    <label>Possession (Service)</label>
-    <div class="row">
-      <button onclick="setPossession('home')">Home</button>
-      <button onclick="setPossession('none')">None</button>
-      <button onclick="setPossession('away')">Away</button>
-    </div>
-  </div>
-
-  <div class="section">
-    <button onclick="sendToServer()">Update OBS</button>
-  </div>
-
-  <div class="section" id="status">Status: Ready</div>
-
-  <div class="section">
-    <button onclick="showResetModal()">Reset Game</button>
-  </div>
-
-  <div class="qr-code-container">
-    <h2>Remote Access (Scan QR for Control Panel)</h2>
-    <img src="/qrcode_image" alt="QR Code for Control Panel" />
-    <p>Scan this QR code with your phone to access the control panel remotely.</p>
-  </div>
-</div>
-
-<!-- TEAMS TAB -->
-<div id="tab-content-teams" class="tab-content">
-  <div class="section">
-    <h2>Match Info</h2>
-    <label for="matchTitle">Match Title</label>
-    <input type="text" id="matchTitle" value="Volleyball Match">
-  </div>
-
-  <div class="section">
-    <div class="row">
-      <div class="col">
-        <label for="homeName">Home Team Name</label>
-        <input type="text" id="homeName" value="Home">
-        <label for="homeLogoFile">Upload Home Logo</label>
-        <input type="file" id="homeLogoFile" accept="image/*">
-        <input type="hidden" id="homeLogo" value="/static/home_logo_placeholder.jpg">
-        <label for="homeColorPrimary">Home Primary Color</label>
-        <input type="color" id="homeColorPrimary" value="#0000FF">
-        <label for="homeColorSecondary">Home Secondary Color</label>
-        <input type="color" id="homeColorSecondary" value="#AAAAFF">
-      </div>
-      <div class="col">
-        <label for="awayName">Away Team Name</label>
-        <input type="text" id="awayName" value="Away">
-        <label for="awayLogoFile">Upload Away Logo (PNG/JPG)</label>
-        <input type="file" id="awayLogoFile" accept="image/*">
-        <input type="hidden" id="awayLogo" value="/static/away_logo.jpg">
-        <label for="awayColorPrimary">Away Primary Color</label>
-        <input type="color" id="awayColorPrimary" value="#FF0000">
-        <label for="awayColorSecondary">Away Secondary Color</label>
-        <input type="color" id="awayColorSecondary" value="#FFAAAA">
+    <!-- Score Summary Bar -->
+    <div class="score-summary">
+      <div class="summary-teams">
+        <span class="summary-team home" id="summaryHomeName">Home</span>
+        <div class="summary-score">
+          <span class="home-score" id="summaryHomeScore">0</span>
+          <span class="separator">-</span>
+          <span class="away-score" id="summaryAwayScore">0</span>
+        </div>
+        <span class="summary-team away" id="summaryAwayName">Away</span>
       </div>
     </div>
-  </div>
 
-  <div class="section">
-    <h2>PIN Protection</h2>
-    <div id="pinSection">
-      <p id="pinStatus">PIN is not set</p>
-      <button onclick="showPinSetup()">Set PIN</button>
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="match">Match</button>
+      <button class="tab-btn" data-tab="teams">Teams</button>
+      <button class="tab-btn" data-tab="timer">Timer</button>
+      <button class="tab-btn" data-tab="settings">Settings</button>
     </div>
-    <div id="pinSetupSection" style="display:none;">
-      <div id="currentPinSection">
-        <label for="currentPin">Current PIN (if changing)</label>
-        <input type="password" id="currentPin" maxlength="4" placeholder="Enter current PIN">
-      </div>
-      <label for="newPin">New PIN (4 digits)</label>
-      <input type="password" id="newPin" maxlength="4" placeholder="Enter new PIN">
-      <label for="confirmPin">Confirm New PIN</label>
-      <input type="password" id="confirmPin" maxlength="4" placeholder="Confirm new PIN">
-      <button onclick="savePin()">Save PIN</button>
-      <button onclick="cancelPinSetup()" style="background:#666; margin-top:10px;">Cancel</button>
-    </div>
-  </div>
 
-  <div class="section">
-    <button onclick="sendToServer()">Update Team Settings</button>
-  </div>
-
-  <div class="section" id="teamStatus">Status: Ready</div>
-</div>
-
-<!-- FORMATIONS TAB -->
-<div id="tab-content-formations" class="tab-content">
-  <div class="section">
-    <label>Formations (Starting Six)</label>
-    <div class="row">
-      <div class="col">
-        <label>Home Players (1-6)</label>
-        <input type="text" id="homeP1" placeholder="Pos 1">
-        <input type="text" id="homeP2" placeholder="Pos 2">
-        <input type="text" id="homeP3" placeholder="Pos 3">
-        <input type="text" id="homeP4" placeholder="Pos 4">
-        <input type="text" id="homeP5" placeholder="Pos 5">
-        <input type="text" id="homeP6" placeholder="Pos 6">
-      </div>
-      <div class="col">
-        <label>Away Players (1-6)</label>
-        <input type="text" id="awayP1" placeholder="Pos 1">
-        <input type="text" id="awayP2" placeholder="Pos 2">
-        <input type="text" id="awayP3" placeholder="Pos 3">
-        <input type="text" id="awayP4" placeholder="Pos 4">
-        <input type="text" id="awayP5" placeholder="Pos 5">
-        <input type="text" id="awayP6" placeholder="Pos 6">
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <button onclick="sendToServer()">Update Formations</button>
-  </div>
-
-  <div class="section" id="formationStatus">Status: Ready</div>
-</div>
-
-<!-- MATCH CONTROLS SECTION -->
-<div class="section">
-  <h2>Match Controls</h2>
-
-  <!-- Timer -->
-  <div style="margin-bottom: 20px; padding: 15px; background: #444; border-radius: 8px;">
-    <label>Match Timer (starts automatically on first point)</label>
-    <div id="timerDisplay" style="font-size: 32px; font-weight: bold; color: #2d7dd2; margin: 10px 0;">00:00</div>
-    <div class="row">
-      <button onclick="timerControl('pause')">Pause</button>
-      <button onclick="timerControl('resume')">Resume</button>
-      <button onclick="timerControl('reset')" style="background:#d9534f;">Reset</button>
-    </div>
-  </div>
-
-  <!-- Timeouts -->
-  <div style="margin-bottom: 20px; padding: 15px; background: #444; border-radius: 8px;">
-    <label>Timeouts (reset each set)</label>
-    <div class="row">
-      <div class="col">
-        <span id="homeTeamNameDisplay">Home</span> Timeouts:
-        <span id="homeTimeoutDotsDisplay">●●</span>
-        <span id="homeTimeoutCountDisplay">(2/2)</span>
-        <div class="score-control-row" style="justify-content: center; margin-top: 5px;">
-          <button onclick="timeoutChange('home', -1)" style="width:35px;">−</button>
-          <button onclick="timeoutChange('home', 1)" style="width:35px;">+</button>
+    <!-- MATCH TAB -->
+    <div class="tab-content active" id="tab-match">
+      <div class="card">
+        <div class="card-title">Score Controls</div>
+        <div class="score-controls">
+          <div class="team-score-control home">
+            <h3 id="homeTeamName">Home</h3>
+            <div class="score-row">
+              <label>Points</label>
+              <button class="btn btn-secondary btn-icon" onclick="changeScore('home', -1)">−</button>
+              <input type="number" class="form-input score-input" id="homeScore" value="0" min="0">
+              <button class="btn btn-primary btn-icon" onclick="changeScore('home', 1)">+</button>
+            </div>
+            <div class="score-row">
+              <label>Sets</label>
+              <button class="btn btn-secondary btn-icon" onclick="changeSet('home', -1)">−</button>
+              <input type="number" class="form-input score-input" id="homeSets" value="0" min="0">
+              <button class="btn btn-primary btn-icon" onclick="changeSet('home', 1)">+</button>
+            </div>
+          </div>
+          <div class="team-score-control away">
+            <h3 id="awayTeamName">Away</h3>
+            <div class="score-row">
+              <label>Points</label>
+              <button class="btn btn-secondary btn-icon" onclick="changeScore('away', -1)">−</button>
+              <input type="number" class="form-input score-input" id="awayScore" value="0" min="0">
+              <button class="btn btn-primary btn-icon" onclick="changeScore('away', 1)">+</button>
+            </div>
+            <div class="score-row">
+              <label>Sets</label>
+              <button class="btn btn-secondary btn-icon" onclick="changeSet('away', -1)">−</button>
+              <input type="number" class="form-input score-input" id="awaySets" value="0" min="0">
+              <button class="btn btn-primary btn-icon" onclick="changeSet('away', 1)">+</button>
+            </div>
+          </div>
+        </div>
+        <div class="possession-row">
+          <button class="btn possession-btn home" id="posHome" onclick="setPossession('home')">Home Serves</button>
+          <button class="btn possession-btn none" id="posNone" onclick="setPossession('none')">No Serve</button>
+          <button class="btn possession-btn away" id="posAway" onclick="setPossession('away')">Away Serves</button>
         </div>
       </div>
-      <div class="col">
-        <span id="awayTeamNameDisplay">Away</span> Timeouts:
-        <span id="awayTimeoutDotsDisplay">●●</span>
-        <span id="awayTimeoutCountDisplay">(2/2)</span>
-        <div class="score-control-row" style="justify-content: center; margin-top: 5px;">
-          <button onclick="timeoutChange('away', -1)" style="width:35px;">−</button>
-          <button onclick="timeoutChange('away', 1)" style="width:35px;">+</button>
+
+      <div class="card">
+        <div class="card-title">Previous Sets</div>
+        <div id="previousSetsContainer">
+          <p style="color: var(--text-muted); font-size: 0.875rem;">No sets completed yet.</p>
         </div>
+        <button class="btn btn-secondary btn-block" onclick="addPreviousSet()">Add Set Score</button>
+      </div>
+
+      <div class="card">
+        <div class="grid-2">
+          <button class="btn btn-primary" onclick="sendToServer()">Update Scoreboard</button>
+          <button class="btn btn-danger" onclick="showResetModal()">Reset Game</button>
+        </div>
+      </div>
+
+      <div class="card qr-container">
+        <img src="/qrcode_image" alt="QR Code" />
+        <p>Scan with phone to access control panel</p>
+      </div>
+    </div>
+
+    <!-- TEAMS TAB -->
+    <div class="tab-content" id="tab-teams">
+      <div class="card">
+        <div class="card-title">Match Info</div>
+        <div class="form-group">
+          <label class="form-label">Match Title</label>
+          <input type="text" class="form-input" id="matchTitle" value="Volleyball Match">
+        </div>
+      </div>
+
+      <div class="team-settings">
+        <div class="team-config home">
+          <h3>Home Team</h3>
+          <div class="form-group">
+            <label class="form-label">Team Name</label>
+            <input type="text" class="form-input" id="homeName" value="Home">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Logo</label>
+            <input type="file" class="form-input" id="homeLogoFile" accept="image/*" style="padding: 8px;">
+            <input type="hidden" id="homeLogo" value="/static/home_logo_placeholder.jpg">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Colors</label>
+            <div class="color-row">
+              <input type="color" class="color-input" id="homeColorPrimary" value="#0000FF">
+              <input type="color" class="color-input" id="homeColorSecondary" value="#AAAAFF">
+            </div>
+          </div>
+        </div>
+        <div class="team-config away">
+          <h3>Away Team</h3>
+          <div class="form-group">
+            <label class="form-label">Team Name</label>
+            <input type="text" class="form-input" id="awayName" value="Away">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Logo</label>
+            <input type="file" class="form-input" id="awayLogoFile" accept="image/*" style="padding: 8px;">
+            <input type="hidden" id="awayLogo" value="/static/away_logo.jpg">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Colors</label>
+            <div class="color-row">
+              <input type="color" class="color-input" id="awayColorPrimary" value="#FF0000">
+              <input type="color" class="color-input" id="awayColorSecondary" value="#FFAAAA">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">PIN Protection</div>
+        <div class="pin-section">
+          <div class="pin-status">
+            <div class="pin-indicator" id="pinStatus">
+              <span>PIN: Not Set</span>
+            </div>
+            <button class="btn btn-sm btn-secondary" onclick="showPinSetup()">Set PIN</button>
+          </div>
+          <div class="pin-form" id="pinForm">
+            <div id="currentPinSection" style="display: none;">
+              <input type="password" class="form-input" id="currentPin" maxlength="4" placeholder="Current PIN">
+            </div>
+            <input type="password" class="form-input" id="newPin" maxlength="4" placeholder="New 4-digit PIN">
+            <input type="password" class="form-input" id="confirmPin" maxlength="4" placeholder="Confirm PIN">
+            <div class="grid-2" style="margin-top: 12px;">
+              <button class="btn btn-primary" onclick="savePin()">Save</button>
+              <button class="btn btn-secondary" onclick="cancelPinSetup()">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary btn-block" onclick="sendToServer()">Save Team Settings</button>
+    </div>
+
+    <!-- TIMER TAB -->
+    <div class="tab-content" id="tab-timer">
+      <div class="card">
+        <div class="card-title">Match Timer</div>
+        <div class="timer-display" id="timerDisplay">00:00</div>
+        <div class="timer-controls">
+          <button class="btn btn-secondary" onclick="timerControl('pause')">Pause</button>
+          <button class="btn btn-primary" onclick="timerControl('resume')">Resume</button>
+          <button class="btn btn-danger" onclick="timerControl('reset')">Reset</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Timeouts</div>
+        <div class="timeout-controls">
+          <div class="timeout-team home">
+            <h4 id="homeTimeoutTeam">Home</h4>
+            <div class="timeout-dots" id="homeTimeoutDots">○○</div>
+            <div class="timeout-count" id="homeTimeoutCount">(2/2)</div>
+            <div class="timeout-btns">
+              <button class="btn btn-sm btn-secondary" onclick="timeoutChange('home', -1)">−</button>
+              <button class="btn btn-sm btn-primary" onclick="timeoutChange('home', 1)">+</button>
+            </div>
+          </div>
+          <div class="timeout-team away">
+            <h4 id="awayTimeoutTeam">Away</h4>
+            <div class="timeout-dots" id="awayTimeoutDots">○○</div>
+            <div class="timeout-count" id="awayTimeoutCount">(2/2)</div>
+            <div class="timeout-btns">
+              <button class="btn btn-sm btn-secondary" onclick="timeoutChange('away', -1)">−</button>
+              <button class="btn btn-sm btn-primary" onclick="timeoutChange('away', 1)">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Last 5 Points</div>
+        <ul class="score-history-list" id="scoreHistoryList">
+          <li style="color: var(--text-muted);">No points scored yet</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <div class="card-title">OBS Overlay URLs</div>
+        <div class="obs-urls">
+          <div class="obs-url">
+            <span>Timer</span>
+            <code>/match_timer</code>
+          </div>
+          <div class="obs-url">
+            <span>Timeouts</span>
+            <code>/timeouts</code>
+          </div>
+          <div class="obs-url">
+            <span>Score History</span>
+            <code>/score_history</code>
+          </div>
+          <div class="obs-url">
+            <span>Scoreboard</span>
+            <code>/scorebug.html</code>
+          </div>
+          <div class="obs-url">
+            <span>All Sets</span>
+            <code>/scorebug_sets.html</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div class="tab-content" id="tab-settings">
+      <div class="card">
+        <div class="card-title">Configuration Backup</div>
+        <button class="btn btn-primary btn-block" onclick="exportConfig()">Export Configuration</button>
+        <div style="margin-top: 16px;">
+          <input type="file" class="form-input" id="importConfigFile" accept=".json" style="padding: 8px;">
+          <button class="btn btn-secondary btn-block" onclick="importConfig()">Import Configuration</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Export Match</div>
+        <button class="btn btn-secondary btn-block" onclick="window.location.href='/export_match'">Go to Export Match</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Reset to Defaults</div>
+        <p style="color: var(--danger); font-size: 0.875rem; margin-bottom: 12px;">Warning: This will reset all settings to defaults.</p>
+        <button class="btn btn-danger btn-block" onclick="showResetConfigModal()">Reset All Settings</button>
       </div>
     </div>
   </div>
 
-  <!-- Score History -->
-  <div style="margin-bottom: 20px; padding: 15px; background: #444; border-radius: 8px;">
-    <label>Last 5 Points</label>
-    <ul id="scoreHistoryList" style="list-style: none; padding: 0; margin: 10px 0; color: #ccc;"></ul>
-  </div>
-
-  <!-- OBS Overlay Links -->
-  <div style="padding: 15px; background: #444; border-radius: 8px;">
-    <label>OBS Overlay URLs</label>
-    <p style="font-size: 12px; color: #aaa; margin: 5px 0;">Add these as Browser Sources in OBS</p>
-    <div style="font-size: 12px; color: #888; word-break: break-all;">
-      <div>Timer: /match_timer</div>
-      <div>Timeouts: /timeouts</div>
-      <div>Score History: /score_history</div>
-    </div>
-  </div>
-</div>
-
-<!-- BACKUP TAB -->
-<div id="tab-content-backup" class="tab-content">
-  <div class="section">
-    <h2>Configuration Backup</h2>
-    <p>Export or import your scoreboard configuration including all settings, teams, and current match state.</p>
-    <button onclick="exportConfig()">Export Configuration</button>
-    <p style="font-size: 12px; color: #aaa; margin-top: 5px;">Download current config as JSON file</p>
-
-    <div style="margin-top: 20px;">
-      <label>Import Configuration</label>
-      <input type="file" id="importConfigFile" accept=".json" style="background: #555; color: white; padding: 10px; border-radius: 4px; width: 100%; box-sizing: border-box;">
-      <button onclick="importConfig()" style="margin-top: 10px;">Import Config</button>
+  <!-- PIN Modal -->
+  <div class="modal-overlay" id="pinModal">
+    <div class="modal">
+      <h2>Enter PIN</h2>
+      <p>Enter the 4-digit PIN to control the scoreboard</p>
+      <input type="password" id="pinInput" maxlength="4" placeholder="----">
+      <p class="error" id="pinError"></p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="verifyPin()">Submit</button>
+      </div>
     </div>
   </div>
 
-  <div class="section">
-    <h2>Reset to Defaults</h2>
-    <p style="color: #ff6b6b;">Warning: This will reset all settings including team names, colors, scores, and PIN.</p>
-    <button onclick="showResetConfigModal()" style="background: #d9534f;">Reset All Settings</button>
-  </div>
-
-  <div class="section">
-    <h2>Export Match</h2>
-    <p>Download match data for record keeping or analysis.</p>
-    <button onclick="window.location.href='/export_match'">Go to Export Match</button>
-    <p style="font-size: 12px; color: #aaa; margin-top: 5px;">Export as JSON or CSV</p>
+  <!-- Reset Game Modal -->
+  <div class="modal-overlay" id="resetModal">
+    <div class="modal">
+      <h2>Reset Game?</h2>
+      <p>This will clear all scores, sets, and match history. This cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="btn btn-danger" onclick="confirmReset()">Yes, Reset</button>
+        <button class="btn btn-secondary" onclick="hideResetModal()">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <!-- Reset Config Modal -->
-  <div id="resetConfigModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 1000;">
-    <div style="background: #333; padding: 30px; border-radius: 10px; text-align: center; max-width: 400px; width: 90%;">
-      <h2 style="margin-top: 0;">Reset All Settings?</h2>
-      <p>This will reset everything to default values.</p>
-      <p style="color: #ff6b6b;">This cannot be undone.</p>
-      <button onclick="confirmResetConfig()" style="background: #d9534f;">Yes, Reset All</button>
-      <button onclick="closeResetConfigModal()" style="background: #666;">Cancel</button>
+  <div class="modal-overlay" id="resetConfigModal">
+    <div class="modal">
+      <h2>Reset All Settings?</h2>
+      <p>This will reset everything to default values including PIN. This cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="btn btn-danger" onclick="confirmResetConfig()">Yes, Reset All</button>
+        <button class="btn btn-secondary" onclick="hideResetConfigModal()">Cancel</button>
+      </div>
     </div>
   </div>
-</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
-<script>
-  // State variables
-  let possession = "none";
-  let homeSets = 0;
-  let awaySets = 0;
-  let serverPin = "";
-  let currentPin = "";
-  let isAuthenticated = false;
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+  <script src="/static/volley-ui.js"></script>
+  <script>
+    // ============================================
+    // STATE
+    // ============================================
+    let possession = "none";
+    let homeSets = 0;
+    let awaySets = 0;
+    let serverPin = "";
+    let currentPin = "";
+    let isAuthenticated = false;
 
-  const PIN_STORAGE_KEY = 'volleyScorePin';
+    const PIN_STORAGE_KEY = 'volleyScorePin';
 
-  const socket = io();
+    let timerState = {
+      timerStarted: false,
+      timerPaused: false,
+      timerStartTimestamp: null,
+      timerPausedTimestamp: null,
+      accumulatedTime: 0
+    };
 
-  socket.on('connect', () => {
-      console.log('Connected to WebSocket');
-  });
+    const socket = io();
 
-  socket.on('score_update', (data) => {
-      console.log('Score update received:', data);
+    // ============================================
+    // TAB NAVIGATION
+    // ============================================
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.dataset.tab;
 
-      // Check if PIN changed on server
-      if (data.pin && data.pin !== serverPin) {
-          serverPin = data.pin;
-          const storedPin = localStorage.getItem(PIN_STORAGE_KEY);
-          if (storedPin !== serverPin) {
-              isAuthenticated = false;
-              document.getElementById("pinModal").style.display = "flex";
-              document.getElementById("pinModalTitle").textContent = "Enter PIN";
-              document.getElementById("pinModalMessage").textContent = "Enter the 4-digit PIN to control the scoreboard";
-          }
-      }
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
-      restoreState(data);
-  });
-
-  window.addEventListener("load", async () => {
-    try {
-        const response = await fetch('/current');
-        const currentState = await response.json();
-        serverPin = currentState.pin || "";
-
-        // Check localStorage for saved PIN
-        const storedPin = localStorage.getItem(PIN_STORAGE_KEY);
-
-        if (serverPin) {
-            if (storedPin === serverPin) {
-                isAuthenticated = true;
-            } else {
-                document.getElementById("pinModal").style.display = "flex";
-                document.getElementById("pinModalTitle").textContent = "Enter PIN";
-                document.getElementById("pinModalMessage").textContent = "Enter the 4-digit PIN to control the scoreboard";
-            }
-        } else {
-            isAuthenticated = true;
-        }
-
-        restoreState(currentState);
-    } catch (e) {
-        console.error("Failed to fetch initial state from server", e);
-    }
-  });
-
-  // Tab switching
-  function switchTab(tabName) {
-    // Hide all tab contents
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-nav button').forEach(el => el.classList.remove('active'));
-
-    // Show selected tab
-    document.getElementById('tab-content-' + tabName).classList.add('active');
-    document.getElementById('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.add('active');
-  }
-
-  // PIN functions
-  function verifyPin() {
-    const input = document.getElementById("pinInput").value;
-
-    if (input === serverPin) {
-        isAuthenticated = true;
-        document.getElementById("pinModal").style.display = "none";
-        document.getElementById("pinError").textContent = "";
-        localStorage.setItem(PIN_STORAGE_KEY, input);
-    } else {
-        document.getElementById("pinError").textContent = "Incorrect PIN";
-        document.getElementById("pinInput").value = "";
-    }
-  }
-
-  document.getElementById("pinInput").addEventListener("keypress", function(e) {
-    if (e.key === "Enter") {
-        verifyPin();
-    }
-  });
-
-  // Timer functions
-  let timerInterval = null;
-  let timerState = {
-    timerStarted: false,
-    timerPaused: false,
-    timerStartTimestamp: null,
-    timerPausedTimestamp: null,
-    accumulatedTime: 0
-  };
-
-  function startTimerDisplay() {
-    if (timerInterval) clearInterval(timerInterval);
-    updateTimerDisplay();
-    timerInterval = setInterval(updateTimerDisplay, 1000);
-  }
-
-  function updateTimerDisplay() {
-    const display = document.getElementById("timerDisplay");
-    if (!timerState.timerStarted) {
-      display.textContent = "00:00";
-      return;
-    }
-
-    let totalSeconds;
-    // Python timestamp is in seconds, JavaScript Date.now() is in milliseconds
-    // Server stores accumulatedTime in seconds
-    if (timerState.timerPaused && timerState.timerPausedTimestamp) {
-      // Timer is paused - calculate accumulated time up to pause point
-      totalSeconds = timerState.accumulatedTime + Math.floor(timerState.timerPausedTimestamp - timerState.timerStartTimestamp);
-    } else if (timerState.timerStartTimestamp) {
-      // Timer is running - add elapsed time since start
-      totalSeconds = timerState.accumulatedTime + Math.floor(Date.now() / 1000 - timerState.timerStartTimestamp);
-    } else {
-      totalSeconds = timerState.accumulatedTime;
-    }
-
-    if (totalSeconds < 0) totalSeconds = 0;
-
-    const mins = Math.floor(totalSeconds / 60);
-    const secs = totalSeconds % 60;
-    display.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  }
-
-  function timerControl(action) {
-    if (!isAuthenticated) {
-      alert("Please enter the PIN first");
-      return;
-    }
-    const formData = new FormData();
-    formData.append("action", action);
-    if (serverPin) formData.append("pin", serverPin);
-
-    fetch("/timer_control", { method: "POST", body: formData })
-      .then(r => r.json())
-      .then(data => {
-        if (data.status === "error") {
-          alert(data.message);
-        }
+        btn.classList.add('active');
+        document.getElementById('tab-' + tab).classList.add('active');
       });
-  }
-
-  // Timeout functions
-  function timeoutChange(team, delta) {
-    if (!isAuthenticated) {
-      alert("Please enter the PIN first");
-      return;
-    }
-    const formData = new FormData();
-    formData.append("team", team);
-    formData.append("change", delta);
-    if (serverPin) formData.append("pin", serverPin);
-
-    fetch("/timeout_control", { method: "POST", body: formData })
-      .then(r => r.json())
-      .then(data => {
-        if (data.status === "error") {
-          alert(data.message);
-        }
-      });
-  }
-
-  function updateTimeoutUI(data) {
-    document.getElementById("homeTeamNameDisplay").textContent = data.homeName || "Home";
-    document.getElementById("awayTeamNameDisplay").textContent = data.awayName || "Away";
-
-    const homeCount = data.homeTimeouts !== undefined ? data.homeTimeouts : 2;
-    const awayCount = data.awayTimeouts !== undefined ? data.awayTimeouts : 2;
-
-    // filled (●) = used, empty (○) = remaining
-    const homeUsed = 2 - homeCount;
-    const awayUsed = 2 - awayCount;
-
-    document.getElementById("homeTimeoutDotsDisplay").textContent = "●".repeat(homeUsed) + "○".repeat(homeCount);
-    document.getElementById("awayTimeoutDotsDisplay").textContent = "●".repeat(awayUsed) + "○".repeat(awayCount);
-    document.getElementById("homeTimeoutCountDisplay").textContent = `(${homeCount}/2)`;
-    document.getElementById("awayTimeoutCountDisplay").textContent = `(${awayCount}/2)`;
-  }
-
-  function updateScoreHistoryUI(data) {
-    const list = document.getElementById("scoreHistoryList");
-    const history = data.scoreHistory || [];
-
-    if (history.length === 0) {
-      list.innerHTML = "<li>No points scored yet</li>";
-      return;
-    }
-
-    let lastHomeScore = 0;
-    let lastAwayScore = 0;
-    let items = [];
-
-    history.forEach((entry, index) => {
-      const homeScored = entry.homeScore > lastHomeScore;
-      const teamName = homeScored ? (data.homeName || "Home") : (data.awayName || "Away");
-      const scoreText = teamName + " " + entry.homeScore + " - " + entry.awayScore;
-
-      // Create li element properly
-      const li = document.createElement("li");
-      li.textContent = scoreText;
-      items.push(li);
-
-      lastHomeScore = entry.homeScore;
-      lastAwayScore = entry.awayScore;
     });
 
-    // Clear and add items in reverse order (newest first)
-    list.innerHTML = "";
-    for (let i = items.length - 1; i >= 0; i--) {
-      list.appendChild(items[i]);
-    }
-  }
+    // ============================================
+    // CONNECTION STATUS
+    // ============================================
+    socket.on('connect', () => {
+      document.getElementById('connectionDot').classList.add('connected');
+      document.getElementById('connectionText').textContent = 'Connected';
+    });
 
-  function showPinSetup() {
-    document.getElementById("pinSection").style.display = "none";
-    document.getElementById("pinSetupSection").style.display = "block";
+    socket.on('disconnect', () => {
+      document.getElementById('connectionDot').classList.remove('connected');
+      document.getElementById('connectionText').textContent = 'Disconnected';
+    });
 
-    const currentPinSection = document.getElementById("currentPinSection");
-    if (currentPin) {
-        currentPinSection.style.display = "block";
-    } else {
-        currentPinSection.style.display = "none";
-    }
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    window.addEventListener('load', async () => {
+      try {
+        const response = await fetch('/current');
+        const state = await response.json();
+        serverPin = state.pin || "";
 
-    document.getElementById("currentPin").value = "";
-    document.getElementById("newPin").value = "";
-    document.getElementById("confirmPin").value = "";
-  }
+        if (serverPin) {
+          const storedPin = localStorage.getItem(PIN_STORAGE_KEY);
+          if (storedPin === serverPin) {
+            isAuthenticated = true;
+          } else {
+            showPinModal();
+          }
+        } else {
+          isAuthenticated = true;
+        }
 
-  function cancelPinSetup() {
-    document.getElementById("pinSection").style.display = "block";
-    document.getElementById("pinSetupSection").style.display = "none";
-  }
+        restoreState(state);
+      } catch (e) {
+        console.error("Failed to fetch initial state:", e);
+      }
+    });
 
-  function savePin() {
-    const currentPinInput = document.getElementById("currentPin").value;
-    const newPin = document.getElementById("newPin").value;
-    const confirmPin = document.getElementById("confirmPin").value;
+    socket.on('score_update', (data) => {
+      if (data.pin && data.pin !== serverPin) {
+        serverPin = data.pin;
+        const storedPin = localStorage.getItem(PIN_STORAGE_KEY);
+        if (storedPin !== serverPin) {
+          isAuthenticated = false;
+          showPinModal();
+        }
+      }
+      restoreState(data);
+    });
 
-    if (!currentPin && currentPinInput) {
-        alert("No current PIN set, leave blank if setting PIN for the first time");
-        return;
-    }
+    // ============================================
+    // STATE RESTORATION
+    // ============================================
+    function restoreState(state) {
+      // Score summary
+      document.getElementById('summaryHomeName').textContent = state.homeName || 'Home';
+      document.getElementById('summaryAwayName').textContent = state.awayName || 'Away';
+      document.getElementById('summaryHomeScore').textContent = state.homeScore || 0;
+      document.getElementById('summaryAwayScore').textContent = state.awayScore || 0;
+      document.getElementById('summarySet').textContent = state.currentSet || 1;
 
-    if (currentPin && currentPinInput !== currentPin) {
-        alert("Current PIN is incorrect");
-        return;
-    }
+      // Score controls
+      document.getElementById('homeScore').value = state.homeScore || 0;
+      document.getElementById('awayScore').value = state.awayScore || 0;
+      document.getElementById('homeSets').value = state.homeSets || 0;
+      document.getElementById('awaySets').value = state.awaySets || 0;
+      homeSets = parseInt(state.homeSets, 10) || 0;
+      awaySets = parseInt(state.awaySets, 10) || 0;
 
-    if (!/^\d{4}$/.test(newPin)) {
-        alert("New PIN must be exactly 4 digits");
-        return;
-    }
+      // Team names
+      document.getElementById('homeTeamName').textContent = state.homeName || 'Home';
+      document.getElementById('awayTeamName').textContent = state.awayName || 'Away';
+      document.getElementById('homeName').value = state.homeName || 'Home';
+      document.getElementById('awayName').value = state.awayName || 'Away';
+      document.getElementById('matchTitle').value = state.matchTitle || 'Volleyball Match';
 
-    if (newPin !== confirmPin) {
-        alert("New PINs do not match");
-        return;
-    }
+      // Colors
+      document.getElementById('homeColorPrimary').value = state.homeColorPrimary || '#0000FF';
+      document.getElementById('homeColorSecondary').value = state.homeColorSecondary || '#AAAAFF';
+      document.getElementById('awayColorPrimary').value = state.awayColorPrimary || '#FF0000';
+      document.getElementById('awayColorSecondary').value = state.awayColorSecondary || '#FFAAAA';
 
-    sendToServer(true, newPin, confirmPin);
-  }
+      // Logos
+      if (state.homeLogo) document.getElementById('homeLogo').value = state.homeLogo;
+      if (state.awayLogo) document.getElementById('awayLogo').value = state.awayLogo;
 
-  // Reset confirmation
-  function showResetModal() {
-    if (!isAuthenticated) {
-        alert("Please enter the PIN first");
-        return;
-    }
-    document.getElementById("resetConfirmModal").style.display = "flex";
-  }
+      // PIN status
+      updatePinStatus(state.pin);
 
-  function closeResetModal() {
-    document.getElementById("resetConfirmModal").style.display = "none";
-  }
+      // Possession
+      possession = state.possession || "none";
+      updatePossessionUI();
 
-  function confirmReset() {
-    document.getElementById("awayScore").value = 0;
-    document.getElementById("homeScore").value = 0;
-    document.getElementById("awaySets").value = 0;
-    document.getElementById("homeSets").value = 0;
-    homeSets = 0;
-    awaySets = 0;
-    possession = "none";
-    updatePreviousSetScoresUI([]);
-    sendToServer();
-    closeResetModal();
-    document.getElementById("status").textContent = "Status: Game reset";
-  }
+      // Previous sets
+      updatePreviousSetsUI(state.previousSetScores || []);
 
-  // State restoration
-  function restoreState(state) {
-    // Score controls
-    document.getElementById("awayScore").value = state.awayScore || 0;
-    document.getElementById("homeScore").value = state.homeScore || 0;
-    document.getElementById("homeSets").value = state.homeSets || 0;
-    document.getElementById("awaySets").value = state.awaySets || 0;
-    homeSets = parseInt(state.homeSets, 10) || 0;
-    awaySets = parseInt(state.awaySets, 10) || 0;
-    possession = state.possession || "none";
-
-    // Previous set scores
-    updatePreviousSetScoresUI(state.previousSetScores || []);
-
-    // Team settings
-    document.getElementById("awayName").value = state.awayName || "Away";
-    document.getElementById("homeName").value = state.homeName || "Home";
-    document.getElementById("matchTitle").value = state.matchTitle || "Volleyball Match";
-
-    if (state.homeLogo) {
-        document.getElementById("homeLogo").value = state.homeLogo;
-    }
-    if (state.awayLogo) {
-        document.getElementById("awayLogo").value = state.awayLogo;
-    }
-
-    document.getElementById("awayColorPrimary").value = state.awayColorPrimary || "#FF0000";
-    document.getElementById("awayColorSecondary").value = state.awayColorSecondary || "#FFAAAA";
-    document.getElementById("homeColorPrimary").value = state.homeColorPrimary || "#0000FF";
-    document.getElementById("homeColorSecondary").value = state.homeColorSecondary || "#AAAAFF";
-
-    // PIN status
-    const pinStatus = document.getElementById("pinStatus");
-    const pinSection = document.getElementById("pinSection");
-    if (state.pin) {
-        pinStatus.textContent = "PIN is set";
-        pinSection.querySelector("button").textContent = "Change PIN";
-    } else {
-        pinStatus.textContent = "PIN is not set";
-        pinSection.querySelector("button").textContent = "Set PIN";
-    }
-    currentPin = state.pin || "";
-
-    // Formations
-    for(let i=1; i<=6; i++) {
-        if(state.homePlayers) document.getElementById("homeP"+i).value = state.homePlayers[i-1] || "";
-        if(state.awayPlayers) document.getElementById("awayP"+i).value = state.awayPlayers[i-1] || "";
-    }
-
-    // Timer state
-    timerState = {
+      // Timer
+      timerState = {
         timerStarted: state.timerStarted || false,
         timerPaused: state.timerPaused || false,
         timerStartTimestamp: state.timerStartTimestamp,
         timerPausedTimestamp: state.timerPausedTimestamp,
         accumulatedTime: state.accumulatedTime || 0
-    };
-    if (state.timerStarted) {
-        startTimerDisplay();
+      };
+      updateTimerDisplay();
+      startTimerInterval();
+
+      // Timeouts
+      updateTimeoutUI(state);
+
+      // Score history
+      updateScoreHistoryUI(state);
     }
 
-    // Timeouts and score history
-    updateTimeoutUI(state);
-    updateScoreHistoryUI(state);
-  }
+    // ============================================
+    // PIN FUNCTIONS
+    // ============================================
+    function showPinModal() {
+      document.getElementById('pinModal').classList.add('active');
+    }
 
-  // Previous set scores functions
-  function updatePreviousSetScoresUI(scores) {
-    const container = document.getElementById("previousSetScoresContainer");
-    container.innerHTML = '';
+    function hidePinModal() {
+      document.getElementById('pinModal').classList.remove('active');
+    }
 
-    if (scores.length === 0) {
-        container.innerHTML = '<p>No sets completed yet.</p>';
+    function verifyPin() {
+      const input = document.getElementById('pinInput').value;
+      if (input === serverPin) {
+        isAuthenticated = true;
+        localStorage.setItem(PIN_STORAGE_KEY, input);
+        hidePinModal();
+        document.getElementById('pinError').textContent = '';
+      } else {
+        document.getElementById('pinError').textContent = 'Incorrect PIN';
+        document.getElementById('pinInput').value = '';
+      }
+    }
+
+    document.getElementById('pinInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') verifyPin();
+    });
+
+    function updatePinStatus(pin) {
+      const status = document.getElementById('pinStatus');
+      currentPin = pin || "";
+      if (pin) {
+        status.className = 'pin-indicator active';
+        status.innerHTML = '<span>● PIN Active</span>';
+        status.nextElementSibling.textContent = 'Change PIN';
+      } else {
+        status.className = 'pin-indicator inactive';
+        status.innerHTML = '<span>○ No PIN</span>';
+        status.nextElementSibling.textContent = 'Set PIN';
+      }
+    }
+
+    function showPinSetup() {
+      document.getElementById('pinForm').classList.add('active');
+      const currentSection = document.getElementById('currentPinSection');
+      currentSection.style.display = currentPin ? 'block' : 'none';
+    }
+
+    function cancelPinSetup() {
+      document.getElementById('pinForm').classList.remove('active');
+      document.getElementById('currentPin').value = '';
+      document.getElementById('newPin').value = '';
+      document.getElementById('confirmPin').value = '';
+    }
+
+    function savePin() {
+      const currentPinInput = document.getElementById('currentPin').value;
+      const newPin = document.getElementById('newPin').value;
+      const confirmPin = document.getElementById('confirmPin').value;
+
+      if (currentPin && currentPinInput !== currentPin) {
+        showToast('Current PIN is incorrect', 'error');
         return;
+      }
+
+      if (!/^\d{4}$/.test(newPin)) {
+        showToast('PIN must be exactly 4 digits', 'error');
+        return;
+      }
+
+      if (newPin !== confirmPin) {
+        showToast('PINs do not match', 'error');
+        return;
+      }
+
+      sendToServer(true, newPin, confirmPin);
     }
 
-    scores.forEach((set, index) => {
-        const div = document.createElement('div');
-        div.style.display = 'flex';
-        div.style.gap = '5px';
-        div.style.marginBottom = '5px';
-        div.innerHTML = `
-            <label>Set ${index + 1}:</label>
-            <input type="number" value="${set.home}" style="width: 60px;" data-set-index="${index}" data-team="home" onchange="updatePreviousSetScore(this)">
-            -
-            <input type="number" value="${set.away}" style="width: 60px;" data-set-index="${index}" data-team="away" onchange="updatePreviousSetScore(this)">
-            <button onclick="removePreviousSetScore(${index})" style="width: auto; padding: 5px 10px; margin-bottom: 0; background: #d9534f;">Remove</button>
-        `;
-        container.appendChild(div);
-    });
-  }
-
-  function addPreviousSetScore() {
-    const currentScores = getCurrentPreviousSetScores();
-    currentScores.push({ home: 0, away: 0 });
-    updatePreviousSetScoresUI(currentScores);
-    sendToServer();
-  }
-
-  function updatePreviousSetScore(inputElement) {
-    const index = parseInt(inputElement.dataset.setIndex);
-    const team = inputElement.dataset.team;
-    const value = parseInt(inputElement.value) || 0;
-
-    const currentScores = getCurrentPreviousSetScores();
-    if (currentScores[index]) {
-        currentScores[index][team] = value;
+    // ============================================
+    // SCORE FUNCTIONS
+    // ============================================
+    function changeScore(team, delta) {
+      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      const input = document.getElementById(team + 'Score');
+      input.value = Math.max(0, parseInt(input.value, 10) + delta);
+      if (delta > 0) possession = team;
+      sendToServer();
     }
-    sendToServer();
-  }
 
-  function removePreviousSetScore(index) {
-    const currentScores = getCurrentPreviousSetScores();
-    currentScores.splice(index, 1);
-    updatePreviousSetScoresUI(currentScores);
-    sendToServer();
-  }
+    function changeSet(team, delta) {
+      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      const input = document.getElementById(team + 'Sets');
+      input.value = Math.max(0, parseInt(input.value, 10) + delta);
+      sendToServer();
+    }
 
-  function getCurrentPreviousSetScores() {
-    const container = document.getElementById("previousSetScoresContainer");
-    const inputs = container.querySelectorAll('input[type="number"]');
-    const scores = [];
-    let tempSet = {};
-    inputs.forEach((input, idx) => {
-        if (idx % 2 === 0) {
-            tempSet = { home: parseInt(input.value) || 0 };
-        } else {
-            tempSet.away = parseInt(input.value) || 0;
-            scores.push(tempSet);
-        }
-    });
-    return scores;
-  }
-
-  // Score control functions
-  function changeSet(team, delta) {
-    const setInput = document.getElementById(team + "Sets");
-    let newSetCount = Math.max(0, parseInt(setInput.value, 10) + delta);
-    setInput.value = newSetCount;
-
-    if (team === 'home') homeSets = newSetCount;
-    if (team === 'away') awaySets = newSetCount;
-
-    sendToServer();
-  }
-
-  function changeScore(team, delta) {
-    const input = document.getElementById(team + "Score");
-    input.value = Math.max(0, parseInt(input.value, 10) + delta);
-
-    if (delta > 0) {
+    function setPossession(team) {
       possession = team;
+      updatePossessionUI();
+      sendToServer();
     }
-    sendToServer();
-  }
 
-  function setPossession(team) {
-    possession = team;
-    sendToServer();
-  }
+    function updatePossessionUI() {
+      document.getElementById('posHome').className = 'btn possession-btn home' + (possession === 'home' ? ' active' : '');
+      document.getElementById('posNone').className = 'btn possession-btn none' + (possession === 'none' ? ' active' : '');
+      document.getElementById('posAway').className = 'btn possession-btn away' + (possession === 'away' ? ' active' : '');
+    }
 
-  // Send to server
-  async function sendToServer(isSettingPin = false, newPin = "", confirmPin = "") {
-    if (!isAuthenticated && !isSettingPin) {
-        alert("Please enter the PIN first");
+    // ============================================
+    // PREVIOUS SETS
+    // ============================================
+    function updatePreviousSetsUI(scores) {
+      const container = document.getElementById('previousSetsContainer');
+      if (!scores.length) {
+        container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.875rem;">No sets completed yet.</p>';
         return;
+      }
+      container.innerHTML = scores.map((s, i) => `
+        <div class="set-item">
+          <span class="set-label">Set ${i + 1}</span>
+          <input type="number" value="${s.home}" data-index="${i}" data-team="home" class="form-input" style="width: 60px;" onchange="updateSetScore(this)">
+          <span>-</span>
+          <input type="number" value="${s.away}" data-index="${i}" data-team="away" class="form-input" style="width: 60px;" onchange="updateSetScore(this)">
+        </div>
+      `).join('');
     }
 
-    const formData = new FormData();
-
-    // Score data
-    formData.append("awayScore", document.getElementById("awayScore").value);
-    formData.append("homeScore", document.getElementById("homeScore").value);
-    formData.append("homeSets", document.getElementById("homeSets").value);
-    formData.append("awaySets", document.getElementById("awaySets").value);
-    formData.append("possession", possession);
-    formData.append("previousSetScores", JSON.stringify(getCurrentPreviousSetScores()));
-
-    // Team settings
-    formData.append("awayName", document.getElementById("awayName").value);
-    formData.append("homeName", document.getElementById("homeName").value);
-    formData.append("matchTitle", document.getElementById("matchTitle").value);
-
-    // Colors
-    formData.append("awayColorPrimary", document.getElementById("awayColorPrimary").value);
-    formData.append("awayColorSecondary", document.getElementById("awayColorSecondary").value);
-    formData.append("homeColorPrimary", document.getElementById("homeColorPrimary").value);
-    formData.append("homeColorSecondary", document.getElementById("homeColorSecondary").value);
-
-    // Logos
-    const logoFile = document.getElementById("awayLogoFile").files[0];
-    const homeLogoFile = document.getElementById("homeLogoFile").files[0];
-
-    if (logoFile) {
-        formData.append("awayLogoFile", logoFile);
-    } else {
-        formData.append("awayLogo", document.getElementById("awayLogo").value);
+    function addPreviousSet() {
+      const container = document.getElementById('previousSetsContainer');
+      const items = container.querySelectorAll('.set-item');
+      const newIndex = items.length;
+      const div = document.createElement('div');
+      div.className = 'set-item';
+      div.innerHTML = `
+        <span class="set-label">Set ${newIndex + 1}</span>
+        <input type="number" value="0" data-index="${newIndex}" data-team="home" class="form-input" style="width: 60px;" onchange="updateSetScore(this)">
+        <span>-</span>
+        <input type="number" value="0" data-index="${newIndex}" data-team="away" class="form-input" style="width: 60px;" onchange="updateSetScore(this)">
+      `;
+      container.appendChild(div);
+      sendToServer();
     }
 
-    if (homeLogoFile) {
-        formData.append("homeLogoFile", homeLogoFile);
-    } else {
-        formData.append("homeLogo", document.getElementById("homeLogo").value);
+    function updateSetScore(input) {
+      const index = parseInt(input.dataset.index);
+      const team = input.dataset.team;
+      const container = document.getElementById('previousSetsContainer');
+      const inputs = container.querySelectorAll('input');
+      const scores = [];
+      let set = {};
+      inputs.forEach((inp, i) => {
+        if (i % 2 === 0) set = { home: parseInt(inp.value) || 0 };
+        else { set.away = parseInt(inp.value) || 0; scores.push(set); }
+      });
+      sendToServer();
     }
 
-    // Formations
-    for(let i=1; i<=6; i++) {
-        formData.append("homeP"+i, document.getElementById("homeP"+i).value);
-        formData.append("awayP"+i, document.getElementById("awayP"+i).value);
-    }
-    formData.append("homePlayers", JSON.stringify([...Array(6)].map((_,i) => document.getElementById("homeP"+(i+1)).value)));
-    formData.append("awayPlayers", JSON.stringify([...Array(6)].map((_,i) => document.getElementById("awayP"+(i+1)).value)));
+    // ============================================
+    // TIMER FUNCTIONS
+    // ============================================
+    let timerInterval = null;
 
-    // PIN
-    if (isSettingPin) {
-        formData.append("isSettingPin", "true");
-        formData.append("pin", currentPin || "");
-        formData.append("newPin", newPin);
-        formData.append("confirmPin", confirmPin);
-    } else if (serverPin) {
-        formData.append("pin", serverPin);
+    function updateTimerDisplay() {
+      const display = document.getElementById('timerDisplay');
+      if (!timerState.timerStarted) {
+        display.textContent = '00:00';
+        document.getElementById('summaryTimer').textContent = '00:00';
+        return;
+      }
+
+      let totalSeconds;
+      if (timerState.timerPaused && timerState.timerPausedTimestamp) {
+        totalSeconds = timerState.accumulatedTime + Math.floor(timerState.timerPausedTimestamp - timerState.timerStartTimestamp);
+      } else if (timerState.timerStartTimestamp) {
+        totalSeconds = timerState.accumulatedTime + Math.floor(Date.now() / 1000 - timerState.timerStartTimestamp);
+      } else {
+        totalSeconds = timerState.accumulatedTime;
+      }
+
+      const formatted = formatTime(totalSeconds);
+      display.textContent = formatted;
+      document.getElementById('summaryTimer').textContent = formatted;
     }
 
-    try {
-        let res = await fetch("/update", {
-            method: "POST",
-            body: formData
+    function startTimerInterval() {
+      if (timerInterval) clearInterval(timerInterval);
+      updateTimerDisplay();
+      if (timerState.timerStarted) {
+        timerInterval = setInterval(updateTimerDisplay, 1000);
+      }
+    }
+
+    function timerControl(action) {
+      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      const formData = new FormData();
+      formData.append('action', action);
+      if (serverPin) formData.append('pin', serverPin);
+
+      fetch('/timer_control', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+          if (data.status === 'error') showToast(data.message, 'error');
         });
-        let result = await res.json();
+    }
 
-        if (result.status === "error") {
-            document.getElementById("status").textContent = "Status: " + result.message;
-            document.getElementById("teamStatus").textContent = "Status: " + result.message;
-            document.getElementById("formationStatus").textContent = "Status: " + result.message;
-            alert(result.message);
-            return;
+    // ============================================
+    // TIMEOUT FUNCTIONS
+    // ============================================
+    function timeoutChange(team, delta) {
+      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      const formData = new FormData();
+      formData.append('team', team);
+      formData.append('change', delta);
+      if (serverPin) formData.append('pin', serverPin);
+
+      fetch('/timeout_control', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+          if (data.status === 'error') showToast(data.message, 'error');
+        });
+    }
+
+    function updateTimeoutUI(data) {
+      document.getElementById('homeTimeoutTeam').textContent = data.homeName || 'Home';
+      document.getElementById('awayTimeoutTeam').textContent = data.awayName || 'Away';
+
+      const homeCount = data.homeTimeouts !== undefined ? data.homeTimeouts : 2;
+      const awayCount = data.awayTimeouts !== undefined ? data.awayTimeouts : 2;
+
+      document.getElementById('homeTimeoutDots').textContent = getTimeoutDotsHTML(homeCount);
+      document.getElementById('awayTimeoutDots').textContent = getTimeoutDotsHTML(awayCount);
+      document.getElementById('homeTimeoutCount').textContent = `(${homeCount}/2)`;
+      document.getElementById('awayTimeoutCount').textContent = `(${awayCount}/2)`;
+    }
+
+    // ============================================
+    // SCORE HISTORY
+    // ============================================
+    function updateScoreHistoryUI(data) {
+      const list = document.getElementById('scoreHistoryList');
+      const history = data.scoreHistory || [];
+
+      if (!history.length) {
+        list.innerHTML = '<li style="color: var(--text-muted);">No points scored yet</li>';
+        return;
+      }
+
+      let lastHome = 0, lastAway = 0;
+      let items = [];
+      history.forEach(entry => {
+        const homeScored = entry.homeScore > lastHome;
+        const teamName = homeScored ? (data.homeName || 'Home') : (data.awayName || 'Away');
+        const li = document.createElement('li');
+        li.textContent = `${teamName} ${entry.homeScore} - ${entry.awayScore}`;
+        items.push(li);
+        lastHome = entry.homeScore;
+        lastAway = entry.awayScore;
+      });
+
+      list.innerHTML = '';
+      items.reverse().forEach(li => list.appendChild(li));
+    }
+
+    // ============================================
+    // RESET MODALS
+    // ============================================
+    function showResetModal() {
+      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      document.getElementById('resetModal').classList.add('active');
+    }
+
+    function hideResetModal() {
+      document.getElementById('resetModal').classList.remove('active');
+    }
+
+    function confirmReset() {
+      document.getElementById('homeScore').value = 0;
+      document.getElementById('awayScore').value = 0;
+      document.getElementById('homeSets').value = 0;
+      document.getElementById('awaySets').value = 0;
+      homeSets = 0;
+      awaySets = 0;
+      possession = 'none';
+      updatePreviousSetsUI([]);
+      updatePossessionUI();
+      // Send reset with currentSet = 1
+      const formData = new FormData();
+      formData.append('homeScore', 0);
+      formData.append('awayScore', 0);
+      formData.append('homeSets', 0);
+      formData.append('awaySets', 0);
+      formData.append('possession', 'none');
+      formData.append('previousSetScores', JSON.stringify([]));
+      formData.append('currentSet', 1);
+      formData.append('homeName', document.getElementById('homeName').value);
+      formData.append('awayName', document.getElementById('awayName').value);
+      formData.append('matchTitle', document.getElementById('matchTitle').value);
+      formData.append('homeColorPrimary', document.getElementById('homeColorPrimary').value);
+      formData.append('awayColorSecondary', document.getElementById('awayColorSecondary').value);
+      formData.append('awayColorPrimary', document.getElementById('awayColorPrimary').value);
+      formData.append('homeColorSecondary', document.getElementById('homeColorSecondary').value);
+      formData.append('awayLogo', document.getElementById('awayLogo').value);
+      formData.append('homeLogo', document.getElementById('homeLogo').value);
+      formData.append('homePlayers', JSON.stringify(['', '', '', '', '', '']));
+      formData.append('awayPlayers', JSON.stringify(['', '', '', '', '', '']));
+      formData.append('homeP1', '');
+      formData.append('homeP2', '');
+      formData.append('homeP3', '');
+      formData.append('homeP4', '');
+      formData.append('homeP5', '');
+      formData.append('homeP6', '');
+      formData.append('awayP1', '');
+      formData.append('awayP2', '');
+      formData.append('awayP3', '');
+      formData.append('awayP4', '');
+      formData.append('awayP5', '');
+      formData.append('awayP6', '');
+      if (serverPin) formData.append('pin', serverPin);
+
+      fetch('/update', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(() => {
+          hideResetModal();
+          showToast('Game reset', 'success');
+        });
+    }
+
+    function showResetConfigModal() {
+      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      document.getElementById('resetConfigModal').classList.add('active');
+    }
+
+    function hideResetConfigModal() {
+      document.getElementById('resetConfigModal').classList.remove('active');
+    }
+
+    function confirmResetConfig() {
+      fetch('/reset_config', { method: 'POST' })
+        .then(r => r.json())
+        .then(data => {
+          if (data.status === 'ok') {
+            localStorage.removeItem(PIN_STORAGE_KEY);
+            location.reload();
+          } else {
+            showToast(data.message, 'error');
+          }
+        });
+    }
+
+    // ============================================
+    // BACKUP FUNCTIONS
+    // ============================================
+    function exportConfig() {
+      window.location.href = '/export_config';
+    }
+
+    async function importConfig() {
+      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      const file = document.getElementById('importConfigFile').files[0];
+      if (!file) { showToast('Select a file', 'warning'); return; }
+
+      const formData = new FormData();
+      formData.append('configFile', file);
+
+      try {
+        const res = await fetch('/import_config', { method: 'POST', body: formData });
+        const result = await res.json();
+        if (result.status === 'ok') {
+          showToast('Config imported', 'success');
+          document.getElementById('importConfigFile').value = '';
+          location.reload();
+        } else {
+          showToast(result.message, 'error');
+        }
+      } catch (e) {
+        showToast('Import failed', 'error');
+      }
+    }
+
+    // ============================================
+    // SEND TO SERVER
+    // ============================================
+    async function sendToServer(isSettingPin = false, newPin = '', confirmPin = '') {
+      if (!isAuthenticated && !isSettingPin) {
+        showToast('Enter PIN first', 'warning');
+        return;
+      }
+
+      const formData = new FormData();
+
+      // Score
+      formData.append('homeScore', document.getElementById('homeScore').value);
+      formData.append('awayScore', document.getElementById('awayScore').value);
+      formData.append('homeSets', document.getElementById('homeSets').value);
+      formData.append('awaySets', document.getElementById('awaySets').value);
+      formData.append('possession', possession);
+
+      // Previous sets
+      const container = document.getElementById('previousSetsContainer');
+      const inputs = container.querySelectorAll('input');
+      const sets = [];
+      let set = {};
+      inputs.forEach((inp, i) => {
+        if (i % 2 === 0) set = { home: parseInt(inp.value) || 0 };
+        else { set.away = parseInt(inp.value) || 0; sets.push(set); }
+      });
+      formData.append('previousSetScores', JSON.stringify(sets));
+
+      // Teams
+      formData.append('homeName', document.getElementById('homeName').value);
+      formData.append('awayName', document.getElementById('awayName').value);
+      formData.append('matchTitle', document.getElementById('matchTitle').value);
+      formData.append('homeColorPrimary', document.getElementById('homeColorPrimary').value);
+      formData.append('homeColorSecondary', document.getElementById('homeColorSecondary').value);
+      formData.append('awayColorPrimary', document.getElementById('awayColorPrimary').value);
+      formData.append('awayColorSecondary', document.getElementById('awayColorSecondary').value);
+
+      // Logos
+      const awayLogoFile = document.getElementById('awayLogoFile').files[0];
+      const homeLogoFile = document.getElementById('homeLogoFile').files[0];
+      if (awayLogoFile) formData.append('awayLogoFile', awayLogoFile);
+      else formData.append('awayLogo', document.getElementById('awayLogo').value);
+      if (homeLogoFile) formData.append('homeLogoFile', homeLogoFile);
+      else formData.append('homeLogo', document.getElementById('homeLogo').value);
+
+      // Players
+      for (let i = 1; i <= 6; i++) {
+        formData.append('homeP' + i, '');
+        formData.append('awayP' + i, '');
+      }
+      formData.append('homePlayers', JSON.stringify(['', '', '', '', '', '']));
+      formData.append('awayPlayers', JSON.stringify(['', '', '', '', '', '']));
+
+      // PIN
+      if (isSettingPin) {
+        formData.append('isSettingPin', 'true');
+        formData.append('pin', currentPin || '');
+        formData.append('newPin', newPin);
+        formData.append('confirmPin', confirmPin);
+      } else if (serverPin) {
+        formData.append('pin', serverPin);
+      }
+
+      try {
+        const res = await fetch('/update', { method: 'POST', body: formData });
+        const result = await res.json();
+
+        if (result.status === 'error') {
+          showToast(result.message, 'error');
+          return;
         }
 
         if (result.newLogoUrl) {
-            document.getElementById("awayLogo").value = result.newLogoUrl;
-            document.getElementById("awayLogoFile").value = "";
+          document.getElementById('awayLogo').value = result.newLogoUrl;
+          document.getElementById('awayLogoFile').value = '';
         }
         if (result.newHomeLogoUrl) {
-            document.getElementById("homeLogo").value = result.newHomeLogoUrl;
-            document.getElementById("homeLogoFile").value = "";
+          document.getElementById('homeLogo').value = result.newHomeLogoUrl;
+          document.getElementById('homeLogoFile').value = '';
         }
 
         if (isSettingPin) {
-            currentPin = newPin;
-            serverPin = newPin;
-            localStorage.setItem(PIN_STORAGE_KEY, newPin);
-            cancelPinSetup();
-            document.getElementById("teamStatus").textContent = "Status: PIN saved successfully";
-        } else {
-            document.getElementById("status").textContent = "Status: " + (result.status || "OK");
-            document.getElementById("teamStatus").textContent = "Status: " + (result.status || "OK");
-            document.getElementById("formationStatus").textContent = "Status: " + (result.status || "OK");
+          currentPin = newPin;
+          serverPin = newPin;
+          localStorage.setItem(PIN_STORAGE_KEY, newPin);
+          cancelPinSetup();
+          updatePinStatus(newPin);
+          showToast('PIN saved', 'success');
         }
-
-    } catch (err) {
-        console.error(err);
-        document.getElementById("status").textContent = "Status: Error";
-        document.getElementById("teamStatus").textContent = "Status: Error";
-        document.getElementById("formationStatus").textContent = "Status: Error";
-    }
-  // Config backup functions
-  function exportConfig() {
-    window.location.href = '/export_config';
-  }
-
-  async function importConfig() {
-    if (!isAuthenticated) {
-      alert("Please enter the PIN first");
-      return;
-    }
-
-    const fileInput = document.getElementById('importConfigFile');
-    const file = fileInput.files[0];
-
-    if (!file) {
-      alert("Please select a file to import");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("configFile", file);
-
-    try {
-      let res = await fetch("/import_config", {
-        method: "POST",
-        body: formData
-      });
-      let result = await res.json();
-
-      if (result.status === "ok") {
-        alert("Config imported successfully");
-        fileInput.value = "";
-        location.reload();
-      } else {
-        alert("Import failed: " + result.message);
+      } catch (e) {
+        showToast('Update failed', 'error');
       }
-    } catch (err) {
-      console.error(err);
-      alert("Import failed: " + err);
     }
-  }
 
-  function showResetConfigModal() {
-    if (!isAuthenticated) {
-      alert("Please enter the PIN first");
-      return;
-    }
-    document.getElementById("resetConfigModal").style.display = "flex";
-  }
-
-  function closeResetConfigModal() {
-    document.getElementById("resetConfigModal").style.display = "none";
-  }
-
-  async function confirmResetConfig() {
-    try {
-      let res = await fetch("/reset_config", {
-        method: "POST"
+    // Close modals on overlay click
+    ['pinModal', 'resetModal', 'resetConfigModal'].forEach(id => {
+      document.getElementById(id).addEventListener('click', (e) => {
+        if (e.target.id === id) {
+          document.getElementById(id).classList.remove('active');
+        }
       });
-      let result = await res.json();
-
-      if (result.status === "ok") {
-        alert("Config reset to defaults");
-        closeResetConfigModal();
-        localStorage.removeItem(PIN_STORAGE_KEY);
-        location.reload();
-      } else {
-        alert("Reset failed: " + result.message);
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Reset failed: " + err);
-    }
-  }
-</script>
+    });
+  </script>
 </body>
 </html>

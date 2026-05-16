@@ -76,6 +76,7 @@ body {
 .boxheader-points {
   background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
   color: white;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.6);
   font-family: "Alfa Slab One", cursive;
   font-size: 20px;
   text-align: center;
@@ -101,6 +102,7 @@ body {
 .boxheader-title {
   background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
   color: white;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.6);
   font-family: "Alfa Slab One", cursive;
   font-size: 22px;
   text-align: center;
@@ -175,20 +177,27 @@ body {
 
 /* --- TEAM NAMES --- */
 .boxhometeam, .boxawayteam {
- text-align: left;
- display: flex;
- align-items: center;
- padding: 10px 15px 10px 25px;
- font-family: "Alfa Slab One", cursive;
- font-size: 50px;
- color: white;
- position: relative;
- background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
- white-space: nowrap;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  padding: 10px 15px 10px 25px;
+  font-family: "Alfa Slab One", cursive;
+  font-size: 50px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.6);
+  position: relative;
+  background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
+  white-space: nowrap;
 }
 
-.boxhometeam { grid-row: 2 / 3; grid-column: 2 / 3; }
-.boxawayteam { grid-row: 3 / 4; grid-column: 2 / 3; }
+.boxhometeam {
+  color: #4a90e2;
+  grid-row: 2 / 3; grid-column: 2 / 3;
+}
+
+.boxawayteam {
+  color: #ef4444;
+  grid-row: 3 / 4; grid-column: 2 / 3;
+}
 
 /* General appearance for boxes */
 .box {
@@ -207,6 +216,7 @@ body {
 .boxhomepoints, .boxawaypoints {
   background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
   color: white;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.6);
   font-size: 80px;
   font-family: "Alfa Slab One", cursive;
   position: relative; /* For animation */

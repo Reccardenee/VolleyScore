@@ -42,7 +42,7 @@
     .timeout-label {
       font-family: "Alfa Slab One", cursive;
       font-size: 22px;
-      color: white;
+      color: #f0a500;
       margin-bottom: 20px;
       letter-spacing: 1px;
     }
@@ -64,16 +64,15 @@
     .team-name {
       font-family: "Alfa Slab One", cursive;
       font-size: 28px;
-      color: white;
       margin-bottom: 15px;
     }
 
-    .team-timeouts:first-child .team-name {
-      color: var(--home-primary);
+    .team-name.home {
+      color: #4a90e2;
     }
 
-    .team-timeouts:last-child .team-name {
-      color: var(--away-primary);
+    .team-name.away {
+      color: #ef4444;
     }
 
     .timeout-dots {
@@ -116,7 +115,7 @@
     <div class="timeout-label">TIMEOUTS</div>
     <div class="teams-row">
       <div class="team-timeouts">
-        <div class="team-name" id="homeTeamName">Home</div>
+        <div class="team-name home" id="homeTeamName">Home</div>
         <div class="timeout-dots" id="homeTimeoutDots">
           <div class="timeout-dot available" id="homeDot1"></div>
           <div class="timeout-dot available" id="homeDot2"></div>
@@ -125,7 +124,7 @@
       </div>
       <div class="vs">-</div>
       <div class="team-timeouts">
-        <div class="team-name" id="awayTeamName">Away</div>
+        <div class="team-name away" id="awayTeamName">Away</div>
         <div class="timeout-dots" id="awayTimeoutDots">
           <div class="timeout-dot available" id="awayDot1"></div>
           <div class="timeout-dot available" id="awayDot2"></div>
@@ -154,11 +153,6 @@
       // Update away timeouts
       const awayTimeouts = data.awayTimeouts !== undefined ? data.awayTimeouts : 2;
       updateTimeoutDots("away", awayTimeouts);
-
-      // Update root colors
-      const root = document.documentElement;
-      root.style.setProperty('--home-primary-color', data.homeColorPrimary || '#0000FF');
-      root.style.setProperty('--away-primary-color', data.awayColorPrimary || '#FF0000');
     }
 
     function updateTimeoutDots(team, count) {

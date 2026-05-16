@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Export Match - VolleyScore</title>
+  <link rel="icon" type="image/x-icon" href="/static/icon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #1a1a2e;
+      --bg-secondary: #16213e;
+      --bg-surface: #1f1f38;
+      --bg-card: #252540;
+      --border-color: #3a3a5c;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0b0;
+      --accent-blue: #4a90e2;
+      --accent-blue-hover: #5da0f2;
+      --accent-gold: #f0a500;
+      --success: #22c55e;
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.3);
+      --radius-lg: 16px;
+      --radius-md: 10px;
+      --radius-sm: 6px;
+      --transition: 0.2s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .logo {
+      font-family: "Alfa Slab One", cursive;
+      font-size: 1.5rem;
+      color: var(--accent-gold);
+    }
+
+    h1 {
+      font-family: "Alfa Slab One", cursive;
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 32px;
+      color: var(--text-primary);
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title::before {
+      content: '';
+      width: 3px;
+      height: 14px;
+      background: var(--accent-blue);
+      border-radius: 2px;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 14px 20px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      min-height: 48px;
+      margin-bottom: 12px;
+    }
+
+    .btn:focus {
+      outline: 2px solid var(--accent-blue);
+      outline-offset: 2px;
+    }
+
+    .btn-primary {
+      background: var(--accent-blue);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-blue-hover);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border-color);
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      text-decoration: none;
+      margin-bottom: 20px;
+      transition: var(--transition);
+    }
+
+    .btn-back:hover {
+      background: var(--border-color);
+    }
+
+    .info {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin-top: -8px;
+      margin-bottom: 16px;
+    }
+
+    .format-info {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .format-info h3 {
+      font-size: 0.875rem;
+      color: var(--accent-blue);
+      margin-bottom: 8px;
+    }
+
+    .format-info p {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <span class="logo">VolleyScore</span>
+    </div>
+
+    <a href="/control_panel" class="btn-back">← Back to Control Panel</a>
+
+    <h1>Export Match</h1>
+
+    <div class="card">
+      <div class="card-title">Export Match Data</div>
+      <p class="info">Download your match data for record keeping or analysis.</p>
+
+      <div class="format-info">
+        <h3>JSON Format</h3>
+        <p>Full match data including sets, scores, timeouts, and duration. Best for backup, restoration, or integration with other tools.</p>
+      </div>
+      <button class="btn btn-primary" onclick="exportJSON()">Download as JSON</button>
+
+      <div class="format-info">
+        <h3>CSV Format</h3>
+        <p>Point-by-point log for spreadsheet analysis. Contains: Point number, Home score, Away score, Scoring team.</p>
+      </div>
+      <button class="btn btn-secondary" onclick="exportCSV()">Download as CSV</button>
+    </div>
+  </div>
+
+  <script>
+    function exportJSON() {
+      window.location.href = '/export_match_json';
+    }
+
+    function exportCSV() {
+      window.location.href = '/export_match_csv';
+    }
+  </script>
+</body>
+</html>

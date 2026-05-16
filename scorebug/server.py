@@ -314,6 +314,21 @@ def update():
 
         current_score["pin"] = new_pin
 
+    # ===== Game reset detection =====
+    # Check BEFORE updating currentSet to detect if this is a reset
+    form_current_set_str = form_data.get("currentSet", "")
+    form_current_set = int(form_current_set_str) if form_current_set_str else None
+    is_game_reset = (
+        form_current_set == 1 and
+        old_current_score.get("currentSet", 1) > 1
+    )
+
+    # Determine new currentSet value
+    if form_current_set is not None:
+        new_current_set = form_current_set
+    else:
+        new_current_set = current_score["currentSet"]
+
     current_score.update({
         "awayName": get_val("awayName", current_score["awayName"]),
         "homeName": get_val("homeName", current_score["homeName"]),
@@ -321,6 +336,7 @@ def update():
         "homeScore": int(get_val("homeScore", current_score["homeScore"])),
         "awaySets": int(get_val("awaySets", current_score["awaySets"])),
         "homeSets": int(get_val("homeSets", current_score["homeSets"])),
+        "currentSet": new_current_set,
         "possession": get_val("possession", current_score["possession"]),
         "awayLogo": new_logo_url,
         "homeLogo": new_home_logo_url,
@@ -337,7 +353,18 @@ def update():
     # Check if set is complete (25 points, or 15 for tie-break set 5)
     set_complete = False
     winning_score = 15 if current_score["currentSet"] == 5 else 25
-    
+
+    # Handle game reset: both scores 0 and currentSet explicitly set to 1
+    if current_score["awayScore"] == 0 and current_score["homeScore"] == 0:
+        explicit_set_str = get_val("currentSet", "")
+        explicit_set = int(explicit_set_str) if explicit_set_str else None
+        if explicit_set == 1 and old_current_score.get("currentSet", 1) > 1:
+            # Game reset detected - keep currentSet at 1
+            pass
+        elif explicit_set != 1:
+            # Don't auto-set to 1 if not explicitly sent (preserve value)
+            pass
+
     # Only check for set completion if scores are > 0 (prevents double-processing after reset)
     if current_score["homeScore"] > 0 and current_score["awayScore"] > 0:
         if current_score["homeScore"] >= winning_score or current_score["awayScore"] >= winning_score:
@@ -365,8 +392,8 @@ def update():
             if current_score["awaySets"] == old_away_sets:
                 current_score["awaySets"] += 1
         
-        # Move to next set (max 5 sets)
-        if current_score["currentSet"] < 5:
+        # Move to next set (max 5 sets) - but not if this is a game reset
+        if current_score["currentSet"] < 5 and not is_game_reset:
             current_score["currentSet"] += 1
         
         # Reset scores for new set
@@ -445,6 +472,7 @@ def timer_control():
         current_score["timerPausedTimestamp"] = None
         current_score["accumulatedTime"] = 0
         current_score["scoreHistory"] = []
+        current_score["currentSet"] = 1
 
     save_config(current_score)
     socketio.emit('score_update', current_score)
