@@ -983,6 +983,7 @@
         <div class="card-title">Match Timer</div>
         <div class="timer-display" id="timerDisplay">00:00</div>
         <div class="timer-controls">
+          <button class="btn btn-primary" onclick="timerControl('start')">Start</button>
           <button class="btn btn-secondary" onclick="timerControl('pause')">Pause</button>
           <button class="btn btn-primary" onclick="timerControl('resume')">Resume</button>
           <button class="btn btn-danger" onclick="timerControl('reset')">Reset</button>
@@ -1196,6 +1197,26 @@
           showPinModal();
         }
       }
+
+      // Explicit timer state sync
+      const oldTimerStarted = timerState.timerStarted;
+      timerState = {
+        timerStarted: data.timerStarted || false,
+        timerPaused: data.timerPaused || false,
+        timerStartTimestamp: data.timerStartTimestamp,
+        timerPausedTimestamp: data.timerPausedTimestamp,
+        accumulatedTime: data.accumulatedTime || 0
+      };
+
+      // Only start interval when timer starts, stop when reset
+      if (!oldTimerStarted && timerState.timerStarted) {
+        startTimerInterval();
+      } else if (oldTimerStarted && !timerState.timerStarted) {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = null;
+        updateTimerDisplay();
+      }
+
       restoreState(data);
     });
 

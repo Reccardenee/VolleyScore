@@ -174,16 +174,9 @@ def index():
 @app.route("/control_panel")
 def control_panel():
     """
-    Route for control panel (unified).
+    Route for control panel.
     """
-    return app.send_static_file("control_panel_unified.html")
-
-@app.route("/control_panel_unified")
-def control_panel_unified():
-    """
-    Route for unified control panel.
-    """
-    return app.send_static_file("control_panel_unified.html")
+    return app.send_static_file("control_panel.html")
 
 @app.route("/match_timer")
 def match_timer():
@@ -205,6 +198,13 @@ def score_history():
     Route for score history overlay.
     """
     return app.send_static_file("score_history.html")
+
+@app.route("/scorebug_sets")
+def scorebug_sets():
+    """
+    Route for scorebug sets overlay (shows all set scores).
+    """
+    return app.send_static_file("scorebug_sets.html")
 
 @app.route("/qrcode_image")
 def qrcode_image():
@@ -451,12 +451,19 @@ def current():
 @app.route("/timer_control", methods=["POST"])
 def timer_control():
     """
-    Endpoint to control the match timer (pause, resume, reset).
+    Endpoint to control the match timer (start, pause, resume, reset).
     """
     global current_score
     action = request.form.get("action", "")
 
-    if action == "pause":
+    if action == "start":
+        if not current_score["timerStarted"]:
+            current_score["timerStarted"] = True
+            current_score["timerStartTimestamp"] = datetime.now().timestamp()
+            current_score["accumulatedTime"] = 0
+            current_score["timerPaused"] = False
+            current_score["timerPausedTimestamp"] = None
+    elif action == "pause":
         current_score["timerPaused"] = True
         current_score["timerPausedTimestamp"] = datetime.now().timestamp()
     elif action == "resume":

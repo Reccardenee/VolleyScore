@@ -99,17 +99,6 @@ body {
   position: relative;
 }
 
-.pin-display {
-  position: absolute;
-  right: 10px;
-  font-size: 14px;
-  font-family: Arial, sans-serif;
-  background: rgba(255,255,255,0.2);
-  padding: 2px 8px;
-  border-radius: 4px;
-  letter-spacing: 2px;
-}
-
 /* --- LOGO COLUMN (SPLIT) --- */
 .home-logo-container, .away-logo-container {
     grid-column: 1 / 2;
@@ -279,7 +268,6 @@ body {
       <!-- Header Row -->
    <div class="box boxheader-title" style="grid-column: 1 / 3;" id="matchTitle">
      Volleyball Match
-     <span class="pin-display" id="pinDisplay"></span>
    </div>
    <div class="box boxheader-service"></div>
 
@@ -494,21 +482,15 @@ function updateUI(data) {
     root.style.setProperty('--away-primary-color', data.awayColorPrimary);
     root.style.setProperty('--away-secondary-color', data.awayColorSecondary);
 
-    // Update PIN display
-    const pinDisplay = document.getElementById("pinDisplay");
-    if (data.pin) {
-        pinDisplay.textContent = "PIN: " + data.pin;
-    } else {
-        pinDisplay.textContent = "";
-    }
-
     previousState = data;
 }
 
 // Initial load of data (if any)
 socket.on('connect', () => {
     console.log('Connected to WebSocket');
-    // The server will emit 'score_update' upon connection, so no explicit request needed here.
+    fetch('/current').then(r => r.json()).then(data => {
+        updateUI(data);
+    });
 });
 
 </script>
