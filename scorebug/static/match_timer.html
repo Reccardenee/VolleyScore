@@ -34,6 +34,13 @@
       padding: 20px 40px;
       text-align: center;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .timer-container.hidden {
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
     }
 
     .timer-display {
@@ -118,6 +125,8 @@
     socket.on('score_update', function(data) {
       const oldState = {...timerState};
       syncTimerState(data);
+      applyTheme(data);
+      applyVisibility(data);
 
       if (!oldState.timerStarted && data.timerStarted) {
         startDisplayTimer();
@@ -167,10 +176,26 @@
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
+    function applyTheme(data) {
+      const root = document.documentElement;
+      root.style.setProperty('--primary-blue', data.themeBgPrimary || '#142850');
+      root.style.setProperty('--secondary-blue', data.themeBgSecondary || '#0a1f3c');
+      root.style.setProperty('--accent-gold', data.themeAccent || '#F0A500');
+      root.style.setProperty('--secondary-gold', data.themeAccentSecondary || '#B87B00');
+    }
+
+    function applyVisibility(data) {
+      const vis = data.overlayVisibility || {};
+      const el = document.querySelector('.timer-container');
+      if (el) el.classList.toggle('hidden', !vis.timer);
+    }
+
     socket.on('connect', () => {
       console.log('Connected to WebSocket');
       fetch('/current').then(r => r.json()).then(data => {
         syncTimerState(data);
+        applyTheme(data);
+        applyVisibility(data);
         if (data.timerStarted) {
           startDisplayTimer();
         }

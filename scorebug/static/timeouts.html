@@ -37,12 +37,19 @@
       text-align: center;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
       min-width: 450px;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .timeout-container.hidden {
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
     }
 
     .timeout-label {
       font-family: "Alfa Slab One", cursive;
       font-size: 22px;
-      color: #f0a500;
+      color: var(--accent-gold);
       margin-bottom: 20px;
       letter-spacing: 1px;
     }
@@ -137,11 +144,28 @@
   <script>
     const socket = io();
 
+    function applyTheme(data) {
+      const root = document.documentElement;
+      root.style.setProperty('--primary-blue', data.themeBgPrimary || '#142850');
+      root.style.setProperty('--secondary-blue', data.themeBgSecondary || '#0a1f3c');
+      root.style.setProperty('--accent-gold', data.themeAccent || '#F0A500');
+      root.style.setProperty('--secondary-gold', data.themeAccentSecondary || '#B87B00');
+      root.style.setProperty('--subtle-border-color', data.themeBorder || '#2a406b');
+    }
+
+    function applyVisibility(data) {
+      const vis = data.overlayVisibility || {};
+      const el = document.querySelector('.timeout-container');
+      if (el) el.classList.toggle('hidden', !vis.timeouts);
+    }
+
     socket.on('score_update', function(data) {
       updateUI(data);
     });
 
     function updateUI(data) {
+      applyTheme(data);
+      applyVisibility(data);
       // Update team names
       document.getElementById("homeTeamName").textContent = data.homeName || "Home";
       document.getElementById("awayTeamName").textContent = data.awayName || "Away";

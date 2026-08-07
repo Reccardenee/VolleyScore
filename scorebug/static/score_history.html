@@ -34,12 +34,19 @@
       padding: 20px;
       min-width: 400px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .history-container.hidden {
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
     }
 
     .history-label {
       font-family: "Alfa Slab One", cursive;
       font-size: 22px;
-      color: #f0a500;
+      color: var(--accent-gold);
       text-align: center;
       margin-bottom: 15px;
       letter-spacing: 1px;
@@ -109,11 +116,28 @@
 
     let previousScores = { home: 0, away: 0 };
 
+    function applyTheme(data) {
+      const root = document.documentElement;
+      root.style.setProperty('--primary-blue', data.themeBgPrimary || '#142850');
+      root.style.setProperty('--secondary-blue', data.themeBgSecondary || '#0a1f3c');
+      root.style.setProperty('--accent-gold', data.themeAccent || '#F0A500');
+      root.style.setProperty('--secondary-gold', data.themeAccentSecondary || '#B87B00');
+      root.style.setProperty('--subtle-border-color', data.themeBorder || '#2a406b');
+    }
+
+    function applyVisibility(data) {
+      const vis = data.overlayVisibility || {};
+      const el = document.querySelector('.history-container');
+      if (el) el.classList.toggle('hidden', !vis.score_history);
+    }
+
     socket.on('score_update', function(data) {
       updateUI(data);
     });
 
     function updateUI(data) {
+      applyTheme(data);
+      applyVisibility(data);
       const list = document.getElementById("historyList");
       // Show only the last 5 points (history is kept in full for export)
       const history = (data.scoreHistory || []).slice(-5);
