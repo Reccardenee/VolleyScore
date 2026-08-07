@@ -115,7 +115,8 @@
 
     function updateUI(data) {
       const list = document.getElementById("historyList");
-      const history = data.scoreHistory || [];
+      // Show only the last 5 points (history is kept in full for export)
+      const history = (data.scoreHistory || []).slice(-5);
 
       if (history.length === 0) {
         list.innerHTML = '<li class="empty-message">No points scored yet</li>';

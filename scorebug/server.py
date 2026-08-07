@@ -28,8 +28,10 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 UPLOAD_FOLDER = os.path.join(EXE_DIR, 'uploads')
-CONFIG_FILE = os.path.join(EXE_DIR, 'config.json')
-LOG_FOLDER = os.path.join(EXE_DIR, 'logs')
+# Config/log paths can be overridden via env vars so tests and E2E runs can
+# use isolated state without touching the real config.json / logs.
+CONFIG_FILE = os.environ.get("VOLLEYSCORE_CONFIG", os.path.join(EXE_DIR, 'config.json'))
+LOG_FOLDER = os.environ.get("VOLLEYSCORE_LOG_DIR", os.path.join(EXE_DIR, 'logs'))
 
 def get_daily_log_file():
     """Returns the log file path for the current day."""
@@ -46,6 +48,8 @@ if not os.path.exists(LOG_FOLDER):
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+PORT = int(os.environ.get("VOLLEYSCORE_PORT", "8000"))
+
 # Global state to store the current score
 DEFAULT_SCORE = {
     "awayName": "Away",
@@ -60,7 +64,8 @@ DEFAULT_SCORE = {
     "homeLogo": "/static/home_logo_placeholder.jpg",
     "homePlayers": ["", "", "", "", "", ""],
     "awayPlayers": ["", "", "", "", "", ""],
-    "previousSetScores": [],
+    # Slot-aligned previous set scores: index = set number - 1, None when unplayed
+    "previousSetScores": [None, None, None, None, None],
     "awayColorPrimary": "#FF0000",
     "awayColorSecondary": "#FFAAAA",
     "homeColorPrimary": "#0000FF",
@@ -80,9 +85,26 @@ DEFAULT_SCORE = {
     "scoreHistory": [],
 }
 
+def normalize_previous_set_slots(raw):
+    """Return a 5-element slot list (index = set number - 1, None = not played)."""
+    if not isinstance(raw, list):
+        return [None] * 5
+    if len(raw) >= 5:
+        # Already slot-aligned: coerce each entry to a dict or None
+        return [
+            (slot if isinstance(slot, dict) else None)
+            for slot in raw[:5]
+        ]
+    # Compressed legacy list: place entry i in slot i (positional), rest None
+    slots = [None] * 5
+    for i, slot in enumerate(raw):
+        if isinstance(slot, dict):
+            slots[i] = {"home": slot.get("home", 0), "away": slot.get("away", 0)}
+    return slots
+
 def load_config():
-    """Load configuration from file or return default."""
-    config = DEFAULT_SCORE.copy()
+    """Load configuration from file or return defaults."""
+    config = json.loads(json.dumps(DEFAULT_SCORE))
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, 'r') as f:
@@ -90,10 +112,24 @@ def load_config():
                 config.update(loaded_config) # Merge loaded config with defaults
         except Exception as e:
             print(f"Error loading config: {e}")
+    config["previousSetScores"] = normalize_previous_set_slots(config.get("previousSetScores"))
     return config
+
+def compute_timer_elapsed(state):
+    """Authoritative elapsed match time (seconds, float), computed server-side."""
+    if not state.get("timerStarted"):
+        return state.get("accumulatedTime", 0)
+    acc = state.get("accumulatedTime", 0)
+    start = state.get("timerStartTimestamp")
+    if state.get("timerPaused") and state.get("timerPausedTimestamp") and start:
+        return acc + (state["timerPausedTimestamp"] - start)
+    if start:
+        return acc + (datetime.now().timestamp() - start)
+    return acc
 
 def save_config(config):
     """Save configuration to file."""
+    config["timerElapsed"] = compute_timer_elapsed(config)
     try:
         with open(CONFIG_FILE, 'w') as f:
             json.dump(config, f, indent=4)
@@ -206,13 +242,34 @@ def scorebug_sets():
     """
     return app.send_static_file("scorebug_sets.html")
 
+@app.route("/home_formation")
+def home_formation():
+    """
+    Route for home team starting lineup overlay.
+    """
+    return app.send_static_file("home_formation.html")
+
+@app.route("/away_formation")
+def away_formation():
+    """
+    Route for away team starting lineup overlay.
+    """
+    return app.send_static_file("away_formation.html")
+
+@app.route("/dual_formation")
+def dual_formation():
+    """
+    Route for dual (both teams) starting lineup overlay.
+    """
+    return app.send_static_file("dual_formation.html")
+
 @app.route("/qrcode_image")
 def qrcode_image():
     """
     Generates and serves a QR code for the control panel URL.
     """
     local_ip = get_local_ip()
-    control_panel_url = f"http://{local_ip}:8000/control_panel"
+    control_panel_url = f"http://{local_ip}:{PORT}/control_panel"
     
     qr = qrcode.QRCode(
         version=1,
@@ -276,18 +333,24 @@ def update():
             except Exception as e:
                 print(f"Error saving file: {e}")
 
-    home_players = [get_val(f"homeP{i}", current_score["homePlayers"][i-1]) for i in range(1, 7)]
-    away_players = [get_val(f"awayP{i}", current_score["awayPlayers"][i-1]) for i in range(1, 7)]
+    def get_player_val(key, current_val):
+        # If the field was submitted, use it as-is (empty string = clear the name)
+        if key in form_data:
+            return form_data[key]
+        return current_val
+
+    home_players = [get_player_val(f"homeP{i}", current_score["homePlayers"][i-1]) for i in range(1, 7)]
+    away_players = [get_player_val(f"awayP{i}", current_score["awayPlayers"][i-1]) for i in range(1, 7)]
 
     # Handle previous set scores (expecting a JSON string from the frontend)
     previous_set_scores_str = form_data.get("previousSetScores")
     if previous_set_scores_str:
         try:
-            previous_set_scores = json.loads(previous_set_scores_str)
+            previous_set_scores = normalize_previous_set_slots(json.loads(previous_set_scores_str))
         except json.JSONDecodeError:
-            previous_set_scores = current_score["previousSetScores"] # Fallback to current if invalid
+            previous_set_scores = normalize_previous_set_slots(current_score["previousSetScores"]) # Fallback to current if invalid
     else:
-        previous_set_scores = current_score["previousSetScores"]
+        previous_set_scores = normalize_previous_set_slots(current_score["previousSetScores"])
 
     # PIN verification - reject updates if PIN doesn't match (unless setting/changing PIN)
     submitted_pin = form_data.get("pin", "")
@@ -318,7 +381,8 @@ def update():
     # Check BEFORE updating currentSet to detect if this is a reset
     form_current_set_str = form_data.get("currentSet", "")
     form_current_set = int(form_current_set_str) if form_current_set_str else None
-    is_game_reset = (
+    explicit_reset = form_data.get("resetGame", "false") == "true"
+    is_game_reset = explicit_reset or (
         form_current_set == 1 and
         old_current_score.get("currentSet", 1) > 1
     )
@@ -354,19 +418,9 @@ def update():
     set_complete = False
     winning_score = 15 if current_score["currentSet"] == 5 else 25
 
-    # Handle game reset: both scores 0 and currentSet explicitly set to 1
-    if current_score["awayScore"] == 0 and current_score["homeScore"] == 0:
-        explicit_set_str = get_val("currentSet", "")
-        explicit_set = int(explicit_set_str) if explicit_set_str else None
-        if explicit_set == 1 and old_current_score.get("currentSet", 1) > 1:
-            # Game reset detected - keep currentSet at 1
-            pass
-        elif explicit_set != 1:
-            # Don't auto-set to 1 if not explicitly sent (preserve value)
-            pass
-
-    # Only check for set completion if scores are > 0 (prevents double-processing after reset)
-    if current_score["homeScore"] > 0 and current_score["awayScore"] > 0:
+    # Only check for set completion if at least one score is > 0
+    # (prevents processing a 0-0 reset as a set end; legal 25-0 sets still complete)
+    if not (current_score["homeScore"] == 0 and current_score["awayScore"] == 0):
         if current_score["homeScore"] >= winning_score or current_score["awayScore"] >= winning_score:
             # Check for minimum 2 point difference
             if abs(current_score["homeScore"] - current_score["awayScore"]) >= 2:
@@ -377,20 +431,32 @@ def update():
         old_home_sets = old_current_score.get("homeSets", 0)
         old_away_sets = old_current_score.get("awaySets", 0)
         
-        # Record the completed set score
-        current_score["previousSetScores"].append({
-            "home": current_score["homeScore"],
-            "away": current_score["awayScore"]
-        })
-        
-        # Only increment sets if client hasn't already done it
+        # Only record the set and increment if client hasn't already counted it
         # (compare with old sets, not current, because current might have client's manual value)
         if current_score["homeScore"] > current_score["awayScore"]:
             if current_score["homeSets"] == old_home_sets:
                 current_score["homeSets"] += 1
+                current_score["previousSetScores"][current_score["currentSet"] - 1] = {
+                    "home": current_score["homeScore"],
+                    "away": current_score["awayScore"]
+                }
+                # Record the winning point in history before resetting
+                current_score["scoreHistory"].append({
+                    "homeScore": current_score["homeScore"],
+                    "awayScore": current_score["awayScore"]
+                })
         else:
             if current_score["awaySets"] == old_away_sets:
                 current_score["awaySets"] += 1
+                current_score["previousSetScores"][current_score["currentSet"] - 1] = {
+                    "home": current_score["homeScore"],
+                    "away": current_score["awayScore"]
+                }
+                # Record the winning point in history before resetting
+                current_score["scoreHistory"].append({
+                    "homeScore": current_score["homeScore"],
+                    "awayScore": current_score["awayScore"]
+                })
         
         # Move to next set (max 5 sets) - but not if this is a game reset
         if current_score["currentSet"] < 5 and not is_game_reset:
@@ -400,6 +466,16 @@ def update():
         current_score["homeScore"] = 0
         current_score["awayScore"] = 0
 
+    # Recompute currentSet from the set counters whenever sets are sent.
+    # The server owns set progression; the client only reports the counters.
+    # Runs after completion so a client that already counted a set doesn't
+    # cause the current set to advance twice.
+    if "homeSets" in form_data or "awaySets" in form_data:
+        current_score["currentSet"] = min(
+            5,
+            current_score["homeSets"] + current_score["awaySets"] + 1
+        )
+
     # Log score change only if score actually changed
     if (current_score["homeScore"] != old_current_score["homeScore"] or
         current_score["awayScore"] != old_current_score["awayScore"] or
@@ -407,27 +483,29 @@ def update():
         current_score["awaySets"] != old_current_score["awaySets"]):
         log_score_event(old_current_score, current_score)
 
-        # Start timer on first point scored (with 60 second grace period)
+        # Start timer on first point scored
         if not current_score["timerStarted"]:
             if current_score["homeScore"] > 0 or current_score["awayScore"] > 0:
                 current_score["timerStarted"] = True
                 current_score["timerStartTimestamp"] = datetime.now().timestamp()
-                current_score["accumulatedTime"] = 60  # 60 second grace period
+                current_score["accumulatedTime"] = 0
 
-        # Add to score history
+        # Add to score history (full point-by-point record, kept for export)
         if current_score["homeScore"] > 0 or current_score["awayScore"] > 0:
             current_score["scoreHistory"].append({
                 "homeScore": current_score["homeScore"],
                 "awayScore": current_score["awayScore"]
             })
-            # Keep only last 5
-            if len(current_score["scoreHistory"]) > 5:
-                current_score["scoreHistory"] = current_score["scoreHistory"][-5:]
 
     # Reset timeouts when currentSet changes
     if current_score["currentSet"] != old_current_score.get("currentSet", 1):
         current_score["homeTimeouts"] = 2
         current_score["awayTimeouts"] = 2
+
+    # Clear score history on game reset
+    if is_game_reset:
+        current_score["scoreHistory"] = []
+        current_score["previousSetScores"] = [None] * 5
     
     save_config(current_score)
     socketio.emit('score_update', current_score)
@@ -446,6 +524,7 @@ def current():
     Endpoint to provide current score to overlay (fallback/initial load).
     Returns the live score.
     """
+    current_score["timerElapsed"] = compute_timer_elapsed(current_score)
     return jsonify(current_score)
 
 @app.route("/timer_control", methods=["POST"])
@@ -455,6 +534,12 @@ def timer_control():
     """
     global current_score
     action = request.form.get("action", "")
+
+    # PIN verification - reject controls if PIN doesn't match
+    submitted_pin = request.form.get("pin", "")
+    current_pin = current_score.get("pin", "")
+    if current_pin and submitted_pin != current_pin:
+        return jsonify({"status": "error", "message": "Invalid PIN"}), 403
 
     if action == "start":
         if not current_score["timerStarted"]:
@@ -468,8 +553,12 @@ def timer_control():
         current_score["timerPausedTimestamp"] = datetime.now().timestamp()
     elif action == "resume":
         if current_score["timerPaused"] and current_score["timerPausedTimestamp"]:
-            # Add elapsed time before pause to accumulated
-            current_score["accumulatedTime"] += (datetime.now().timestamp() - current_score["timerPausedTimestamp"])
+            # Move the pre-pause elapsed time into accumulated and shift the
+            # start timestamp forward so the elapsed-time formula stays correct
+            current_score["accumulatedTime"] += (
+                current_score["timerPausedTimestamp"] - current_score["timerStartTimestamp"]
+            )
+            current_score["timerStartTimestamp"] = datetime.now().timestamp()
         current_score["timerPaused"] = False
         current_score["timerPausedTimestamp"] = None
     elif action == "reset":
@@ -494,6 +583,12 @@ def timeout_control():
     global current_score
     team = request.form.get("team", "")
     change = int(request.form.get("change", 0))
+
+    # PIN verification - reject controls if PIN doesn't match
+    submitted_pin = request.form.get("pin", "")
+    current_pin = current_score.get("pin", "")
+    if current_pin and submitted_pin != current_pin:
+        return jsonify({"status": "error", "message": "Invalid PIN"}), 403
 
     if team == "home":
         current_score["homeTimeouts"] = max(0, min(2, current_score["homeTimeouts"] + change))
@@ -540,8 +635,12 @@ def import_config():
             if field not in config_data:
                 return jsonify({"status": "error", "message": f"Invalid config file: missing {field}"}), 400
 
-        # Update current score with imported config
-        current_score = config_data
+        # Merge imported config with defaults so missing keys can't break
+        # later updates from older/partial export files
+        merged = json.loads(json.dumps(DEFAULT_SCORE))
+        merged.update(config_data)
+        merged["previousSetScores"] = normalize_previous_set_slots(config_data.get("previousSetScores"))
+        current_score = merged
         save_config(current_score)
         socketio.emit('score_update', current_score)
 
@@ -558,7 +657,9 @@ def reset_config():
     """
     global current_score
 
-    current_score = DEFAULT_SCORE.copy()
+    # Deep copy so nested structures (e.g. scoreHistory) are not shared with
+    # DEFAULT_SCORE and mutated in place by later updates
+    current_score = json.loads(json.dumps(DEFAULT_SCORE))
     save_config(current_score)
     socketio.emit('score_update', current_score)
 
@@ -672,7 +773,7 @@ if __name__ == "__main__":
 
     print("VolleyScore Server starting...")
     print("-" * 40)
-    print(f"Control Panel: http://{get_local_ip()}:8000/control_panel")
+    print(f"Control Panel: http://{get_local_ip()}:{PORT}/control_panel")
     print("-" * 40)
 
-    socketio.run(app, host="0.0.0.0", port=8000, log_output=False)
+    socketio.run(app, host="0.0.0.0", port=PORT, log_output=False)

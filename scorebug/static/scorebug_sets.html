@@ -409,20 +409,15 @@ function updateUI(data) {
         
         let homeValue, awayValue;
         
-        if (setIndex === currentSet) {
+        const setData = previousSetScores[setIndex - 1];
+        if (setData) {
+            // Completed set - show the recorded final score
+            homeValue = setData.home;
+            awayValue = setData.away;
+        } else if (setIndex === currentSet) {
             // Current set being played - show live score
             homeValue = homeLiveScore;
             awayValue = awayLiveScore;
-        } else if (setIndex < currentSet) {
-            // Completed set - show from previousSetScores
-            const setData = previousSetScores[i];
-            if (setData) {
-                homeValue = setData.home;
-                awayValue = setData.away;
-            } else {
-                homeValue = 0;
-                awayValue = 0;
-            }
         } else {
             // Future set not yet played
             homeValue = 0;

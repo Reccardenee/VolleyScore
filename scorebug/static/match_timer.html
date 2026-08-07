@@ -77,10 +77,14 @@
       accumulatedTime: 0
     };
 
+    // Committed timer baseline: server-reported elapsed plus a client-clock
+    // anchor, so display math ticks only with client-clock deltas.
+    let timerDisplayBase = 0;
+    let timerDisplayAnchor = Date.now() / 1000;
+
     let displayInterval = null;
 
-    socket.on('score_update', function(data) {
-      const oldState = {...timerState};
+    function syncTimerState(data) {
       timerState = {
         timerStarted: data.timerStarted,
         timerPaused: data.timerPaused,
@@ -88,6 +92,32 @@
         timerPausedTimestamp: data.timerPausedTimestamp,
         accumulatedTime: data.accumulatedTime
       };
+
+      if (typeof data.timerElapsed === 'number' && !isNaN(data.timerElapsed)) {
+        timerDisplayBase = data.timerElapsed;
+      } else {
+        const acc = data.accumulatedTime || 0;
+        const start = data.timerStartTimestamp;
+        if (data.timerPaused && data.timerPausedTimestamp && start) {
+          timerDisplayBase = acc + (data.timerPausedTimestamp - start);
+        } else if (data.timerStarted && start) {
+          timerDisplayBase = acc + (Date.now() / 1000 - start);
+        } else {
+          timerDisplayBase = acc;
+        }
+      }
+      timerDisplayAnchor = Date.now() / 1000;
+    }
+
+    function getTimerElapsed() {
+      if (!timerState.timerStarted) return 0;
+      if (timerState.timerPaused) return timerDisplayBase;
+      return timerDisplayBase + (Date.now() / 1000 - timerDisplayAnchor);
+    }
+
+    socket.on('score_update', function(data) {
+      const oldState = {...timerState};
+      syncTimerState(data);
 
       if (!oldState.timerStarted && data.timerStarted) {
         startDisplayTimer();
@@ -119,18 +149,14 @@
         return;
       }
 
-      if (timerState.timerPaused && timerState.timerPausedTimestamp) {
-        const currentElapsed = timerState.accumulatedTime + (timerState.timerPausedTimestamp - timerState.timerStartTimestamp);
-        const totalSeconds = Math.floor(currentElapsed);
-        display.textContent = formatTime(totalSeconds);
+      if (timerState.timerPaused) {
+        display.textContent = formatTime(Math.floor(getTimerElapsed()));
         status.textContent = "Paused";
         return;
       }
 
       if (timerState.timerStartTimestamp) {
-        const currentElapsed = timerState.accumulatedTime + (Date.now() / 1000 - timerState.timerStartTimestamp);
-        const totalSeconds = Math.floor(currentElapsed);
-        display.textContent = formatTime(totalSeconds);
+        display.textContent = formatTime(Math.floor(getTimerElapsed()));
         status.textContent = "";
       }
     }
@@ -144,13 +170,7 @@
     socket.on('connect', () => {
       console.log('Connected to WebSocket');
       fetch('/current').then(r => r.json()).then(data => {
-        timerState = {
-          timerStarted: data.timerStarted,
-          timerPaused: data.timerPaused,
-          timerStartTimestamp: data.timerStartTimestamp,
-          timerPausedTimestamp: data.timerPausedTimestamp,
-          accumulatedTime: data.accumulatedTime
-        };
+        syncTimerState(data);
         if (data.timerStarted) {
           startDisplayTimer();
         }

@@ -184,6 +184,10 @@ body {
 <script>
 const socket = io();
 
+socket.on('connect', function() {
+    fetch('/current').then(r => r.json()).then(updateGraphic);
+});
+
 socket.on('score_update', function(data) {
     updateGraphic(data);
 });

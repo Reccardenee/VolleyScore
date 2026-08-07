@@ -800,6 +800,50 @@
     .pin-form.active {
       display: block;
     }
+
+    /* ============================================
+       OVERLAY PREVIEWS
+       ============================================ */
+    .overlay-preview {
+      position: relative;
+      width: 100%;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      background-color: #101018;
+      background-image: linear-gradient(45deg, #1c1c26 25%, transparent 25%),
+                        linear-gradient(-45deg, #1c1c26 25%, transparent 25%),
+                        linear-gradient(45deg, transparent 75%, #1c1c26 75%),
+                        linear-gradient(-45deg, transparent 75%, #1c1c26 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+    }
+
+    .overlay-preview iframe {
+      border: none;
+      transform-origin: 0 0;
+      pointer-events: none;
+      display: block;
+    }
+
+    .preview-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin: 16px 0 6px;
+    }
+
+    .preview-label a {
+      color: var(--accent-blue);
+      text-decoration: none;
+      font-size: 0.75rem;
+    }
+
+    .preview-label a:hover {
+      color: var(--accent-blue-hover);
+    }
   </style>
 </head>
 <body>
@@ -826,13 +870,17 @@
         </div>
         <span class="summary-team away" id="summaryAwayName">Away</span>
       </div>
+      <div class="summary-meta">
+        <span>Set <b id="summarySet">1</b></span>
+        <span>Timer <b id="summaryTimer">00:00</b></span>
+      </div>
     </div>
 
     <!-- Tabs -->
     <div class="tabs">
       <button class="tab-btn active" data-tab="match">Match</button>
       <button class="tab-btn" data-tab="teams">Teams</button>
-      <button class="tab-btn" data-tab="timer">Timer</button>
+      <button class="tab-btn" data-tab="timer">Match Stats</button>
       <button class="tab-btn" data-tab="settings">Settings</button>
     </div>
 
@@ -884,13 +932,25 @@
         <div id="previousSetsContainer">
           <p style="color: var(--text-muted); font-size: 0.875rem;">No sets completed yet.</p>
         </div>
-        <button class="btn btn-secondary btn-block" onclick="addPreviousSet()">Add Set Score</button>
+        <button class="btn btn-secondary btn-block" id="addPreviousSetBtn" onclick="addPreviousSet()">Add Set Score</button>
       </div>
 
       <div class="card">
         <div class="grid-2">
-          <button class="btn btn-primary" onclick="sendToServer()">Update Scoreboard</button>
+          <button class="btn btn-primary" onclick="sendScoreUpdate()">Update Scoreboard</button>
           <button class="btn btn-danger" onclick="showResetModal()">Reset Game</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Overlay Previews</div>
+        <div class="preview-label"><span>Scoreboard</span><a href="/" target="_blank" rel="noopener">open in new tab</a></div>
+        <div class="overlay-preview" id="preview-scoreboard-container">
+          <iframe id="preview-scoreboard" src="/" title="Scoreboard preview"></iframe>
+        </div>
+        <div class="preview-label"><span>All Sets</span><a href="/scorebug_sets" target="_blank" rel="noopener">open in new tab</a></div>
+        <div class="overlay-preview" id="preview-sets-container">
+          <iframe id="preview-sets" src="/scorebug_sets" title="All sets preview"></iframe>
         </div>
       </div>
 
@@ -929,6 +989,17 @@
               <input type="color" class="color-input" id="homeColorSecondary" value="#AAAAFF">
             </div>
           </div>
+          <div class="form-group">
+            <label class="form-label">Players</label>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+              <input type="text" class="form-input" id="homeP1" placeholder="Pos 1" maxlength="24">
+              <input type="text" class="form-input" id="homeP2" placeholder="Pos 2" maxlength="24">
+              <input type="text" class="form-input" id="homeP3" placeholder="Pos 3" maxlength="24">
+              <input type="text" class="form-input" id="homeP4" placeholder="Pos 4" maxlength="24">
+              <input type="text" class="form-input" id="homeP5" placeholder="Pos 5" maxlength="24">
+              <input type="text" class="form-input" id="homeP6" placeholder="Pos 6" maxlength="24">
+            </div>
+          </div>
         </div>
         <div class="team-config away">
           <h3>Away Team</h3>
@@ -948,33 +1019,29 @@
               <input type="color" class="color-input" id="awayColorSecondary" value="#FFAAAA">
             </div>
           </div>
+          <div class="form-group">
+            <label class="form-label">Players</label>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+              <input type="text" class="form-input" id="awayP1" placeholder="Pos 1" maxlength="24">
+              <input type="text" class="form-input" id="awayP2" placeholder="Pos 2" maxlength="24">
+              <input type="text" class="form-input" id="awayP3" placeholder="Pos 3" maxlength="24">
+              <input type="text" class="form-input" id="awayP4" placeholder="Pos 4" maxlength="24">
+              <input type="text" class="form-input" id="awayP5" placeholder="Pos 5" maxlength="24">
+              <input type="text" class="form-input" id="awayP6" placeholder="Pos 6" maxlength="24">
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-title">PIN Protection</div>
-        <div class="pin-section">
-          <div class="pin-status">
-            <div class="pin-indicator" id="pinStatus">
-              <span>PIN: Not Set</span>
-            </div>
-            <button class="btn btn-sm btn-secondary" onclick="showPinSetup()">Set PIN</button>
-          </div>
-          <div class="pin-form" id="pinForm">
-            <div id="currentPinSection" style="display: none;">
-              <input type="password" class="form-input" id="currentPin" maxlength="4" placeholder="Current PIN">
-            </div>
-            <input type="password" class="form-input" id="newPin" maxlength="4" placeholder="New 4-digit PIN">
-            <input type="password" class="form-input" id="confirmPin" maxlength="4" placeholder="Confirm PIN">
-            <div class="grid-2" style="margin-top: 12px;">
-              <button class="btn btn-primary" onclick="savePin()">Save</button>
-              <button class="btn btn-secondary" onclick="cancelPinSetup()">Cancel</button>
-            </div>
-          </div>
+        <div class="card-title">Formation Preview</div>
+        <div class="preview-label"><span>Dual Formation (both teams)</span><a href="/dual_formation" target="_blank" rel="noopener">open in new tab</a></div>
+        <div class="overlay-preview" id="preview-formation-container">
+          <iframe id="preview-formation" src="/dual_formation" title="Dual formation preview"></iframe>
         </div>
       </div>
 
-      <button class="btn btn-primary btn-block" onclick="sendToServer()">Save Team Settings</button>
+      <button class="btn btn-primary btn-block" onclick="sendTeamSettings()">Save Team Settings</button>
     </div>
 
     <!-- TIMER TAB -->
@@ -1022,10 +1089,46 @@
       </div>
 
       <div class="card">
+        <div class="card-title">Overlay Previews</div>
+        <div class="preview-label"><span>Match Stats</span><a href="/match_timer" target="_blank" rel="noopener">open in new tab</a></div>
+        <div class="overlay-preview" id="preview-timer-container">
+          <iframe id="preview-timer" src="/match_timer" title="Timer preview"></iframe>
+        </div>
+        <div class="preview-label"><span>Timeouts</span><a href="/timeouts" target="_blank" rel="noopener">open in new tab</a></div>
+        <div class="overlay-preview" id="preview-timeouts-container">
+          <iframe id="preview-timeouts" src="/timeouts" title="Timeouts preview"></iframe>
+        </div>
+        <div class="preview-label"><span>Score History</span><a href="/score_history" target="_blank" rel="noopener">open in new tab</a></div>
+        <div class="overlay-preview" id="preview-history-container">
+          <iframe id="preview-history" src="/score_history" title="Score history preview"></iframe>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="card-title">OBS Overlay URLs</div>
         <div class="obs-urls">
           <div class="obs-url">
-            <span>Timer</span>
+            <span>Scoreboard</span>
+            <code>/</code>
+          </div>
+          <div class="obs-url">
+            <span>All Sets</span>
+            <code>/scorebug_sets</code>
+          </div>
+          <div class="obs-url">
+            <span>Home Formation</span>
+            <code>/home_formation</code>
+          </div>
+          <div class="obs-url">
+            <span>Away Formation</span>
+            <code>/away_formation</code>
+          </div>
+          <div class="obs-url">
+            <span>Dual Formation</span>
+            <code>/dual_formation</code>
+          </div>
+          <div class="obs-url">
+            <span>Match Stats</span>
             <code>/match_timer</code>
           </div>
           <div class="obs-url">
@@ -1036,20 +1139,35 @@
             <span>Score History</span>
             <code>/score_history</code>
           </div>
-          <div class="obs-url">
-            <span>Scoreboard</span>
-            <code>/scorebug.html</code>
-          </div>
-          <div class="obs-url">
-            <span>All Sets</span>
-            <code>/scorebug_sets.html</code>
-          </div>
         </div>
       </div>
     </div>
 
     <!-- SETTINGS TAB -->
     <div class="tab-content" id="tab-settings">
+      <div class="card">
+        <div class="card-title">PIN Protection</div>
+        <div class="pin-section">
+          <div class="pin-status">
+            <div class="pin-indicator" id="pinStatus">
+              <span>PIN: Not Set</span>
+            </div>
+            <button class="btn btn-sm btn-secondary" onclick="showPinSetup()">Set PIN</button>
+          </div>
+          <div class="pin-form" id="pinForm">
+            <div id="currentPinSection" style="display: none;">
+              <input type="password" class="form-input" id="currentPin" maxlength="4" placeholder="Current PIN">
+            </div>
+            <input type="password" class="form-input" id="newPin" maxlength="4" placeholder="New 4-digit PIN">
+            <input type="password" class="form-input" id="confirmPin" maxlength="4" placeholder="Confirm PIN">
+            <div class="grid-2" style="margin-top: 12px;">
+              <button class="btn btn-primary" onclick="savePin()">Save</button>
+              <button class="btn btn-secondary" onclick="cancelPinSetup()">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-title">Configuration Backup</div>
         <button class="btn btn-primary btn-block" onclick="exportConfig()">Export Configuration</button>
@@ -1131,6 +1249,11 @@
       timerPausedTimestamp: null,
       accumulatedTime: 0
     };
+    // Committed timer baseline: server-reported elapsed plus a client-clock
+    // anchor. All display math ticks with client-clock deltas only, so the
+    // display never jumps due to browser/server clock skew.
+    let timerDisplayBase = 0;
+    let timerDisplayAnchor = Date.now() / 1000;
 
     const socket = io();
 
@@ -1200,13 +1323,7 @@
 
       // Explicit timer state sync
       const oldTimerStarted = timerState.timerStarted;
-      timerState = {
-        timerStarted: data.timerStarted || false,
-        timerPaused: data.timerPaused || false,
-        timerStartTimestamp: data.timerStartTimestamp,
-        timerPausedTimestamp: data.timerPausedTimestamp,
-        accumulatedTime: data.accumulatedTime || 0
-      };
+      syncTimerState(data);
 
       // Only start interval when timer starts, stop when reset
       if (!oldTimerStarted && timerState.timerStarted) {
@@ -1223,13 +1340,18 @@
     // ============================================
     // STATE RESTORATION
     // ============================================
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
     function restoreState(state) {
       // Score summary
-      document.getElementById('summaryHomeName').textContent = state.homeName || 'Home';
-      document.getElementById('summaryAwayName').textContent = state.awayName || 'Away';
-      document.getElementById('summaryHomeScore').textContent = state.homeScore || 0;
-      document.getElementById('summaryAwayScore').textContent = state.awayScore || 0;
-      document.getElementById('summarySet').textContent = state.currentSet || 1;
+      setText('summaryHomeName', state.homeName || 'Home');
+      setText('summaryAwayName', state.awayName || 'Away');
+      setText('summaryHomeScore', state.homeScore || 0);
+      setText('summaryAwayScore', state.awayScore || 0);
+      setText('summarySet', state.currentSet || 1);
 
       // Score controls
       document.getElementById('homeScore').value = state.homeScore || 0;
@@ -1245,6 +1367,14 @@
       document.getElementById('homeName').value = state.homeName || 'Home';
       document.getElementById('awayName').value = state.awayName || 'Away';
       document.getElementById('matchTitle').value = state.matchTitle || 'Volleyball Match';
+
+      // Players
+      for (let i = 1; i <= 6; i++) {
+        const homeInput = document.getElementById('homeP' + i);
+        const awayInput = document.getElementById('awayP' + i);
+        if (homeInput) homeInput.value = (state.homePlayers && state.homePlayers[i - 1]) || '';
+        if (awayInput) awayInput.value = (state.awayPlayers && state.awayPlayers[i - 1]) || '';
+      }
 
       // Colors
       document.getElementById('homeColorPrimary').value = state.homeColorPrimary || '#0000FF';
@@ -1267,13 +1397,7 @@
       updatePreviousSetsUI(state.previousSetScores || []);
 
       // Timer
-      timerState = {
-        timerStarted: state.timerStarted || false,
-        timerPaused: state.timerPaused || false,
-        timerStartTimestamp: state.timerStartTimestamp,
-        timerPausedTimestamp: state.timerPausedTimestamp,
-        accumulatedTime: state.accumulatedTime || 0
-      };
+      syncTimerState(state);
       updateTimerDisplay();
       startTimerInterval();
 
@@ -1359,7 +1483,7 @@
         return;
       }
 
-      sendToServer(true, newPin, confirmPin);
+      sendPinUpdate(newPin, confirmPin);
     }
 
     // ============================================
@@ -1368,22 +1492,22 @@
     function changeScore(team, delta) {
       if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
       const input = document.getElementById(team + 'Score');
-      input.value = Math.max(0, parseInt(input.value, 10) + delta);
+      input.value = Math.max(0, (parseInt(input.value, 10) || 0) + delta);
       if (delta > 0) possession = team;
-      sendToServer();
+      sendScoreUpdate();
     }
 
     function changeSet(team, delta) {
       if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
       const input = document.getElementById(team + 'Sets');
-      input.value = Math.max(0, parseInt(input.value, 10) + delta);
-      sendToServer();
+      input.value = Math.max(0, (parseInt(input.value, 10) || 0) + delta);
+      sendScoreUpdate();
     }
 
     function setPossession(team) {
       possession = team;
       updatePossessionUI();
-      sendToServer();
+      sendPossessionUpdate();
     }
 
     function updatePossessionUI() {
@@ -1392,53 +1516,100 @@
       document.getElementById('posAway').className = 'btn possession-btn away' + (possession === 'away' ? ' active' : '');
     }
 
+    // Manual typing: score/set inputs apply on Enter/blur, and shortly after typing
+    function wireInputListener(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      let debounce = null;
+      el.addEventListener('input', () => {
+        if (debounce) clearTimeout(debounce);
+        debounce = setTimeout(sendScoreUpdate, 350);
+      });
+      el.addEventListener('change', sendScoreUpdate);
+    }
+    ['homeScore', 'awayScore', 'homeSets', 'awaySets'].forEach(wireInputListener);
+
     // ============================================
     // PREVIOUS SETS
     // ============================================
+    function collectPreviousSetSlots() {
+      const slots = [null, null, null, null, null];
+      document.querySelectorAll('#previousSetsContainer .set-item').forEach(item => {
+        const slot = parseInt(item.dataset.slot, 10);
+        if (isNaN(slot) || slot < 0 || slot >= 5) return;
+        const home = item.querySelector('input[data-team="home"]');
+        const away = item.querySelector('input[data-team="away"]');
+        slots[slot] = {
+          home: home ? (parseInt(home.value, 10) || 0) : 0,
+          away: away ? (parseInt(away.value, 10) || 0) : 0
+        };
+      });
+      return slots;
+    }
+
+    function previousSetItemHTML(slot, home, away) {
+      return `
+        <div class="set-item" data-slot="${slot}">
+          <span class="set-label">Set ${slot + 1}</span>
+          <input type="number" value="${home}" data-slot="${slot}" data-team="home" class="form-input" style="width: 60px;" onchange="updateSetScore(this)">
+          <span>-</span>
+          <input type="number" value="${away}" data-slot="${slot}" data-team="away" class="form-input" style="width: 60px;" onchange="updateSetScore(this)">
+          <button type="button" class="btn btn-sm btn-danger" title="Delete this set" onclick="removePreviousSet(${slot})">✕</button>
+        </div>
+      `;
+    }
+
     function updatePreviousSetsUI(scores) {
       const container = document.getElementById('previousSetsContainer');
-      if (!scores.length) {
-        container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.875rem;">No sets completed yet.</p>';
-        return;
-      }
-      container.innerHTML = scores.map((s, i) => `
-        <div class="set-item">
-          <span class="set-label">Set ${i + 1}</span>
-          <input type="number" value="${s.home}" data-index="${i}" data-team="home" class="form-input" style="width: 60px;" onchange="updateSetScore(this)">
-          <span>-</span>
-          <input type="number" value="${s.away}" data-index="${i}" data-team="away" class="form-input" style="width: 60px;" onchange="updateSetScore(this)">
-        </div>
-      `).join('');
+      const slots = (scores && scores.length) ? scores : [null, null, null, null, null];
+      const filled = slots
+        .map((s, i) => (s ? { home: s.home, away: s.away, slot: i } : null))
+        .filter(Boolean);
+
+      container.innerHTML = filled.length
+        ? filled.map(f => previousSetItemHTML(f.slot, f.home, f.away)).join('')
+        : '<p style="color: var(--text-muted); font-size: 0.875rem;">No sets completed yet.</p>';
+
+      const addBtn = document.getElementById('addPreviousSetBtn');
+      if (addBtn) addBtn.disabled = filled.length >= 5;
     }
 
     function addPreviousSet() {
       const container = document.getElementById('previousSetsContainer');
-      const items = container.querySelectorAll('.set-item');
-      const newIndex = items.length;
+      const slots = collectPreviousSetSlots();
+      const emptyIdx = slots.findIndex(s => !s);
+      if (emptyIdx === -1) return;
       const div = document.createElement('div');
       div.className = 'set-item';
+      div.dataset.slot = String(emptyIdx);
       div.innerHTML = `
-        <span class="set-label">Set ${newIndex + 1}</span>
-        <input type="number" value="0" data-index="${newIndex}" data-team="home" class="form-input" style="width: 60px;" onchange="updateSetScore(this)">
+        <span class="set-label">Set ${emptyIdx + 1}</span>
+        <input type="number" value="0" data-slot="${emptyIdx}" data-team="home" class="form-input" style="width: 60px;" onchange="updateSetScore(this)">
         <span>-</span>
-        <input type="number" value="0" data-index="${newIndex}" data-team="away" class="form-input" style="width: 60px;" onchange="updateSetScore(this)">
+        <input type="number" value="0" data-slot="${emptyIdx}" data-team="away" class="form-input" style="width: 60px;" onchange="updateSetScore(this)">
+        <button type="button" class="btn btn-sm btn-danger" title="Delete this set" onclick="removePreviousSet(${emptyIdx})">✕</button>
       `;
       container.appendChild(div);
-      sendToServer();
+      const addBtn = document.getElementById('addPreviousSetBtn');
+      if (addBtn) addBtn.disabled = collectPreviousSetSlots().every(Boolean);
+      sendPreviousSetUpdate();
     }
 
     function updateSetScore(input) {
-      const index = parseInt(input.dataset.index);
-      const team = input.dataset.team;
+      if (!input || !input.dataset.slot) return;
+      sendPreviousSetUpdate();
+    }
+
+    function removePreviousSet(slotIndex) {
       const container = document.getElementById('previousSetsContainer');
-      const inputs = container.querySelectorAll('input');
-      const scores = [];
-      let set = {};
-      inputs.forEach((inp, i) => {
-        if (i % 2 === 0) set = { home: parseInt(inp.value) || 0 };
-        else { set.away = parseInt(inp.value) || 0; scores.push(set); }
-      });
-      sendToServer();
+      const item = container.querySelector('.set-item[data-slot="' + slotIndex + '"]');
+      if (item) item.remove();
+      if (!container.querySelector('.set-item')) {
+        container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.875rem;">No sets completed yet.</p>';
+      }
+      const addBtn = document.getElementById('addPreviousSetBtn');
+      if (addBtn) addBtn.disabled = false;
+      sendPreviousSetUpdate();
     }
 
     // ============================================
@@ -1446,26 +1617,48 @@
     // ============================================
     let timerInterval = null;
 
+    function syncTimerState(data) {
+      timerState = {
+        timerStarted: data.timerStarted || false,
+        timerPaused: data.timerPaused || false,
+        timerStartTimestamp: data.timerStartTimestamp,
+        timerPausedTimestamp: data.timerPausedTimestamp,
+        accumulatedTime: data.accumulatedTime || 0
+      };
+
+      if (typeof data.timerElapsed === 'number' && !isNaN(data.timerElapsed)) {
+        timerDisplayBase = data.timerElapsed;
+      } else {
+        const acc = data.accumulatedTime || 0;
+        const start = data.timerStartTimestamp;
+        if (data.timerPaused && data.timerPausedTimestamp && start) {
+          timerDisplayBase = acc + (data.timerPausedTimestamp - start);
+        } else if (data.timerStarted && start) {
+          timerDisplayBase = acc + (Date.now() / 1000 - start);
+        } else {
+          timerDisplayBase = acc;
+        }
+      }
+      timerDisplayAnchor = Date.now() / 1000;
+    }
+
+    function getTimerElapsed() {
+      if (!timerState.timerStarted) return 0;
+      if (timerState.timerPaused) return timerDisplayBase;
+      return timerDisplayBase + (Date.now() / 1000 - timerDisplayAnchor);
+    }
+
     function updateTimerDisplay() {
       const display = document.getElementById('timerDisplay');
       if (!timerState.timerStarted) {
         display.textContent = '00:00';
-        document.getElementById('summaryTimer').textContent = '00:00';
+        setText('summaryTimer', '00:00');
         return;
       }
 
-      let totalSeconds;
-      if (timerState.timerPaused && timerState.timerPausedTimestamp) {
-        totalSeconds = timerState.accumulatedTime + Math.floor(timerState.timerPausedTimestamp - timerState.timerStartTimestamp);
-      } else if (timerState.timerStartTimestamp) {
-        totalSeconds = timerState.accumulatedTime + Math.floor(Date.now() / 1000 - timerState.timerStartTimestamp);
-      } else {
-        totalSeconds = timerState.accumulatedTime;
-      }
-
-      const formatted = formatTime(totalSeconds);
+      const formatted = formatTime(Math.floor(getTimerElapsed()));
       display.textContent = formatted;
-      document.getElementById('summaryTimer').textContent = formatted;
+      setText('summaryTimer', formatted);
     }
 
     function startTimerInterval() {
@@ -1524,7 +1717,8 @@
     // ============================================
     function updateScoreHistoryUI(data) {
       const list = document.getElementById('scoreHistoryList');
-      const history = data.scoreHistory || [];
+      // Show only the last 5 points (history is kept in full for export)
+      const history = (data.scoreHistory || []).slice(-5);
 
       if (!history.length) {
         list.innerHTML = '<li style="color: var(--text-muted);">No points scored yet</li>';
@@ -1567,7 +1761,7 @@
       homeSets = 0;
       awaySets = 0;
       possession = 'none';
-      updatePreviousSetsUI([]);
+      updatePreviousSetsUI([null, null, null, null, null]);
       updatePossessionUI();
       // Send reset with currentSet = 1
       const formData = new FormData();
@@ -1576,8 +1770,9 @@
       formData.append('homeSets', 0);
       formData.append('awaySets', 0);
       formData.append('possession', 'none');
-      formData.append('previousSetScores', JSON.stringify([]));
+      formData.append('previousSetScores', JSON.stringify([null, null, null, null, null]));
       formData.append('currentSet', 1);
+      formData.append('resetGame', 'true');
       formData.append('homeName', document.getElementById('homeName').value);
       formData.append('awayName', document.getElementById('awayName').value);
       formData.append('matchTitle', document.getElementById('matchTitle').value);
@@ -1664,78 +1859,25 @@
     }
 
     // ============================================
-    // SEND TO SERVER
+    // SEND TO SERVER (scoped - each action only sends the fields it touches)
     // ============================================
-    async function sendToServer(isSettingPin = false, newPin = '', confirmPin = '') {
-      if (!isAuthenticated && !isSettingPin) {
-        showToast('Enter PIN first', 'warning');
-        return;
-      }
+    function sanitizeNumber(value) {
+      const n = parseInt(value, 10);
+      return (isNaN(n) || n < 0) ? 0 : n;
+    }
 
-      const formData = new FormData();
+    function appendPin(formData) {
+      if (serverPin) formData.append('pin', serverPin);
+    }
 
-      // Score
-      formData.append('homeScore', document.getElementById('homeScore').value);
-      formData.append('awayScore', document.getElementById('awayScore').value);
-      formData.append('homeSets', document.getElementById('homeSets').value);
-      formData.append('awaySets', document.getElementById('awaySets').value);
-      formData.append('possession', possession);
-
-      // Previous sets
-      const container = document.getElementById('previousSetsContainer');
-      const inputs = container.querySelectorAll('input');
-      const sets = [];
-      let set = {};
-      inputs.forEach((inp, i) => {
-        if (i % 2 === 0) set = { home: parseInt(inp.value) || 0 };
-        else { set.away = parseInt(inp.value) || 0; sets.push(set); }
-      });
-      formData.append('previousSetScores', JSON.stringify(sets));
-
-      // Teams
-      formData.append('homeName', document.getElementById('homeName').value);
-      formData.append('awayName', document.getElementById('awayName').value);
-      formData.append('matchTitle', document.getElementById('matchTitle').value);
-      formData.append('homeColorPrimary', document.getElementById('homeColorPrimary').value);
-      formData.append('homeColorSecondary', document.getElementById('homeColorSecondary').value);
-      formData.append('awayColorPrimary', document.getElementById('awayColorPrimary').value);
-      formData.append('awayColorSecondary', document.getElementById('awayColorSecondary').value);
-
-      // Logos
-      const awayLogoFile = document.getElementById('awayLogoFile').files[0];
-      const homeLogoFile = document.getElementById('homeLogoFile').files[0];
-      if (awayLogoFile) formData.append('awayLogoFile', awayLogoFile);
-      else formData.append('awayLogo', document.getElementById('awayLogo').value);
-      if (homeLogoFile) formData.append('homeLogoFile', homeLogoFile);
-      else formData.append('homeLogo', document.getElementById('homeLogo').value);
-
-      // Players
-      for (let i = 1; i <= 6; i++) {
-        formData.append('homeP' + i, '');
-        formData.append('awayP' + i, '');
-      }
-      formData.append('homePlayers', JSON.stringify(['', '', '', '', '', '']));
-      formData.append('awayPlayers', JSON.stringify(['', '', '', '', '', '']));
-
-      // PIN
-      if (isSettingPin) {
-        formData.append('isSettingPin', 'true');
-        formData.append('pin', currentPin || '');
-        formData.append('newPin', newPin);
-        formData.append('confirmPin', confirmPin);
-      } else if (serverPin) {
-        formData.append('pin', serverPin);
-      }
-
+    async function postUpdate(formData) {
       try {
         const res = await fetch('/update', { method: 'POST', body: formData });
         const result = await res.json();
-
         if (result.status === 'error') {
           showToast(result.message, 'error');
-          return;
+          return null;
         }
-
         if (result.newLogoUrl) {
           document.getElementById('awayLogo').value = result.newLogoUrl;
           document.getElementById('awayLogoFile').value = '';
@@ -1744,8 +1886,77 @@
           document.getElementById('homeLogo').value = result.newHomeLogoUrl;
           document.getElementById('homeLogoFile').value = '';
         }
+        return result;
+      } catch (e) {
+        showToast('Update failed', 'error');
+        return null;
+      }
+    }
 
-        if (isSettingPin) {
+    function sendScoreUpdate() {
+      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      const formData = new FormData();
+      formData.append('homeScore', sanitizeNumber(document.getElementById('homeScore').value));
+      formData.append('awayScore', sanitizeNumber(document.getElementById('awayScore').value));
+      formData.append('homeSets', sanitizeNumber(document.getElementById('homeSets').value));
+      formData.append('awaySets', sanitizeNumber(document.getElementById('awaySets').value));
+      formData.append('possession', possession);
+      appendPin(formData);
+      postUpdate(formData);
+    }
+
+    function sendPossessionUpdate() {
+      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      const formData = new FormData();
+      formData.append('possession', possession);
+      appendPin(formData);
+      postUpdate(formData);
+    }
+
+    function sendPreviousSetUpdate() {
+      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      const formData = new FormData();
+      formData.append('previousSetScores', JSON.stringify(collectPreviousSetSlots()));
+      appendPin(formData);
+      postUpdate(formData);
+    }
+
+    function sendTeamSettings() {
+      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      const formData = new FormData();
+      formData.append('homeName', document.getElementById('homeName').value);
+      formData.append('awayName', document.getElementById('awayName').value);
+      formData.append('matchTitle', document.getElementById('matchTitle').value);
+      formData.append('homeColorPrimary', document.getElementById('homeColorPrimary').value);
+      formData.append('homeColorSecondary', document.getElementById('homeColorSecondary').value);
+      formData.append('awayColorPrimary', document.getElementById('awayColorPrimary').value);
+      formData.append('awayColorSecondary', document.getElementById('awayColorSecondary').value);
+
+      const awayLogoFile = document.getElementById('awayLogoFile').files[0];
+      const homeLogoFile = document.getElementById('homeLogoFile').files[0];
+      if (awayLogoFile) formData.append('awayLogoFile', awayLogoFile);
+      else formData.append('awayLogo', document.getElementById('awayLogo').value);
+      if (homeLogoFile) formData.append('homeLogoFile', homeLogoFile);
+      else formData.append('homeLogo', document.getElementById('homeLogo').value);
+
+      for (let i = 1; i <= 6; i++) {
+        const homeInput = document.getElementById('homeP' + i);
+        const awayInput = document.getElementById('awayP' + i);
+        formData.append('homeP' + i, homeInput ? homeInput.value : '');
+        formData.append('awayP' + i, awayInput ? awayInput.value : '');
+      }
+      appendPin(formData);
+      postUpdate(formData);
+    }
+
+    function sendPinUpdate(newPin, confirmPin) {
+      const formData = new FormData();
+      formData.append('isSettingPin', 'true');
+      formData.append('pin', currentPin || '');
+      formData.append('newPin', newPin);
+      formData.append('confirmPin', confirmPin);
+      postUpdate(formData).then(result => {
+        if (result && result.status === 'ok') {
           currentPin = newPin;
           serverPin = newPin;
           localStorage.setItem(PIN_STORAGE_KEY, newPin);
@@ -1753,9 +1964,7 @@
           updatePinStatus(newPin);
           showToast('PIN saved', 'success');
         }
-      } catch (e) {
-        showToast('Update failed', 'error');
-      }
+      });
     }
 
     // Close modals on overlay click
@@ -1765,6 +1974,66 @@
           document.getElementById(id).classList.remove('active');
         }
       });
+    });
+
+    // ============================================
+    // OVERLAY PREVIEWS
+    // ============================================
+    function setupOverlayPreview(containerId, iframeId, contentSelector, fallbackW, fallbackH) {
+      const container = document.getElementById(containerId);
+      const frame = document.getElementById(iframeId);
+      if (!container || !frame) return;
+
+      // Large viewport so the overlay's real content never overflows the iframe
+      // (no scrollbars, no bottom clipping). The content is later measured and
+      // repositioned so only the actual overlay is shown.
+      frame.style.width = '1920px';
+      frame.style.height = '1080px';
+      frame.style.transformOrigin = '0 0';
+
+      function measure() {
+        try {
+          const doc = frame.contentDocument;
+          const el = doc && doc.querySelector(contentSelector);
+          if (el) {
+            const r = el.getBoundingClientRect();
+            if (r.width >= 50 && r.height >= 50 && r.width < 2000) {
+              return { left: r.left, top: r.top, w: r.width, h: r.height };
+            }
+          }
+        } catch (e) {}
+        return { left: 0, top: 0, w: fallbackW, h: fallbackH };
+      }
+
+      function apply() {
+        const m = measure();
+        const k = container.clientWidth / m.w;
+        container.style.height = Math.round(m.h * k) + 'px';
+        // Shift the overlay content to the box's top-left corner, then scale it
+        // to fill the panel width (overlays center their content in the viewport).
+        // Order matters: translate runs first (moves the content origin to 0,0),
+        // then scale keeps that anchor fixed.
+        frame.style.transform = `scale(${k}) translate(${-m.left}px, ${-m.top}px)`;
+      }
+
+      apply();
+      frame.addEventListener('load', apply);
+      window.addEventListener('resize', apply);
+      if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(apply).observe(container);
+      }
+      // Re-measure after fonts / entry animations settle.
+      setTimeout(apply, 300);
+      setTimeout(apply, 1000);
+    }
+
+    window.addEventListener('load', () => {
+      setupOverlayPreview('preview-scoreboard-container', 'preview-scoreboard', '.containervolley', 1050, 300);
+      setupOverlayPreview('preview-sets-container', 'preview-sets', '.containervolley', 1050, 350);
+      setupOverlayPreview('preview-timer-container', 'preview-timer', '.timer-container', 320, 220);
+      setupOverlayPreview('preview-timeouts-container', 'preview-timeouts', '.timeout-container', 460, 240);
+      setupOverlayPreview('preview-history-container', 'preview-history', '.history-container', 460, 380);
+      setupOverlayPreview('preview-formation-container', 'preview-formation', '.dual-wrapper', 1800, 330);
     });
   </script>
 </body>
