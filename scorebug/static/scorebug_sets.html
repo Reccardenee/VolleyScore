@@ -259,6 +259,15 @@ body {
   border-bottom: 1px solid var(--subtle-border-color);
 }
 
+#scoreboard {
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+#scoreboard.hidden {
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+}
+
 </style>
 </head>
 
@@ -476,6 +485,18 @@ function updateUI(data) {
     root.style.setProperty('--home-secondary-color', data.homeColorSecondary);
     root.style.setProperty('--away-primary-color', data.awayColorPrimary);
     root.style.setProperty('--away-secondary-color', data.awayColorSecondary);
+
+    // Overlay theme (same non-team palette)
+    root.style.setProperty('--primary-blue', data.themeBgPrimary || '#142850');
+    root.style.setProperty('--secondary-blue', data.themeBgSecondary || '#0a1f3c');
+    root.style.setProperty('--accent-gold', data.themeAccent || '#F0A500');
+    root.style.setProperty('--secondary-gold', data.themeAccentSecondary || '#B87B00');
+    root.style.setProperty('--subtle-border-color', data.themeBorder || '#2a406b');
+
+    // Per-overlay visibility (the sets overlay can be toggled from the panel)
+    const sb = document.getElementById('scoreboard');
+    const vis = data.overlayVisibility || {};
+    if (sb) sb.classList.toggle('hidden', !vis.scorebug_sets);
 
     previousState = data;
 }

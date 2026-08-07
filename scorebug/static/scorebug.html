@@ -443,6 +443,13 @@ function updateUI(data) {
     root.style.setProperty('--away-primary-color', data.awayColorPrimary);
     root.style.setProperty('--away-secondary-color', data.awayColorSecondary);
 
+    // Overlay theme (shared non-team palette)
+    root.style.setProperty('--primary-blue', data.themeBgPrimary || '#142850');
+    root.style.setProperty('--secondary-blue', data.themeBgSecondary || '#0a1f3c');
+    root.style.setProperty('--accent-gold', data.themeAccent || '#F0A500');
+    root.style.setProperty('--secondary-gold', data.themeAccentSecondary || '#B87B00');
+    root.style.setProperty('--subtle-border-color', data.themeBorder || '#2a406b');
+
     // Update PIN display
     const pinDisplay = document.getElementById("pinDisplay");
     if (data.pin) {
