@@ -1169,6 +1169,47 @@
       </div>
 
       <div class="card">
+        <div class="card-title">Overlay Theme</div>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 12px;">
+          Shared colors for scorebug, sets, timer, timeouts &amp; history. Team formations keep their team colors.
+        </p>
+        <div class="form-group">
+          <label class="form-label">Background (top)</label>
+          <input type="color" class="color-input" id="themeBgPrimary" value="#142850">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Background (bottom)</label>
+          <input type="color" class="color-input" id="themeBgSecondary" value="#0a1f3c">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Accent</label>
+          <input type="color" class="color-input" id="themeAccent" value="#F0A500">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Accent (secondary)</label>
+          <input type="color" class="color-input" id="themeAccentSecondary" value="#B87B00">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Border</label>
+          <input type="color" class="color-input" id="themeBorder" value="#2a406b">
+        </div>
+        <button class="btn btn-primary" onclick="saveTheme()">Apply Theme</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Overlay Display</div>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 12px;">
+          The standard scorebug is always visible. Toggle the others — they fade in on the overlay pages.
+        </p>
+        <div class="grid-2">
+          <button class="btn btn-secondary" id="overlayToggleSets" onclick="toggleOverlay('sets')">All Sets</button>
+          <button class="btn btn-secondary" id="overlayToggleTimer" onclick="toggleOverlay('timer')">Match Timer</button>
+          <button class="btn btn-secondary" id="overlayToggleTimeouts" onclick="toggleOverlay('timeouts')">Timeouts</button>
+          <button class="btn btn-secondary" id="overlayToggleHistory" onclick="toggleOverlay('history')">Score History</button>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="card-title">Configuration Backup</div>
         <button class="btn btn-primary btn-block" onclick="exportConfig()">Export Configuration</button>
         <div style="margin-top: 16px;">
@@ -1345,6 +1386,11 @@
       if (el) el.textContent = value;
     }
 
+    function setColor(id, value, fallback) {
+      const el = document.getElementById(id);
+      if (el) el.value = value || fallback;
+    }
+
     function restoreState(state) {
       // Score summary
       setText('summaryHomeName', state.homeName || 'Home');
@@ -1381,6 +1427,14 @@
       document.getElementById('homeColorSecondary').value = state.homeColorSecondary || '#AAAAFF';
       document.getElementById('awayColorPrimary').value = state.awayColorPrimary || '#FF0000';
       document.getElementById('awayColorSecondary').value = state.awayColorSecondary || '#FFAAAA';
+
+      // Theme colors
+      setColor('themeBgPrimary', state.themeBgPrimary, '#142850');
+      setColor('themeBgSecondary', state.themeBgSecondary, '#0a1f3c');
+      setColor('themeAccent', state.themeAccent, '#F0A500');
+      setColor('themeAccentSecondary', state.themeAccentSecondary, '#B87B00');
+      setColor('themeBorder', state.themeBorder, '#2a406b');
+      updateOverlayButtons(state.overlayVisibility);
 
       // Logos
       if (state.homeLogo) document.getElementById('homeLogo').value = state.homeLogo;
@@ -1945,6 +1999,58 @@
         formData.append('homeP' + i, homeInput ? homeInput.value : '');
         formData.append('awayP' + i, awayInput ? awayInput.value : '');
       }
+      appendPin(formData);
+      postUpdate(formData);
+    }
+
+    function saveTheme() {
+      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      const formData = new FormData();
+      formData.append('themeBgPrimary', document.getElementById('themeBgPrimary').value);
+      formData.append('themeBgSecondary', document.getElementById('themeBgSecondary').value);
+      formData.append('themeAccent', document.getElementById('themeAccent').value);
+      formData.append('themeAccentSecondary', document.getElementById('themeAccentSecondary').value);
+      formData.append('themeBorder', document.getElementById('themeBorder').value);
+      appendPin(formData);
+      postUpdate(formData);
+    }
+
+    let overlayFlags = { sets: false, timer: false, timeouts: false, history: false };
+
+    function updateOverlayButtons(vis) {
+      overlayFlags = {
+        sets: !!(vis && vis.scorebug_sets),
+        timer: !!(vis && vis.timer),
+        timeouts: !!(vis && vis.timeouts),
+        history: !!(vis && vis.score_history),
+      };
+      const paint = (id, on) => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.classList.toggle('btn-primary', on);
+          el.classList.toggle('btn-secondary', !on);
+        }
+      };
+      paint('overlayToggleSets', overlayFlags.sets);
+      paint('overlayToggleTimer', overlayFlags.timer);
+      paint('overlayToggleTimeouts', overlayFlags.timeouts);
+      paint('overlayToggleHistory', overlayFlags.history);
+    }
+
+    function toggleOverlay(name) {
+      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      overlayFlags[name] = !overlayFlags[name];
+      updateOverlayButtons({
+        scorebug_sets: overlayFlags.sets,
+        timer: overlayFlags.timer,
+        timeouts: overlayFlags.timeouts,
+        score_history: overlayFlags.history,
+      });
+      const formData = new FormData();
+      formData.append('overlay_sets', overlayFlags.sets ? 'true' : 'false');
+      formData.append('overlay_timer', overlayFlags.timer ? 'true' : 'false');
+      formData.append('overlay_timeouts', overlayFlags.timeouts ? 'true' : 'false');
+      formData.append('overlay_history', overlayFlags.history ? 'true' : 'false');
       appendPin(formData);
       postUpdate(formData);
     }
