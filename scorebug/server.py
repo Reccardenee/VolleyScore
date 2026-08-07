@@ -50,6 +50,14 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 PORT = int(os.environ.get("VOLLEYSCORE_PORT", "8000"))
 
+# Per-overlay show/hide defaults; the standard scorebug is always visible
+DEFAULT_OVERLAY_VISIBILITY = {
+    "scorebug_sets": False,
+    "timer": False,
+    "timeouts": False,
+    "score_history": False,
+}
+
 # Global state to store the current score
 DEFAULT_SCORE = {
     "awayName": "Away",
@@ -77,12 +85,7 @@ DEFAULT_SCORE = {
     "themeAccentSecondary": "#B87B00",
     "themeBorder": "#2a406b",
     # Per-overlay show/hide; the standard scorebug is always visible
-    "overlayVisibility": {
-        "scorebug_sets": False,
-        "timer": False,
-        "timeouts": False,
-        "score_history": False,
-    },
+    "overlayVisibility": dict(DEFAULT_OVERLAY_VISIBILITY),
     "matchTitle": "Volleyball Match",
     "pin": "",
     # Match Timer
@@ -432,13 +435,13 @@ def update():
         "matchTitle": get_val("matchTitle", current_score["matchTitle"]),
     })
 
-    # Overlay visibility: full-replacement semantics. Toggled flags always
-    # arrive together from the panel; fields omitted are left untouched.
+    # Overlay visibility: an update with no overlay_* fields leaves visibility
+    # untouched; otherwise all four flags are replaced outright (any field not
+    # sent is treated as false) — the panel always sends all four together.
+    # Form keys (overlay_sets/overlay_history) map onto the longer state keys.
     if any(k in form_data for k in ("overlay_timer", "overlay_timeouts",
                                     "overlay_history", "overlay_sets")):
-        vis = dict(current_score.get("overlayVisibility", {
-            "scorebug_sets": False, "timer": False, "timeouts": False, "score_history": False,
-        }))
+        vis = dict(current_score.get("overlayVisibility", dict(DEFAULT_OVERLAY_VISIBILITY)))
         vis["timer"] = form_data.get("overlay_timer") == "true"
         vis["timeouts"] = form_data.get("overlay_timeouts") == "true"
         vis["score_history"] = form_data.get("overlay_history") == "true"

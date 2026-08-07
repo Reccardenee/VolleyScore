@@ -653,6 +653,7 @@ def test_overlay_toggle_sets_flags(clean_state):
     assert s["overlayVisibility"]["timer"] is True
     assert s["overlayVisibility"]["timeouts"] is True
     assert s["overlayVisibility"]["score_history"] is False
+    assert s["overlayVisibility"]["scorebug_sets"] is False
 
 
 def test_overlay_toggle_fields_absent_keeps_existing(clean_state):
