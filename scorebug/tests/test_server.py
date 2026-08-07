@@ -601,3 +601,26 @@ def test_score_history_kept_full(clean_state):
         post_update({"homeScore": i, "awayScore": 0})
     s = get_state()
     assert len(s["scoreHistory"]) == 8
+
+
+# ============================================
+# THEME COLORS & OVERLAY VISIBILITY
+# ============================================
+
+def test_theme_colors_defaults_in_current(clean_state):
+    s = get_state()
+    assert s["themeBgPrimary"] == "#142850"
+    assert s["themeBgSecondary"] == "#0a1f3c"
+    assert s["themeAccent"] == "#F0A500"
+    assert s["themeAccentSecondary"] == "#B87B00"
+    assert s["themeBorder"] == "#2a406b"
+
+
+def test_overlay_visibility_defaults_all_hidden(clean_state):
+    s = get_state()
+    assert s["overlayVisibility"] == {
+        "scorebug_sets": False,
+        "timer": False,
+        "timeouts": False,
+        "score_history": False,
+    }

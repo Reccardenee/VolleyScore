@@ -70,6 +70,19 @@ DEFAULT_SCORE = {
     "awayColorSecondary": "#FFAAAA",
     "homeColorPrimary": "#0000FF",
     "homeColorSecondary": "#AAAAFF",
+    # Overlay theme: shared palette for scorebug/sets/timer/timeouts/history (not formations)
+    "themeBgPrimary": "#142850",
+    "themeBgSecondary": "#0a1f3c",
+    "themeAccent": "#F0A500",
+    "themeAccentSecondary": "#B87B00",
+    "themeBorder": "#2a406b",
+    # Per-overlay show/hide; the standard scorebug is always visible
+    "overlayVisibility": {
+        "scorebug_sets": False,
+        "timer": False,
+        "timeouts": False,
+        "score_history": False,
+    },
     "matchTitle": "Volleyball Match",
     "pin": "",
     # Match Timer
