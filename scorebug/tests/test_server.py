@@ -624,3 +624,39 @@ def test_overlay_visibility_defaults_all_hidden(clean_state):
         "timeouts": False,
         "score_history": False,
     }
+
+
+def test_update_theme_colors_persist(clean_state):
+    r = post_update({
+        "themeBgPrimary": "#111111", "themeBgSecondary": "#222222",
+        "themeAccent": "#00FF00", "themeAccentSecondary": "#33CC33",
+        "themeBorder": "#444444",
+    })
+    assert r.status_code == 200
+    s = get_state()
+    assert s["themeBgPrimary"] == "#111111"
+    assert s["themeAccent"] == "#00FF00"
+
+
+def test_theme_colors_survive_later_score_update(clean_state):
+    post_update({"themeAccent": "#00FF00"})
+    r = post_update({"homeScore": 1, "awayScore": 0})
+    assert r.status_code == 200
+    assert get_state()["themeAccent"] == "#00FF00"
+
+
+def test_overlay_toggle_sets_flags(clean_state):
+    r = post_update({"overlay_timer": "true", "overlay_timeouts": "true",
+                     "overlay_history": "false", "overlay_sets": "false"})
+    assert r.status_code == 200
+    s = get_state()
+    assert s["overlayVisibility"]["timer"] is True
+    assert s["overlayVisibility"]["timeouts"] is True
+    assert s["overlayVisibility"]["score_history"] is False
+
+
+def test_overlay_toggle_fields_absent_keeps_existing(clean_state):
+    post_update({"overlay_timer": "true"})
+    r = post_update({"homeScore": 2})
+    assert r.status_code == 200
+    assert get_state()["overlayVisibility"]["timer"] is True

@@ -424,8 +424,26 @@ def update():
         "awayColorSecondary": get_val("awayColorSecondary", current_score["awayColorSecondary"]),
         "homeColorPrimary": get_val("homeColorPrimary", current_score["homeColorPrimary"]),
         "homeColorSecondary": get_val("homeColorSecondary", current_score["homeColorSecondary"]),
+        "themeBgPrimary": get_val("themeBgPrimary", current_score["themeBgPrimary"]),
+        "themeBgSecondary": get_val("themeBgSecondary", current_score["themeBgSecondary"]),
+        "themeAccent": get_val("themeAccent", current_score["themeAccent"]),
+        "themeAccentSecondary": get_val("themeAccentSecondary", current_score["themeAccentSecondary"]),
+        "themeBorder": get_val("themeBorder", current_score["themeBorder"]),
         "matchTitle": get_val("matchTitle", current_score["matchTitle"]),
     })
+
+    # Overlay visibility: full-replacement semantics. Toggled flags always
+    # arrive together from the panel; fields omitted are left untouched.
+    if any(k in form_data for k in ("overlay_timer", "overlay_timeouts",
+                                    "overlay_history", "overlay_sets")):
+        vis = dict(current_score.get("overlayVisibility", {
+            "scorebug_sets": False, "timer": False, "timeouts": False, "score_history": False,
+        }))
+        vis["timer"] = form_data.get("overlay_timer") == "true"
+        vis["timeouts"] = form_data.get("overlay_timeouts") == "true"
+        vis["score_history"] = form_data.get("overlay_history") == "true"
+        vis["scorebug_sets"] = form_data.get("overlay_sets") == "true"
+        current_score["overlayVisibility"] = vis
 
     # Check if set is complete (25 points, or 15 for tie-break set 5)
     set_complete = False
