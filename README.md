@@ -30,6 +30,8 @@ This tool was built for a local volleyball team to use during OBS-based livestre
   - Records completed set scores to `previousSetScores` for display in the sets scorebug.
   - Resets points automatically after a set win.
 - **Custom Team Colors**: Configure primary and secondary colors for each team. These colors are used for the vertical bars next to team logos and in the formation header gradients.
+- **Overlay Theme**: Change the shared color palette (background gradient, accent, border) of the main scorebug, sets, timer, timeouts and score history overlays from the Settings tab. The team formations keep their team colors.
+- **Overlay Display**: Show or hide the sets, timer, timeouts and score history overlays from the Settings tab — they fade in/out with a subtle rise. The standard scorebug is always visible. Overlay state persists across restarts.
 - **Service Indicator**: Visual indicator for which team has possession/service.
 - **Customizable Logos**: Upload custom logos for both Home and Away teams directly from the control panel.
 - **Persistent State**: Scores are saved to a local `config.json` file on the server and synced across all connected clients.
@@ -139,11 +141,16 @@ The control panel also includes **live overlay previews** (in the Match, Teams a
 **Match Export** (downloads JSON/CSV, not an overlay):
 - **URL**: `http://localhost:8000/export_match`
 
+#### Recommended OBS layout: one scene
+
+Because the timer, timeouts, score history and sets overlays render fully transparent when hidden, you don't need separate scenes per overlay. Add all overlay browser sources to a single scene, stack them at the same position and size, then use the **Overlay Display** toggles in the control panel to fade the one you need in and out. The main scorebug (URL `http://localhost:8000/`) is always visible.
+
 ### 3. Uploading Logos, Colors and Players
 In the Control Panel, you can:
 - Upload PNG or JPG files for both teams. These logos are saved on the server in an `uploads` folder and will persist across restarts.
 - Configure primary and secondary colors for each team using color pickers. These colors will appear in the formation headers and logo bars.
 - Enter the 6 starting players per team (positions 1-6). These names are shown in the formation overlays.
+- Configure the shared **overlay theme** (background, accent and border colors for scorebug, sets, timer, timeouts and history) and toggle which overlays are **displayed** in the Settings tab.
 
 ### 4. Manual Set Adjustment
 The control panel allows manual set adjustment. You can increment/decrement sets manually using the +/- buttons next to the sets input fields. This is useful if you need to correct the set count due to an error or special situation.
@@ -173,7 +180,7 @@ The server will also automatically increment sets when a team reaches 25 points 
 │   └── tests/                    # Automated integration tests (pytest)
 ├── e2e/                          # Playwright end-to-end tests (Node)
 │   ├── playwright.config.js      # Launches an isolated server on port 8130
-│   └── tests/                    # Full-match, set 5, timer, PIN, previews...
+│   └── tests/                    # Full-match, set 5, timer, PIN, previews, theme, visibility...
 ├── .gitignore
 ├── README.md
 └── requirements.txt
@@ -216,7 +223,7 @@ Your `config.json` and `logs/` are automatically backed up and restored around t
 
 ### Running Playwright E2E Tests
 
-End-to-end tests simulate a real user driving the control panel in a headless Chromium browser and verify the overlays react in real time (full matches, the 5th-set tie-break, timer pause/resume, PIN protection, previews, exports and more). They run against an isolated server on port 8130 with its own `config.json` and logs.
+End-to-end tests simulate a real user driving the control panel in a headless Chromium browser and verify the overlays react in real time (full matches, the 5th-set tie-break, timer pause/resume, PIN protection, overlay previews, theme colors, overlay show/hide, exports and more). They run against an isolated server on port 8130 with its own `config.json` and logs.
 
 ```bash
 cd e2e
