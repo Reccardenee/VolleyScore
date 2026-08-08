@@ -661,3 +661,46 @@ def test_overlay_toggle_fields_absent_keeps_existing(clean_state):
     r = post_update({"homeScore": 2})
     assert r.status_code == 200
     assert get_state()["overlayVisibility"]["timer"] is True
+
+
+# ============================================
+# KEYBOARD SHORTCUTS
+# ============================================
+
+def test_keyboard_shortcuts_defaults_in_current(clean_state):
+    s = get_state()
+    assert s["keyboardShortcuts"]["home_point_plus"] == "1"
+    assert s["keyboardShortcuts"]["away_point_plus"] == "2"
+    assert s["keyboardShortcuts"]["timer_toggle"] == "t"
+    assert s["keyboardShortcuts"]["overlay_sets"] == "ctrl+1"
+
+
+def test_keyboard_shortcuts_saved_and_persist(clean_state):
+    new_map = {
+        "timer_toggle": "q",
+        "home_point_plus": "",
+        "tab_settings": "ctrl+shift+9",
+    }
+    r = post_update({"keyboardShortcuts": json.dumps(new_map)})
+    assert r.status_code == 200
+    s = get_state()
+    assert s["keyboardShortcuts"]["timer_toggle"] == "q"
+    assert s["keyboardShortcuts"]["home_point_plus"] == ""
+    assert s["keyboardShortcuts"]["tab_settings"] == "ctrl+shift+9"
+    # Unchanged keys keep their previous values
+    assert s["keyboardShortcuts"]["away_point_plus"] == "2"
+
+
+def test_keyboard_shortcuts_survive_score_update(clean_state):
+    post_update({"keyboardShortcuts": json.dumps({"timer_toggle": "q"})})
+    r = post_update({"homeScore": 1, "awayScore": 0})
+    assert r.status_code == 200
+    s = get_state()
+    assert s["keyboardShortcuts"]["timer_toggle"] == "q"
+
+
+def test_keyboard_shortcuts_invalid_json_ignored(clean_state):
+    post_update({"keyboardShortcuts": json.dumps({"timer_toggle": "q"})})
+    r = post_update({"keyboardShortcuts": "not json{{"})
+    assert r.status_code == 200
+    assert get_state()["keyboardShortcuts"]["timer_toggle"] == "q"

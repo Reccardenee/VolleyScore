@@ -359,6 +359,7 @@
 
     .btn-icon {
       width: 44px;
+      height: 44px;
       padding: 0;
       font-size: 1.25rem;
     }
@@ -570,6 +571,74 @@
       gap: 8px;
     }
 
+    .cards-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .cards-2col .card {
+      margin-bottom: 0;
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .preview-grid .preview-label {
+      margin-top: 0;
+    }
+
+    /* Grid tracks must be allowed to shrink below their content size,
+       otherwise the 1920px-wide preview iframes blow the columns out. */
+    .preview-grid > *,
+    .cards-2col > * {
+      min-width: 0;
+    }
+
+    /* ============================================
+       KEYBOARD SHORTCUTS
+       ============================================ */
+    .shortcut-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .shortcut-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .shortcut-label {
+      flex: 1;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .shortcut-bind {
+      min-width: 130px;
+      font-family: monospace;
+      font-weight: 600;
+    }
+
+    .shortcut-bind.capturing {
+      border: 2px dashed var(--accent-gold);
+      color: var(--accent-gold);
+    }
+
+    .shortcut-bind.bound {
+      color: var(--accent-blue);
+    }
+
+    .shortcut-clear {
+      width: 28px;
+      flex: none;
+    }
+
     /* ============================================
        MODALS
        ============================================ */
@@ -693,6 +762,13 @@
     /* ============================================
        RESPONSIVE
        ============================================ */
+    @media (max-width: 1100px) {
+      .cards-2col,
+      .preview-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 767px) {
       .score-controls {
         grid-template-columns: 1fr;
@@ -880,7 +956,6 @@
     <div class="tabs">
       <button class="tab-btn active" data-tab="match">Match</button>
       <button class="tab-btn" data-tab="teams">Teams</button>
-      <button class="tab-btn" data-tab="timer">Match Stats</button>
       <button class="tab-btn" data-tab="settings">Settings</button>
     </div>
 
@@ -928,11 +1003,70 @@
       </div>
 
       <div class="card">
-        <div class="card-title">Previous Sets</div>
-        <div id="previousSetsContainer">
-          <p style="color: var(--text-muted); font-size: 0.875rem;">No sets completed yet.</p>
+        <div class="card-title">Overlay Display</div>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 12px;">
+          The standard scorebug is always visible. Toggle the others — they fade in on the overlay pages.
+        </p>
+        <div class="grid-2">
+          <button class="btn btn-secondary" id="overlayToggleSets" onclick="toggleOverlay('sets')">All Sets</button>
+          <button class="btn btn-secondary" id="overlayToggleTimer" onclick="toggleOverlay('timer')">Match Timer</button>
+          <button class="btn btn-secondary" id="overlayToggleTimeouts" onclick="toggleOverlay('timeouts')">Timeouts</button>
+          <button class="btn btn-secondary" id="overlayToggleHistory" onclick="toggleOverlay('history')">Score History</button>
         </div>
-        <button class="btn btn-secondary btn-block" id="addPreviousSetBtn" onclick="addPreviousSet()">Add Set Score</button>
+      </div>
+
+      <div class="cards-2col">
+        <div class="card">
+          <div class="card-title">Match Timer</div>
+          <div class="timer-display" id="timerDisplay">00:00</div>
+          <div class="timer-controls">
+            <button class="btn btn-primary" onclick="timerControl('start')">Start</button>
+            <button class="btn btn-secondary" onclick="timerControl('pause')">Pause</button>
+            <button class="btn btn-primary" onclick="timerControl('resume')">Resume</button>
+            <button class="btn btn-danger" onclick="timerControl('reset')">Reset</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Timeouts</div>
+          <div class="timeout-controls">
+            <div class="timeout-team home">
+              <h4 id="homeTimeoutTeam">Home</h4>
+              <div class="timeout-dots" id="homeTimeoutDots">○○</div>
+              <div class="timeout-count" id="homeTimeoutCount">(2/2)</div>
+              <div class="timeout-btns">
+                <button class="btn btn-sm btn-secondary" onclick="timeoutChange('home', -1)">−</button>
+                <button class="btn btn-sm btn-primary" onclick="timeoutChange('home', 1)">+</button>
+              </div>
+            </div>
+            <div class="timeout-team away">
+              <h4 id="awayTimeoutTeam">Away</h4>
+              <div class="timeout-dots" id="awayTimeoutDots">○○</div>
+              <div class="timeout-count" id="awayTimeoutCount">(2/2)</div>
+              <div class="timeout-btns">
+                <button class="btn btn-sm btn-secondary" onclick="timeoutChange('away', -1)">−</button>
+                <button class="btn btn-sm btn-primary" onclick="timeoutChange('away', 1)">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cards-2col">
+        <div class="card">
+          <div class="card-title">Last 5 Points</div>
+          <ul class="score-history-list" id="scoreHistoryList">
+            <li style="color: var(--text-muted);">No points scored yet</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Previous Sets</div>
+          <div id="previousSetsContainer">
+            <p style="color: var(--text-muted); font-size: 0.875rem;">No sets completed yet.</p>
+          </div>
+          <button class="btn btn-secondary btn-block" id="addPreviousSetBtn" onclick="addPreviousSet()">Add Set Score</button>
+        </div>
       </div>
 
       <div class="card">
@@ -944,13 +1078,37 @@
 
       <div class="card">
         <div class="card-title">Overlay Previews</div>
-        <div class="preview-label"><span>Scoreboard</span><a href="/" target="_blank" rel="noopener">open in new tab</a></div>
-        <div class="overlay-preview" id="preview-scoreboard-container">
-          <iframe id="preview-scoreboard" src="/" title="Scoreboard preview"></iframe>
-        </div>
-        <div class="preview-label"><span>All Sets</span><a href="/scorebug_sets" target="_blank" rel="noopener">open in new tab</a></div>
-        <div class="overlay-preview" id="preview-sets-container">
-          <iframe id="preview-sets" src="/scorebug_sets" title="All sets preview"></iframe>
+        <div class="preview-grid">
+          <div class="preview-item">
+            <div class="preview-label"><span>Scoreboard</span><a href="/" target="_blank" rel="noopener">open in new tab</a></div>
+            <div class="overlay-preview" id="preview-scoreboard-container">
+              <iframe id="preview-scoreboard" src="/" title="Scoreboard preview"></iframe>
+            </div>
+          </div>
+          <div class="preview-item">
+            <div class="preview-label"><span>All Sets</span><a href="/scorebug_sets" target="_blank" rel="noopener">open in new tab</a></div>
+            <div class="overlay-preview" id="preview-sets-container">
+              <iframe id="preview-sets" src="/scorebug_sets" title="All sets preview"></iframe>
+            </div>
+          </div>
+          <div class="preview-item">
+            <div class="preview-label"><span>Match Timer</span><a href="/match_timer" target="_blank" rel="noopener">open in new tab</a></div>
+            <div class="overlay-preview" id="preview-timer-container">
+              <iframe id="preview-timer" src="/match_timer" title="Timer preview"></iframe>
+            </div>
+          </div>
+          <div class="preview-item">
+            <div class="preview-label"><span>Timeouts</span><a href="/timeouts" target="_blank" rel="noopener">open in new tab</a></div>
+            <div class="overlay-preview" id="preview-timeouts-container">
+              <iframe id="preview-timeouts" src="/timeouts" title="Timeouts preview"></iframe>
+            </div>
+          </div>
+          <div class="preview-item">
+            <div class="preview-label"><span>Score History</span><a href="/score_history" target="_blank" rel="noopener">open in new tab</a></div>
+            <div class="overlay-preview" id="preview-history-container">
+              <iframe id="preview-history" src="/score_history" title="Score history preview"></iframe>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1044,105 +1202,6 @@
       <button class="btn btn-primary btn-block" onclick="sendTeamSettings()">Save Team Settings</button>
     </div>
 
-    <!-- TIMER TAB -->
-    <div class="tab-content" id="tab-timer">
-      <div class="card">
-        <div class="card-title">Match Timer</div>
-        <div class="timer-display" id="timerDisplay">00:00</div>
-        <div class="timer-controls">
-          <button class="btn btn-primary" onclick="timerControl('start')">Start</button>
-          <button class="btn btn-secondary" onclick="timerControl('pause')">Pause</button>
-          <button class="btn btn-primary" onclick="timerControl('resume')">Resume</button>
-          <button class="btn btn-danger" onclick="timerControl('reset')">Reset</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Timeouts</div>
-        <div class="timeout-controls">
-          <div class="timeout-team home">
-            <h4 id="homeTimeoutTeam">Home</h4>
-            <div class="timeout-dots" id="homeTimeoutDots">○○</div>
-            <div class="timeout-count" id="homeTimeoutCount">(2/2)</div>
-            <div class="timeout-btns">
-              <button class="btn btn-sm btn-secondary" onclick="timeoutChange('home', -1)">−</button>
-              <button class="btn btn-sm btn-primary" onclick="timeoutChange('home', 1)">+</button>
-            </div>
-          </div>
-          <div class="timeout-team away">
-            <h4 id="awayTimeoutTeam">Away</h4>
-            <div class="timeout-dots" id="awayTimeoutDots">○○</div>
-            <div class="timeout-count" id="awayTimeoutCount">(2/2)</div>
-            <div class="timeout-btns">
-              <button class="btn btn-sm btn-secondary" onclick="timeoutChange('away', -1)">−</button>
-              <button class="btn btn-sm btn-primary" onclick="timeoutChange('away', 1)">+</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Last 5 Points</div>
-        <ul class="score-history-list" id="scoreHistoryList">
-          <li style="color: var(--text-muted);">No points scored yet</li>
-        </ul>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Overlay Previews</div>
-        <div class="preview-label"><span>Match Stats</span><a href="/match_timer" target="_blank" rel="noopener">open in new tab</a></div>
-        <div class="overlay-preview" id="preview-timer-container">
-          <iframe id="preview-timer" src="/match_timer" title="Timer preview"></iframe>
-        </div>
-        <div class="preview-label"><span>Timeouts</span><a href="/timeouts" target="_blank" rel="noopener">open in new tab</a></div>
-        <div class="overlay-preview" id="preview-timeouts-container">
-          <iframe id="preview-timeouts" src="/timeouts" title="Timeouts preview"></iframe>
-        </div>
-        <div class="preview-label"><span>Score History</span><a href="/score_history" target="_blank" rel="noopener">open in new tab</a></div>
-        <div class="overlay-preview" id="preview-history-container">
-          <iframe id="preview-history" src="/score_history" title="Score history preview"></iframe>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">OBS Overlay URLs</div>
-        <div class="obs-urls">
-          <div class="obs-url">
-            <span>Scoreboard</span>
-            <code>/</code>
-          </div>
-          <div class="obs-url">
-            <span>All Sets</span>
-            <code>/scorebug_sets</code>
-          </div>
-          <div class="obs-url">
-            <span>Home Formation</span>
-            <code>/home_formation</code>
-          </div>
-          <div class="obs-url">
-            <span>Away Formation</span>
-            <code>/away_formation</code>
-          </div>
-          <div class="obs-url">
-            <span>Dual Formation</span>
-            <code>/dual_formation</code>
-          </div>
-          <div class="obs-url">
-            <span>Match Stats</span>
-            <code>/match_timer</code>
-          </div>
-          <div class="obs-url">
-            <span>Timeouts</span>
-            <code>/timeouts</code>
-          </div>
-          <div class="obs-url">
-            <span>Score History</span>
-            <code>/score_history</code>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- SETTINGS TAB -->
     <div class="tab-content" id="tab-settings">
       <div class="card">
@@ -1197,15 +1256,53 @@
       </div>
 
       <div class="card">
-        <div class="card-title">Overlay Display</div>
+        <div class="card-title">OBS Overlay URLs</div>
+        <div class="obs-urls">
+          <div class="obs-url">
+            <span>Scoreboard</span>
+            <code>/</code>
+          </div>
+          <div class="obs-url">
+            <span>All Sets</span>
+            <code>/scorebug_sets</code>
+          </div>
+          <div class="obs-url">
+            <span>Home Formation</span>
+            <code>/home_formation</code>
+          </div>
+          <div class="obs-url">
+            <span>Away Formation</span>
+            <code>/away_formation</code>
+          </div>
+          <div class="obs-url">
+            <span>Dual Formation</span>
+            <code>/dual_formation</code>
+          </div>
+          <div class="obs-url">
+            <span>Match Stats</span>
+            <code>/match_timer</code>
+          </div>
+          <div class="obs-url">
+            <span>Timeouts</span>
+            <code>/timeouts</code>
+          </div>
+          <div class="obs-url">
+            <span>Score History</span>
+            <code>/score_history</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Keyboard Shortcuts</div>
         <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 12px;">
-          The standard scorebug is always visible. Toggle the others — they fade in on the overlay pages.
+          Match controls without a mouse. Click a key, then press the new combo.
+          Re-map here if a combo clashes with OBS hotkeys.
         </p>
-        <div class="grid-2">
-          <button class="btn btn-secondary" id="overlayToggleSets" onclick="toggleOverlay('sets')">All Sets</button>
-          <button class="btn btn-secondary" id="overlayToggleTimer" onclick="toggleOverlay('timer')">Match Timer</button>
-          <button class="btn btn-secondary" id="overlayToggleTimeouts" onclick="toggleOverlay('timeouts')">Timeouts</button>
-          <button class="btn btn-secondary" id="overlayToggleHistory" onclick="toggleOverlay('history')">Score History</button>
+        <div class="shortcut-list" id="shortcutList"></div>
+        <div class="grid-2" style="margin-top: 12px;">
+          <button class="btn btn-primary" onclick="saveShortcuts()">Apply Shortcuts</button>
+          <button class="btn btn-secondary" onclick="resetShortcutsUI()">Reset to Defaults</button>
         </div>
       </div>
 
@@ -1301,16 +1398,17 @@
     // ============================================
     // TAB NAVIGATION
     // ============================================
+    function switchToTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      const btn = document.querySelector('.tab-btn[data-tab="' + tab + '"]');
+      if (btn) btn.classList.add('active');
+      const content = document.getElementById('tab-' + tab);
+      if (content) content.classList.add('active');
+    }
+
     document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tab = btn.dataset.tab;
-
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
-        btn.classList.add('active');
-        document.getElementById('tab-' + tab).classList.add('active');
-      });
+      btn.addEventListener('click', () => switchToTab(btn.dataset.tab));
     });
 
     // ============================================
@@ -1435,6 +1533,15 @@
       setColor('themeAccentSecondary', state.themeAccentSecondary, '#B87B00');
       setColor('themeBorder', state.themeBorder, '#2a406b');
       updateOverlayButtons(state.overlayVisibility);
+
+      // Keyboard shortcuts (server config wins; fall back to defaults)
+      if (state.keyboardShortcuts && typeof state.keyboardShortcuts === 'object') {
+        shortcuts = { ...state.keyboardShortcuts };
+      } else {
+        shortcuts = { ...DEFAULT_SHORTCUTS };
+      }
+      buildComboToAction();
+      if (document.getElementById('shortcutList')) renderShortcutList();
 
       // Logos
       if (state.homeLogo) document.getElementById('homeLogo').value = state.homeLogo;
@@ -2081,6 +2188,256 @@
         }
       });
     });
+
+    // ============================================
+    // KEYBOARD SHORTCUTS (configurable, persisted server-side)
+    // ============================================
+    const DEFAULT_SHORTCUTS = {
+      home_point_plus: '1',
+      home_point_minus: 'shift+1',
+      away_point_plus: '2',
+      away_point_minus: 'shift+2',
+      home_set_plus: '3',
+      home_set_minus: 'shift+3',
+      away_set_plus: '4',
+      away_set_minus: 'shift+4',
+      possession_cycle: 'space',
+      timer_toggle: 't',
+      timer_reset: 'shift+t',
+      home_timeout_plus: 'u',
+      home_timeout_minus: 'shift+u',
+      away_timeout_plus: 'i',
+      away_timeout_minus: 'shift+i',
+      overlay_sets: 'ctrl+1',
+      overlay_timer: 'ctrl+2',
+      overlay_timeouts: 'ctrl+3',
+      overlay_history: 'ctrl+4',
+      tab_match: 'alt+1',
+      tab_teams: 'alt+2',
+      tab_settings: 'alt+3',
+    };
+
+    const SHORTCUT_LABELS = {
+      home_point_plus: 'Home +1 point',
+      home_point_minus: 'Home -1 point',
+      away_point_plus: 'Away +1 point',
+      away_point_minus: 'Away -1 point',
+      home_set_plus: 'Home +1 set',
+      home_set_minus: 'Home -1 set',
+      away_set_plus: 'Away +1 set',
+      away_set_minus: 'Away -1 set',
+      possession_cycle: 'Possession cycle',
+      timer_toggle: 'Timer start / pause',
+      timer_reset: 'Timer reset',
+      home_timeout_plus: 'Home timeout +1',
+      home_timeout_minus: 'Home timeout -1',
+      away_timeout_plus: 'Away timeout +1',
+      away_timeout_minus: 'Away timeout -1',
+      overlay_sets: 'Toggle All Sets overlay',
+      overlay_timer: 'Toggle Match Timer overlay',
+      overlay_timeouts: 'Toggle Timeouts overlay',
+      overlay_history: 'Toggle Score History overlay',
+      tab_match: 'Go to Match tab',
+      tab_teams: 'Go to Teams tab',
+      tab_settings: 'Go to Settings tab',
+    };
+
+    let shortcuts = { ...DEFAULT_SHORTCUTS };
+    let comboToAction = {};
+    let awaitingCapture = false;
+
+    function buildComboToAction() {
+      comboToAction = {};
+      for (const [action, combo] of Object.entries(shortcuts)) {
+        if (combo) comboToAction[combo] = action;
+      }
+    }
+
+    function normalizeComboEvent(e) {
+      if (e.key === 'Control' || e.key === 'Shift' || e.key === 'Alt' || e.key === 'Meta') return null;
+      const mods = [];
+      if (e.ctrlKey) mods.push('ctrl');
+      if (e.shiftKey) mods.push('shift');
+      if (e.altKey) mods.push('alt');
+      const key = e.key === ' ' ? 'space' : e.key.toLowerCase();
+      return mods.length ? mods.join('+') + '+' + key : key;
+    }
+
+    function formatCombo(combo) {
+      if (!combo) return 'Unbound';
+      return combo.split('+').map(p => {
+        if (p === 'ctrl') return 'Ctrl';
+        if (p === 'shift') return 'Shift';
+        if (p === 'alt') return 'Alt';
+        if (p === 'space') return 'Space';
+        return p.length === 1 ? p.toUpperCase() : p;
+      }).join('+');
+    }
+
+    function renderShortcutList() {
+      const list = document.getElementById('shortcutList');
+      if (!list) return;
+      list.innerHTML = '';
+      for (const [action, label] of Object.entries(SHORTCUT_LABELS)) {
+        const row = document.createElement('div');
+        row.className = 'shortcut-row';
+
+        const name = document.createElement('span');
+        name.className = 'shortcut-label';
+        name.textContent = label;
+
+        const bindBtn = document.createElement('button');
+        bindBtn.className = 'btn btn-sm shortcut-bind' + (shortcuts[action] ? ' bound' : '');
+        bindBtn.textContent = formatCombo(shortcuts[action]);
+        bindBtn.dataset.action = action;
+        bindBtn.addEventListener('click', () => startCapture(action, bindBtn));
+
+        const clearBtn = document.createElement('button');
+        clearBtn.className = 'btn btn-sm btn-secondary shortcut-clear';
+        clearBtn.textContent = '×';
+        clearBtn.title = 'Unbind';
+        clearBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          shortcuts[action] = '';
+          renderShortcutList();
+        });
+
+        row.appendChild(name);
+        row.appendChild(bindBtn);
+        row.appendChild(clearBtn);
+        list.appendChild(row);
+      }
+    }
+
+    function startCapture(action, btn) {
+      if (!btn) return;
+      awaitingCapture = true;
+      btn.classList.add('capturing');
+      const original = btn.textContent;
+      btn.textContent = 'Press a key…';
+      let timer = null;
+
+      const finish = (combo) => {
+        awaitingCapture = false;
+        btn.classList.remove('capturing');
+        document.removeEventListener('keydown', onKey, true);
+        if (timer) clearTimeout(timer);
+        if (combo === undefined) renderShortcutList();
+      };
+
+      const onKey = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.key === 'Escape') {
+          finish(undefined);
+          return;
+        }
+        const combo = normalizeComboEvent(e);
+        finish(combo);
+        if (combo) {
+          const clash = Object.entries(shortcuts).find(([a, c]) => c === combo && a !== action);
+          if (clash) {
+            showToast('Key already used by: ' + SHORTCUT_LABELS[clash[0]], 'error');
+            renderShortcutList();
+            return;
+          }
+          shortcuts[action] = combo;
+          renderShortcutList();
+        }
+      };
+      document.addEventListener('keydown', onKey, true);
+      timer = setTimeout(() => finish(undefined), 5000);
+    }
+
+    function saveShortcuts() {
+      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      const formData = new FormData();
+      formData.append('keyboardShortcuts', JSON.stringify(shortcuts));
+      appendPin(formData);
+      postUpdate(formData).then(result => {
+        if (result && result.status === 'ok') {
+          buildComboToAction();
+          showToast('Shortcuts saved', 'success');
+        }
+      });
+    }
+
+    function resetShortcutsUI() {
+      shortcuts = { ...DEFAULT_SHORTCUTS };
+      renderShortcutList();
+    }
+
+    function dispatchShortcutAction(action) {
+      switch (action) {
+        case 'home_point_plus': changeScore('home', 1); break;
+        case 'home_point_minus': changeScore('home', -1); break;
+        case 'away_point_plus': changeScore('away', 1); break;
+        case 'away_point_minus': changeScore('away', -1); break;
+        case 'home_set_plus': changeSet('home', 1); break;
+        case 'home_set_minus': changeSet('home', -1); break;
+        case 'away_set_plus': changeSet('away', 1); break;
+        case 'away_set_minus': changeSet('away', -1); break;
+        case 'possession_cycle': cyclePossession(); break;
+        case 'timer_toggle': timerToggle(); break;
+        case 'timer_reset': timerControl('reset'); break;
+        case 'home_timeout_plus': timeoutChange('home', 1); break;
+        case 'home_timeout_minus': timeoutChange('home', -1); break;
+        case 'away_timeout_plus': timeoutChange('away', 1); break;
+        case 'away_timeout_minus': timeoutChange('away', -1); break;
+        case 'overlay_sets': toggleOverlay('sets'); break;
+        case 'overlay_timer': toggleOverlay('timer'); break;
+        case 'overlay_timeouts': toggleOverlay('timeouts'); break;
+        case 'overlay_history': toggleOverlay('history'); break;
+        case 'tab_match': switchToTab('match'); break;
+        case 'tab_teams': switchToTab('teams'); break;
+        case 'tab_settings': switchToTab('settings'); break;
+      }
+    }
+
+    function cyclePossession() {
+      const order = ['none', 'home', 'away'];
+      const idx = order.indexOf(possession);
+      setPossession(order[(idx + 1) % order.length]);
+    }
+
+    function timerToggle() {
+      if (!timerState.timerStarted) timerControl('start');
+      else if (timerState.timerPaused) timerControl('resume');
+      else timerControl('pause');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (awaitingCapture) return;
+
+      if (e.key === 'Escape') {
+        const openModal = document.querySelector('.modal-overlay.active');
+        if (openModal) {
+          if (openModal.id === 'pinModal') hidePinModal();
+          else if (openModal.id === 'resetModal') hideResetModal();
+          else if (openModal.id === 'resetConfigModal') hideResetConfigModal();
+        }
+        return;
+      }
+
+      const combo = normalizeComboEvent(e);
+      if (!combo) return;
+      const action = comboToAction[combo];
+      if (!action) return;
+
+      const target = e.target;
+      const typing = target && (target.tagName === 'INPUT' ||
+                                target.tagName === 'TEXTAREA' ||
+                                target.tagName === 'SELECT' ||
+                                target.isContentEditable);
+      if (typing) return;
+      if (document.querySelector('.modal-overlay.active')) return;
+
+      e.preventDefault();
+      dispatchShortcutAction(action);
+    });
+
+    buildComboToAction();
+    renderShortcutList();
 
     // ============================================
     // OVERLAY PREVIEWS

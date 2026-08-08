@@ -44,17 +44,13 @@ test('score history, timeouts and game reset work from the panel', async ({ page
   await expect(page.locator('#scoreHistoryList li')).toHaveCount(4);
   await expect(page.locator('#scoreHistoryList li').first()).toContainText('Home 4 - 0');
 
-  // Timeouts decrement in the Match Stats tab
-  await openTab(page, 'timer');
+  // Timeouts decrement on the Match tab
   await page
     .locator('.timeout-team.home .timeout-btns')
     .getByRole('button', { name: '−', exact: true })
     .click();
   await expect(page.locator('#homeTimeoutCount')).toHaveText('(1/2)');
   await expect(page.locator('#homeTimeoutDots')).toHaveText('●○');
-
-  // Reset Game clears everything
-  await openTab(page, 'match');
   await page.getByRole('button', { name: 'Reset Game' }).click();
   await page.getByRole('button', { name: 'Yes, Reset' }).click();
   await expect(page.locator('#summaryHomeScore')).toHaveText('0');

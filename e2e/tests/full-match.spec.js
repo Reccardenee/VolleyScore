@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
-const { getState, openPanel, clickPlus } = require('./helpers');
+const { expectState, getState, openPanel, clickPlus } = require('./helpers');
 
-test('plays a full match and syncs all overlays', async ({ page }) => {
+test('plays a full match and syncs all overlays', async ({ page, request }) => {
   await page.request.post('/reset_config');
   await openPanel(page);
 
@@ -16,10 +16,9 @@ test('plays a full match and syncs all overlays', async ({ page }) => {
   }
   await clickPlus(page, 'home', 5);
 
-  await expect(page.locator('#homeScore')).toHaveValue('0');
-  await expect(page.locator('#awayScore')).toHaveValue('0');
-  await expect(page.locator('#homeSets')).toHaveValue('1');
-  await expect(page.locator('#awaySets')).toHaveValue('0');
+  // The server is authoritative: the set completes and both scores reset.
+  // (The input box can briefly echo clicks still in flight, so we poll the API.)
+  await expectState(request, { homeScore: 0, awayScore: 0, homeSets: 1, awaySets: 0, currentSet: 2 });
   await expect(page.locator('#summarySet')).toHaveText('2');
   await expect(page.locator('#posHome')).toHaveClass(/active/);
 

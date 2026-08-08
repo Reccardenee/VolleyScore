@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { openPanel, openTab, parseTimerSeconds } = require('./helpers');
+const { openPanel, parseTimerSeconds } = require('./helpers');
 
 async function timerSeconds(page) {
   return parseTimerSeconds(await page.locator('#summaryTimer').textContent());
@@ -8,7 +8,6 @@ async function timerSeconds(page) {
 test('timer runs, freezes while paused (no jump), resumes, and resets', async ({ page }) => {
   await page.request.post('/reset_config');
   await openPanel(page);
-  await openTab(page, 'timer');
 
   await expect(page.locator('#timerDisplay')).toHaveText('00:00');
 
@@ -31,7 +30,7 @@ test('timer runs, freezes while paused (no jump), resumes, and resets', async ({
     .toBeGreaterThanOrEqual(frozen + 1);
 
   // Reset: everything clears
-  await page.getByRole('button', { name: 'Reset' }).click();
+  await page.getByRole('button', { name: 'Reset', exact: true }).click();
   await expect(page.locator('#timerDisplay')).toHaveText('00:00');
   await expect(page.locator('#summaryTimer')).toHaveText('00:00');
 });

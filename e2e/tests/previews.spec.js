@@ -1,16 +1,17 @@
 const { test, expect } = require('@playwright/test');
 const { openPanel, openTab } = require('./helpers');
 
+// Content selectors inside each preview iframe (1920px layout space)
 const PREVIEWS = [
-  ['#preview-scoreboard', '.containervolley', 500, 100, 'match'],
-  ['#preview-sets', '.containervolley', 500, 150, 'match'],
-  ['#preview-timer', '.timer-container', 200, 80, 'timer'],
-  ['#preview-timeouts', '.timeout-container', 300, 100, 'timer'],
-  ['#preview-history', '.history-container', 300, 150, 'timer'],
-  ['#preview-formation', '.dual-wrapper', 500, 80, 'teams'],
+  ['#preview-scoreboard', '.containervolley', 'match'],
+  ['#preview-sets', '.containervolley', 'match'],
+  ['#preview-timer', '.timer-container', 'match'],
+  ['#preview-timeouts', '.timeout-container', 'match'],
+  ['#preview-history', '.history-container', 'match'],
+  ['#preview-formation', '.dual-wrapper', 'teams'],
 ];
 
-for (const [frameId, selector, minW, minH, tab] of PREVIEWS) {
+for (const [frameId, selector, tab] of PREVIEWS) {
   test(`${frameId} preview renders the overlay scaled into the visible box`, async ({ page }) => {
     await page.request.post('/reset_config');
     await openPanel(page);
@@ -27,8 +28,10 @@ for (const [frameId, selector, minW, minH, tab] of PREVIEWS) {
     const containerBox = await container.boundingBox();
     const box = await content.boundingBox();
 
-    expect(box.width).toBeGreaterThanOrEqual(minW);
-    expect(box.height).toBeGreaterThanOrEqual(minH);
+    // Scaled content fills the visible box (no blowout, no tiny thumbnail),
+    // whatever the panel width - the box tracks the container's dimensions
+    expect(box.width).toBeGreaterThanOrEqual(containerBox.width * 0.95);
+    expect(box.height).toBeGreaterThanOrEqual(containerBox.height * 0.8);
     // Content is anchored at the container's origin, not shifted off-screen
     expect(box.x).toBeGreaterThanOrEqual(containerBox.x - 5);
     expect(box.y).toBeGreaterThanOrEqual(containerBox.y - 5);

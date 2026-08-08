@@ -382,9 +382,12 @@ function animateScoreChange(elementId, newValue) {
 
 
 function updateUI(data) {
-    // Update match title
+    // Update match title (only the text node, preserving the PIN badge inside)
     if (data.matchTitle !== previousState.matchTitle) {
-        document.getElementById("matchTitle").textContent = data.matchTitle || "Volleyball Match";
+        const titleEl = document.getElementById("matchTitle");
+        if (titleEl && titleEl.childNodes[0]) {
+            titleEl.childNodes[0].textContent = data.matchTitle || "Volleyball Match";
+        }
     }
 
     // Update team names
@@ -452,10 +455,8 @@ function updateUI(data) {
 
     // Update PIN display
     const pinDisplay = document.getElementById("pinDisplay");
-    if (data.pin) {
-        pinDisplay.textContent = "PIN: " + data.pin;
-    } else {
-        pinDisplay.textContent = "";
+    if (pinDisplay) {
+        pinDisplay.textContent = data.pin ? "PIN: " + data.pin : "";
     }
 
     previousState = data;

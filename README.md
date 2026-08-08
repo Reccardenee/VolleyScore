@@ -7,7 +7,7 @@ This tool was built for a local volleyball team to use during OBS-based livestre
 
 ## Features
 
-- **Web-Based Control Panel**: Control the score from the host computer or any device on the same local network (e.g., a tablet or phone). Organized into Match, Teams, Match Stats and Settings tabs.
+- **Web-Based Control Panel**: Control the score from the host computer or any device on the same local network (e.g., a tablet or phone). Organized into Match, Teams and Settings tabs. All match-critical controls — points, sets, possession, timer, timeouts, overlay visibility and live previews — live on the single **Match** tab.
 - **Instant Updates via WebSockets**: Real-time updates to the OBS Browser Source using Flask-SocketIO, providing low latency.
 - **Multiple Overlay Views**:
   - **Main Scorebug** (`/` or `scorebug.html`): The primary scoreboard overlay showing current score and sets won.
@@ -18,7 +18,7 @@ This tool was built for a local volleyball team to use during OBS-based livestre
   - **Match Timer** (`match_timer.html`): Elapsed match time overlay with start/pause/resume/reset controls.
   - **Timeouts** (`timeouts.html`): Timeout indicator overlay (2 per team per set).
   - **Score History** (`score_history.html`): Last 5 points overlay.
-- **Match Timer**: Manual start/pause/resume/reset via the Match Stats tab. Auto-starts when the first point is scored. Elapsed time is tracked by the server and the display ticks from a server-reported baseline, so pausing freezes the clock exactly (no jumps from clock skew).
+- **Match Timer**: Manual start/pause/resume/reset from the Match tab. Auto-starts when the first point is scored. Elapsed time is tracked by the server and the display ticks from a server-reported baseline, so pausing freezes the clock exactly (no jumps from clock skew).
 - **Timeouts**: Track the 2 timeouts per team per set. Counts reset automatically when a new set starts.
 - **Score History**: Every point is recorded server-side; the overlays show the last 5. Full point-by-point history is available in the CSV match export.
 - **Match Export**: Export the full match (teams, sets, score history, timeouts, duration) as JSON or a point-by-point CSV.
@@ -31,7 +31,8 @@ This tool was built for a local volleyball team to use during OBS-based livestre
   - Resets points automatically after a set win.
 - **Custom Team Colors**: Configure primary and secondary colors for each team. These colors are used for the vertical bars next to team logos and in the formation header gradients.
 - **Overlay Theme**: Change the shared color palette (background gradient, accent, border) of the main scorebug, sets, timer, timeouts and score history overlays from the Settings tab. The team formations keep their team colors.
-- **Overlay Display**: Show or hide the sets, timer, timeouts and score history overlays from the Settings tab — they fade in/out with a subtle rise. The standard scorebug is always visible. Overlay state persists across restarts.
+- **Overlay Display**: Show or hide the sets, timer, timeouts and score history overlays from the Match tab — they fade in/out with a subtle rise. The standard scorebug is always visible. Overlay state persists across restarts.
+- **Keyboard Shortcuts**: Drive every match control from the keyboard while focusing the panel — points, sets, possession, timer, timeouts and overlay toggles. All shortcuts are **remappable** in the Settings tab and persist across restarts.
 - **Service Indicator**: Visual indicator for which team has possession/service.
 - **Customizable Logos**: Upload custom logos for both Home and Away teams directly from the control panel.
 - **Persistent State**: Scores are saved to a local `config.json` file on the server and synced across all connected clients.
@@ -88,7 +89,7 @@ Open your web browser and navigate to:
 
 Use this interface to change team names, update scores, manage sets, upload logos, and configure team colors.
 
-The control panel also includes **live overlay previews** (in the Match, Teams and Match Stats tabs): scaled-down, real-time copies of the scoreboard, sets, formation, timer, timeouts and score history overlays. They update instantly via the same WebSocket used by OBS, so you can track changes as you adjust the score. Previews are scaled to fit the panel width; previews on hidden tabs render automatically when you switch to their tab.
+The control panel also includes **live overlay previews** (in the Match and Teams tabs): scaled-down, real-time copies of the scoreboard, sets, formation, timer, timeouts and score history overlays. They update instantly via the same WebSocket used by OBS, so you can track changes as you adjust the score. Previews are scaled to fit the panel width; previews on hidden tabs render automatically when you switch to their tab.
 
 ### 2. Add to OBS Studio
 1. Open OBS Studio.
@@ -143,14 +144,43 @@ The control panel also includes **live overlay previews** (in the Match, Teams a
 
 #### Recommended OBS layout: one scene
 
-Because the timer, timeouts, score history and sets overlays render fully transparent when hidden, you don't need separate scenes per overlay. Add all overlay browser sources to a single scene, stack them at the same position and size, then use the **Overlay Display** toggles in the control panel to fade the one you need in and out. The main scorebug (URL `http://localhost:8000/`) is always visible.
+Because the timer, timeouts, score history and sets overlays render fully transparent when hidden, you don't need separate scenes per overlay. Add all overlay browser sources to a single scene, stack them at the same position and size, then use the **Overlay Display** toggles on the control panel's Match tab to fade the one you need in and out. The main scorebug (URL `http://localhost:8000/`) is always visible.
+
+#### One-window match day: control panel inside OBS (custom dock)
+
+If you run everything on a single laptop screen, you can host the control panel inside the OBS Studio window so you never need to Alt-Tab during a match:
+
+1. Open OBS Studio and select **Docks → Custom Browser Docks…** from the top menu.
+2. Click **+**, name it `VolleyScore Panel`, and set the URL to `http://localhost:8000/control_panel`.
+3. Click **Apply**, then drag the dock to the edge of the window (right side works well) and resize it.
+4. Turn on **Studio Mode** (bottom-right): the Program preview shows the live broadcast, and the dock holds every match control on the **Match** tab — score, possession, timer, timeouts, overlay toggles and live previews.
+
+The panel is fully responsive, so the dock's width (typically 300-400px) works as-is; on narrow widths the cards stack into a single column.
+
+#### Keyboard shortcuts
+
+While the control panel tab has focus, the whole match can be run from the keyboard — handy on a one-laptop match day. Shortcuts are ignored while you are typing in a field (team names, scores...) or when a modal dialog is open. They are remappable and unbindable in **Settings → Keyboard Shortcuts** (click a key, press the new combo; click × to unbind; apply saves them) and persist across restarts.
+
+| Action | Default key |
+|---|---|
+| Home / away +1 point | `1` / `2` |
+| Home / away −1 point | `Shift+1` / `Shift+2` |
+| Home / away +1 set | `3` / `4` |
+| Home / away −1 set | `Shift+3` / `Shift+4` |
+| Cycle possession (none → home → away) | `Space` |
+| Start / pause / resume timer | `T` |
+| Reset timer | `Shift+T` |
+| Home / away timeout +1 | `U` / `I` |
+| Home / away timeout −1 | `Shift+U` / `Shift+I` |
+| Toggle sets / timer / timeouts / history overlays | `Ctrl+1` / `Ctrl+2` / `Ctrl+3` / `Ctrl+4` |
+| Switch to Match / Teams / Settings tab | `Alt+1` / `Alt+2` / `Alt+3` |
 
 ### 3. Uploading Logos, Colors and Players
 In the Control Panel, you can:
 - Upload PNG or JPG files for both teams. These logos are saved on the server in an `uploads` folder and will persist across restarts.
 - Configure primary and secondary colors for each team using color pickers. These colors will appear in the formation headers and logo bars.
 - Enter the 6 starting players per team (positions 1-6). These names are shown in the formation overlays.
-- Configure the shared **overlay theme** (background, accent and border colors for scorebug, sets, timer, timeouts and history) and toggle which overlays are **displayed** in the Settings tab.
+- Configure the shared **overlay theme** (background, accent and border colors for scorebug, sets, timer, timeouts and history) in the Settings tab, and toggle which overlays are **displayed** on the Match tab.
 
 ### 4. Manual Set Adjustment
 The control panel allows manual set adjustment. You can increment/decrement sets manually using the +/- buttons next to the sets input fields. This is useful if you need to correct the set count due to an error or special situation.

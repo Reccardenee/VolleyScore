@@ -58,6 +58,33 @@ DEFAULT_OVERLAY_VISIBILITY = {
     "score_history": False,
 }
 
+# Configurable keyboard shortcuts (control panel). Combos are canonical:
+# modifiers in ctrl+shift+alt order, key lowercased ("space" for Space).
+DEFAULT_KEYBOARD_SHORTCUTS = {
+    "home_point_plus": "1",
+    "home_point_minus": "shift+1",
+    "away_point_plus": "2",
+    "away_point_minus": "shift+2",
+    "home_set_plus": "3",
+    "home_set_minus": "shift+3",
+    "away_set_plus": "4",
+    "away_set_minus": "shift+4",
+    "possession_cycle": "space",
+    "timer_toggle": "t",
+    "timer_reset": "shift+t",
+    "home_timeout_plus": "u",
+    "home_timeout_minus": "shift+u",
+    "away_timeout_plus": "i",
+    "away_timeout_minus": "shift+i",
+    "overlay_sets": "ctrl+1",
+    "overlay_timer": "ctrl+2",
+    "overlay_timeouts": "ctrl+3",
+    "overlay_history": "ctrl+4",
+    "tab_match": "alt+1",
+    "tab_teams": "alt+2",
+    "tab_settings": "alt+3",
+}
+
 # Global state to store the current score
 DEFAULT_SCORE = {
     "awayName": "Away",
@@ -86,6 +113,8 @@ DEFAULT_SCORE = {
     "themeBorder": "#2a406b",
     # Per-overlay show/hide; the standard scorebug is always visible
     "overlayVisibility": dict(DEFAULT_OVERLAY_VISIBILITY),
+    # Configurable keyboard shortcuts for the control panel
+    "keyboardShortcuts": dict(DEFAULT_KEYBOARD_SHORTCUTS),
     "matchTitle": "Volleyball Match",
     "pin": "",
     # Match Timer
@@ -447,6 +476,22 @@ def update():
         vis["score_history"] = form_data.get("overlay_history") == "true"
         vis["scorebug_sets"] = form_data.get("overlay_sets") == "true"
         current_score["overlayVisibility"] = vis
+
+    # Keyboard shortcuts: optional JSON mapping of action name -> canonical
+    # combo string ("" unbinds). Keys not mentioned keep their current value;
+    # invalid JSON is ignored, keeping the current map.
+    shortcuts_str = form_data.get("keyboardShortcuts")
+    if shortcuts_str is not None:
+        try:
+            parsed_shortcuts = json.loads(shortcuts_str)
+        except json.JSONDecodeError:
+            parsed_shortcuts = None
+        if isinstance(parsed_shortcuts, dict):
+            merged_shortcuts = dict(current_score.get(
+                "keyboardShortcuts", DEFAULT_KEYBOARD_SHORTCUTS))
+            merged_shortcuts.update(
+                {str(k): str(v) for k, v in parsed_shortcuts.items()})
+            current_score["keyboardShortcuts"] = merged_shortcuts
 
     # Check if set is complete (25 points, or 15 for tie-break set 5)
     set_complete = False
