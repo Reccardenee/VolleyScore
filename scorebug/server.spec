@@ -17,8 +17,7 @@ a = Analysis(
         'gevent.monkey',
         'gevent.hub',
         'gevent.event',
-        'gevent.timeout',
-        'dns.asyncresolver'
+        'gevent.timeout'
     ],
     hookspath=[],
     hooksconfig={},
@@ -51,5 +50,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='icon.ico',
+    icon='static/icon.ico',
 )
