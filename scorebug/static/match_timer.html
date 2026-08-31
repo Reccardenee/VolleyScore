@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match Timer</title>
+  <link rel="icon" type="image/x-icon" href="/static/icon.ico">
+
+  <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+  <style>
+    :root {
+      --primary-blue: #142850;
+      --secondary-blue: #0a1f3c;
+      --accent-gold: #F0A500;
+      --secondary-gold: #B87B00;
+    }
+
+    body {
+      background: rgba(0,0,0,0);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+
+    .timer-container {
+      background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
+      border-radius: 15px;
+      padding: 20px 40px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .timer-container.hidden {
+      opacity: 0;
+      transform: translateY(10px);
+      pointer-events: none;
+    }
+
+    .timer-display {
+      font-family: "Alfa Slab One", cursive;
+      font-size: 80px;
+      color: white;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timer-label {
+      font-family: "Alfa Slab One", cursive;
+      font-size: 20px;
+      color: var(--accent-gold);
+      letter-spacing: 2px;
+      margin-top: 10px;
+    }
+
+    .timer-status {
+      font-size: 14px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="timer-container">
+    <div class="timer-display" id="timerDisplay">00:00</div>
+    <div class="timer-label">MATCH TIME</div>
+    <div class="timer-status" id="timerStatus"></div>
+  </div>
+
+  <script>
+    const socket = io();
+
+    let timerState = {
+      timerStarted: false,
+      timerPaused: false,
+      timerStartTimestamp: null,
+      timerPausedTimestamp: null,
+      accumulatedTime: 0
+    };
+
+    // Committed timer baseline: server-reported elapsed plus a client-clock
+    // anchor, so display math ticks only with client-clock deltas.
+    let timerDisplayBase = 0;
+    let timerDisplayAnchor = Date.now() / 1000;
+
+    let displayInterval = null;
+
+    function syncTimerState(data) {
+      timerState = {
+        timerStarted: data.timerStarted,
+        timerPaused: data.timerPaused,
+        timerStartTimestamp: data.timerStartTimestamp,
+        timerPausedTimestamp: data.timerPausedTimestamp,
+        accumulatedTime: data.accumulatedTime
+      };
+
+      if (typeof data.timerElapsed === 'number' && !isNaN(data.timerElapsed)) {
+        timerDisplayBase = data.timerElapsed;
+      } else {
+        const acc = data.accumulatedTime || 0;
+        const start = data.timerStartTimestamp;
+        if (data.timerPaused && data.timerPausedTimestamp && start) {
+          timerDisplayBase = acc + (data.timerPausedTimestamp - start);
+        } else if (data.timerStarted && start) {
+          timerDisplayBase = acc + (Date.now() / 1000 - start);
+        } else {
+          timerDisplayBase = acc;
+        }
+      }
+      timerDisplayAnchor = Date.now() / 1000;
+    }
+
+    function getTimerElapsed() {
+      if (!timerState.timerStarted) return 0;
+      if (timerState.timerPaused) return timerDisplayBase;
+      return timerDisplayBase + (Date.now() / 1000 - timerDisplayAnchor);
+    }
+
+    socket.on('score_update', function(data) {
+      const oldState = {...timerState};
+      syncTimerState(data);
+      applyTheme(data);
+      applyVisibility(data);
+
+      if (!oldState.timerStarted && data.timerStarted) {
+        startDisplayTimer();
+      } else if (oldState.timerStarted && !data.timerStarted) {
+        stopDisplayTimer();
+      }
+    });
+
+    function startDisplayTimer() {
+      if (displayInterval) clearInterval(displayInterval);
+      updateTimerDisplay();
+      displayInterval = setInterval(updateTimerDisplay, 1000);
+    }
+
+    function stopDisplayTimer() {
+      if (displayInterval) {
+        clearInterval(displayInterval);
+        displayInterval = null;
+      }
+    }
+
+    function updateTimerDisplay() {
+      const display = document.getElementById("timerDisplay");
+      const status = document.getElementById("timerStatus");
+
+      if (!timerState.timerStarted) {
+        display.textContent = "00:00";
+        status.textContent = "Ready";
+        return;
+      }
+
+      if (timerState.timerPaused) {
+        display.textContent = formatTime(Math.floor(getTimerElapsed()));
+        status.textContent = "Paused";
+        return;
+      }
+
+      if (timerState.timerStartTimestamp) {
+        display.textContent = formatTime(Math.floor(getTimerElapsed()));
+        status.textContent = "";
+      }
+    }
+
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function applyTheme(data) {
+      const root = document.documentElement;
+      root.style.setProperty('--primary-blue', data.themeBgPrimary || '#142850');
+      root.style.setProperty('--secondary-blue', data.themeBgSecondary || '#0a1f3c');
+      root.style.setProperty('--accent-gold', data.themeAccent || '#F0A500');
+      root.style.setProperty('--secondary-gold', data.themeAccentSecondary || '#B87B00');
+    }
+
+    function applyVisibility(data) {
+      const vis = data.overlayVisibility || {};
+      const el = document.querySelector('.timer-container');
+      if (el) el.classList.toggle('hidden', !vis.timer);
+    }
+
+    socket.on('connect', () => {
+      console.log('Connected to WebSocket');
+      fetch('/current').then(r => r.json()).then(data => {
+        syncTimerState(data);
+        applyTheme(data);
+        applyVisibility(data);
+        if (data.timerStarted) {
+          startDisplayTimer();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

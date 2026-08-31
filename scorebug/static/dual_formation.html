@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>VolleyScore Dual Formation</title>
+<link rel="icon" type="image/x-icon" href="/static/icon.ico">
 <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
 <!-- Socket.IO Client -->
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -13,6 +14,12 @@
  --accent-red: #D83A56;
  --accent-gold: #F0A500;
  --subtle-border-color: #2a406b;
+
+ /* Dynamic Colors - Default values (will be updated by JS) */
+ --home-primary-color: #0000FF;
+ --home-secondary-color: #AAAAFF;
+ --away-primary-color: #FF0000;
+ --away-secondary-color: #FFAAAA;
 }
 
 body {
@@ -66,9 +73,9 @@ body {
 }
 
 /* Home specific header */
-.home .header { background: linear-gradient(to right, var(--accent-red), var(--primary-blue)); border-color: var(--accent-gold); }
-/* Away specific header */
-.away .header { background: linear-gradient(to right, var(--accent-gold), var(--primary-blue)); border-color: white; }
+.home .header { background: linear-gradient(to right, var(--home-secondary-color), var(--primary-blue)); border-color: var(--home-secondary-color); }
+
+.away .header { background: linear-gradient(to right, var(--away-secondary-color), var(--primary-blue)); border-color: var(--away-secondary-color); }
 
 .team-logo {
   width: 60px;
@@ -107,12 +114,20 @@ body {
   transition: transform 0.3s ease;
 }
 
+.home .pos-label {
+  background: var(--home-secondary-color);
+  color: var(--primary-blue);
+}
+
+.away .pos-label {
+  background: var(--away-secondary-color);
+  color: var(--primary-blue);
+}
+
 .pos-label {
   position: absolute;
   top: -8px;
   left: 15px;
-  background: var(--accent-gold);
-  color: var(--primary-blue);
   font-family: "Alfa Slab One", cursive;
   font-size: 11px;
   padding: 2px 8px;
@@ -169,11 +184,21 @@ body {
 <script>
 const socket = io();
 
+socket.on('connect', function() {
+    fetch('/current').then(r => r.json()).then(updateGraphic);
+});
+
 socket.on('score_update', function(data) {
     updateGraphic(data);
 });
 
 function updateGraphic(data) {
+    const root = document.documentElement;
+    root.style.setProperty('--home-primary-color', data.homeColorPrimary);
+    root.style.setProperty('--home-secondary-color', data.homeColorSecondary);
+    root.style.setProperty('--away-primary-color', data.awayColorPrimary);
+    root.style.setProperty('--away-secondary-color', data.awayColorSecondary);
+
     // Update Home
     document.getElementById("homeName").textContent = data.homeName;
     document.getElementById("homeLogo").style.backgroundImage = `url('${data.homeLogo}')`;

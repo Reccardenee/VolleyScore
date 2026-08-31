@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VolleyScore</title>
+<title>VolleyScore - All Sets</title>
 <link rel="icon" type="image/x-icon" href="/static/icon.ico">
 
 <!-- Fonts: Used for the bold team names and scores -->
@@ -33,7 +33,7 @@
 
 /* --- GENERAL BODY --- */
 body {
- background: var(--dark-background);
+ background: rgba(0,0,0,0); /* Transparent for OBS */
  margin: 0;
  padding: 20px;
  display: flex;
@@ -49,12 +49,12 @@ body {
   width: fit-content;
   min-width: 1000px;
   display: grid;
-  grid-template-columns: 150px auto 70px 100px 120px; /* Logo | Name | Service | Sets | Points */
+  grid-template-columns: 150px auto 70px 90px 90px 90px 90px 90px;
   grid-template-rows: auto auto auto; /* Header + Home + Away */
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  margin-bottom: 10px;
+  margin-bottom: 10px; /* Space for previous set scores */
 }
 
 /* --- HEADER ROW (Labels like SETS, POINTS) --- */
@@ -72,21 +72,7 @@ body {
   border-bottom: 1px solid var(--subtle-border-color);
 }
 
-/* Points Header */
-.boxheader-points {
-  background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
-  color: white;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.6);
-  font-family: "Alfa Slab One", cursive;
-  font-size: 20px;
-  text-align: center;
-  font-weight: bold;
-  letter-spacing: 2px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-bottom: 1px solid var(--subtle-border-color);
-}
+
 
 .boxheader-service {
   background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
@@ -102,7 +88,6 @@ body {
 .boxheader-title {
   background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
   color: white;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.6);
   font-family: "Alfa Slab One", cursive;
   font-size: 22px;
   text-align: center;
@@ -112,17 +97,6 @@ body {
   justify-content: center;
   border-bottom: 1px solid var(--subtle-border-color);
   position: relative;
-}
-
-.pin-display {
-  position: absolute;
-  right: 10px;
-  font-size: 14px;
-  font-family: Arial, sans-serif;
-  background: rgba(255,255,255,0.2);
-  padding: 2px 8px;
-  border-radius: 4px;
-  letter-spacing: 2px;
 }
 
 /* --- LOGO COLUMN (SPLIT) --- */
@@ -144,7 +118,7 @@ body {
     width: 80%;
     height: 90%;
     border-radius: 15px;
-    background-size: contain; 
+    background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
@@ -177,27 +151,20 @@ body {
 
 /* --- TEAM NAMES --- */
 .boxhometeam, .boxawayteam {
-  text-align: left;
-  display: flex;
-  align-items: center;
-  padding: 10px 15px 10px 25px;
-  font-family: "Alfa Slab One", cursive;
-  font-size: 50px;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.6);
-  position: relative;
-  background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
-  white-space: nowrap;
+ text-align: left;
+ display: flex;
+ align-items: center;
+ padding: 10px 15px 10px 25px;
+ font-family: "Alfa Slab One", cursive;
+ font-size: 50px;
+ color: white;
+ position: relative;
+ background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
+ white-space: nowrap;
 }
 
-.boxhometeam {
-  color: #4a90e2;
-  grid-row: 2 / 3; grid-column: 2 / 3;
-}
-
-.boxawayteam {
-  color: #ef4444;
-  grid-row: 3 / 4; grid-column: 2 / 3;
-}
+.boxhometeam { grid-row: 2 / 3; grid-column: 2 / 3; }
+.boxawayteam { grid-row: 3 / 4; grid-column: 2 / 3; }
 
 /* General appearance for boxes */
 .box {
@@ -212,27 +179,44 @@ body {
  border-bottom: 1px solid var(--subtle-border-color);
 }
 
-/* --- POINTS (Score) --- */
-.boxhomepoints, .boxawaypoints {
-  background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
-  color: white;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.6);
-  font-size: 80px;
-  font-family: "Alfa Slab One", cursive;
-  position: relative; /* For animation */
-  overflow: hidden; /* Hide overflowing numbers during animation */
-}
-.boxawaypoints { border-bottom-right-radius: 20px; }
-
 /* --- SETS --- */
 .boxhomesets, .boxawaysets {
-  background: linear-gradient(to bottom, var(--accent-gold), var(--secondary-gold));
-  color: var(--primary-blue);
   font-weight: bold;
   font-size: 70px;
   font-family: "Alfa Slab One", cursive;
-  position: relative; /* For animation */
-  overflow: hidden; /* Hide overflowing numbers during animation */
+  position: relative;
+  overflow: hidden;
+  border-left: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Set columns - Alternating Orange (odd) and Blue (even) */
+#home_set_1, #away_set_1,
+#home_set_3, #away_set_3,
+#home_set_5, #away_set_5 {
+  background: linear-gradient(to bottom, var(--accent-gold), var(--secondary-gold));
+  color: var(--primary-blue);
+}
+
+#home_set_2, #away_set_2,
+#home_set_4, #away_set_4 {
+  background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
+  color: white;
+}
+
+/* Set headers - alternating colors */
+.boxheader-sets:nth-child(3),
+.boxheader-sets:nth-child(5),
+.boxheader-sets:nth-child(7),
+.boxheader-sets:nth-child(9) {
+  background: linear-gradient(to bottom, var(--accent-gold), var(--secondary-gold));
+  color: var(--primary-blue);
+}
+
+.boxheader-sets:nth-child(4),
+.boxheader-sets:nth-child(6),
+.boxheader-sets:nth-child(8) {
+  background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
+  color: white;
 }
 
 /* Score animation number styling */
@@ -270,7 +254,19 @@ body {
 .okservice { opacity: 1; }
 .noservice { opacity: 0; }
 
+/* Row Separator */
+.home-logo-container, .boxhometeam, .boxhomeservice, .boxhomesets {
+  border-bottom: 1px solid var(--subtle-border-color);
+}
 
+#scoreboard {
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+#scoreboard.hidden {
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+}
 
 </style>
 </head>
@@ -278,15 +274,19 @@ body {
 <body>
  <section id="scoreboard">
   <div class="containervolley">
-<!-- Header Row -->
-    <div class="box boxheader-title" style="grid-column: 1 / 3;" id="matchTitle">
-      Volleyball Match
-      <span class="pin-display" id="pinDisplay"></span>
-    </div>
-   <div class="box boxheader-service"></div> <!-- Empty service column -->
-   <div class="box boxheader-sets">SETS</div>
-   <div class="box boxheader-points">POINTS</div>
-   <!-- Home Logo Column (Row 1, Column 1) -->
+      <!-- Header Row -->
+   <div class="box boxheader-title" style="grid-column: 1 / 3;" id="matchTitle">
+     Volleyball Match
+   </div>
+   <div class="box boxheader-service"></div>
+
+   <div class="box boxheader-sets">Set 1</div>
+   <div class="box boxheader-sets">Set 2</div>
+   <div class="box boxheader-sets">Set 3</div>
+   <div class="box boxheader-sets">Set 4</div>
+<div class="box boxheader-sets">Set 5</div>
+
+    <!-- Home Logo Column (Row 1, Column 1) -->
    <div class="home-logo-container">
      <div class="home-logo-placeholder"></div>
    </div>
@@ -298,11 +298,14 @@ body {
      <i data-lucide="volleyball"></i>
     </span>
    </div>
-   <div class="box numbers boxhomesets" id="set_1"><span class="score-anim-number is-current">0</span></div>
-   <div class="box numbers boxhomepoints" id="points_1"><span class="score-anim-number is-current">0</span></div>
+   <div class="box numbers boxhomesets" id="home_set_1"><span class="score-anim-number is-current">0</span></div>
+   <div class="box numbers boxhomesets" id="home_set_2"><span class="score-anim-number is-current">0</span></div>
+   <div class="box numbers boxhomesets" id="home_set_3"><span class="score-anim-number is-current">0</span></div>
+   <div class="box numbers boxhomesets" id="home_set_4"><span class="score-anim-number is-current">0</span></div>
+<div class="box numbers boxhomesets" id="home_set_5"><span class="score-anim-number is-current">0</span></div>
 
-   <!-- Away Logo Column (Row 2, Column 1) -->
-   <div class="away-logo-container">
+    <!-- Away Logo Column (Row 2, Column 1) -->
+    <div class="away-logo-container">
      <div class="away-logo-placeholder"></div>
    </div>
 
@@ -313,13 +316,16 @@ body {
      <i data-lucide="volleyball"></i>
     </span>
    </div>
-   <div class="box numbers boxawaysets" id="set_2"><span class="score-anim-number is-current">0</span></div>
-   <div class="box numbers boxawaypoints" id="points_2"><span class="score-anim-number is-current">0</span></div>
+   <div class="box numbers boxawaysets" id="away_set_1"><span class="score-anim-number is-current">0</span></div>
+   <div class="box numbers boxawaysets" id="away_set_2"><span class="score-anim-number is-current">0</span></div>
+   <div class="box numbers boxawaysets" id="away_set_3"><span class="score-anim-number is-current">0</span></div>
+   <div class="box numbers boxawaysets" id="away_set_4"><span class="score-anim-number is-current">0</span></div>
+<div class="box numbers boxawaysets" id="away_set_5"><span class="score-anim-number is-current">0</span></div>
 
 </div>
-</section>
+  </section>
 
- <script>
+  <script>
 // Initialize Lucide icons once when the window loads
 window.onload = function() {
   lucide.createIcons();
@@ -382,25 +388,59 @@ function animateScoreChange(elementId, newValue) {
 
 
 function updateUI(data) {
-    // Update match title (only the text node, preserving the PIN badge inside)
+    // Update match title
     if (data.matchTitle !== previousState.matchTitle) {
-        const titleEl = document.getElementById("matchTitle");
-        if (titleEl && titleEl.childNodes[0]) {
-            titleEl.childNodes[0].textContent = data.matchTitle || "Volleyball Match";
-        }
+        document.getElementById("matchTitle").childNodes[0].textContent = data.matchTitle || "Volleyball Match";
     }
 
     // Update team names
     if (data.homeName !== previousState.homeName) document.getElementById("team_1").textContent = data.homeName;
     if (data.awayName !== previousState.awayName) document.getElementById("team_2").textContent = data.awayName;
 
-    // Update scores with animation
-    if (data.homeScore !== previousState.homeScore) animateScoreChange("points_1", Number(data.homeScore));
-    if (data.awayScore !== previousState.awayScore) animateScoreChange("points_2", Number(data.awayScore));
+    // Scores are now handled in the set columns update below
+
+    // Update set scores - update all 5 set columns based on currentSet
+    const currentSet = data.currentSet || 1;
+    const previousSetScores = data.previousSetScores || [];
+    const homeLiveScore = data.homeScore || 0;
+    const awayLiveScore = data.awayScore || 0;
     
-    // Update set counts with animation
-    if (data.homeSets !== previousState.homeSets) animateScoreChange("set_1", Number(data.homeSets || 0));
-    if (data.awaySets !== previousState.awaySets) animateScoreChange("set_2", Number(data.awaySets || 0));
+    for (let i = 0; i < 5; i++) {
+        const setIndex = i + 1;
+        const homeSetCell = document.getElementById(`home_set_${setIndex}`);
+        const awaySetCell = document.getElementById(`away_set_${setIndex}`);
+        
+        if (!homeSetCell || !awaySetCell) continue;
+        
+        const homeScoreSpan = homeSetCell.querySelector('.score-anim-number.is-current');
+        const awayScoreSpan = awaySetCell.querySelector('.score-anim-number.is-current');
+        if (!homeScoreSpan || !awayScoreSpan) continue;
+        
+        let homeValue, awayValue;
+        
+        const setData = previousSetScores[setIndex - 1];
+        if (setData) {
+            // Completed set - show the recorded final score
+            homeValue = setData.home;
+            awayValue = setData.away;
+        } else if (setIndex === currentSet) {
+            // Current set being played - show live score
+            homeValue = homeLiveScore;
+            awayValue = awayLiveScore;
+        } else {
+            // Future set not yet played
+            homeValue = 0;
+            awayValue = 0;
+        }
+        
+        // Update with animation if changed
+        if (homeScoreSpan.textContent != homeValue) {
+            animateScoreChange(`home_set_${setIndex}`, homeValue);
+        }
+        if (awayScoreSpan.textContent != awayValue) {
+            animateScoreChange(`away_set_${setIndex}`, awayValue);
+        }
+    }
 
     // Update logos
     if (data.awayLogo !== previousState.awayLogo) {
@@ -446,18 +486,17 @@ function updateUI(data) {
     root.style.setProperty('--away-primary-color', data.awayColorPrimary);
     root.style.setProperty('--away-secondary-color', data.awayColorSecondary);
 
-    // Overlay theme (shared non-team palette)
+    // Overlay theme (same non-team palette)
     root.style.setProperty('--primary-blue', data.themeBgPrimary || '#142850');
     root.style.setProperty('--secondary-blue', data.themeBgSecondary || '#0a1f3c');
     root.style.setProperty('--accent-gold', data.themeAccent || '#F0A500');
     root.style.setProperty('--secondary-gold', data.themeAccentSecondary || '#B87B00');
     root.style.setProperty('--subtle-border-color', data.themeBorder || '#2a406b');
 
-    // Update PIN display
-    const pinDisplay = document.getElementById("pinDisplay");
-    if (pinDisplay) {
-        pinDisplay.textContent = data.pin ? "PIN: " + data.pin : "";
-    }
+    // Per-overlay visibility (the sets overlay can be toggled from the panel)
+    const sb = document.getElementById('scoreboard');
+    const vis = data.overlayVisibility || {};
+    if (sb) sb.classList.toggle('hidden', !vis.scorebug_sets);
 
     previousState = data;
 }
@@ -465,8 +504,9 @@ function updateUI(data) {
 // Initial load of data (if any)
 socket.on('connect', () => {
     console.log('Connected to WebSocket');
-    // Request current state on connect to ensure UI is up-to-date
-    // The server will emit 'score_update' upon connection, so no explicit request needed here.
+    fetch('/current').then(r => r.json()).then(data => {
+        updateUI(data);
+    });
 });
 
 </script>

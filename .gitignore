@@ -11,6 +11,7 @@ dist/
 
 # Application Data
 uploads/
+scorebug/logs/
 
 # IDEs
 .idea/
@@ -20,6 +21,12 @@ uploads/
 .env
 venv/
 env/
+
+# Playwright E2E
+node_modules/
+playwright-report/
+test-results/
+e2e/.tmp/
 
 # Other
 *.log

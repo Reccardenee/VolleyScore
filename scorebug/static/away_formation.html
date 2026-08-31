@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>VolleyScore Away Formation</title>
+<link rel="icon" type="image/x-icon" href="/static/icon.ico">
 <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
 <!-- Socket.IO Client -->
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -13,6 +14,10 @@
  --accent-red: #D83A56;
  --accent-gold: #F0A500;
  --subtle-border-color: #2a406b;
+
+ /* Dynamic Colors - Default values (will be updated by JS) */
+ --away-primary-color: #FF0000;
+ --away-secondary-color: #FFAAAA;
 }
 
 body {
@@ -59,7 +64,7 @@ body {
 }
 
 /* Away specific header */
-.away .header { background: linear-gradient(to right, var(--accent-gold), var(--primary-blue)); border-color: white; }
+.away .header { background: linear-gradient(to right, var(--away-secondary-color), var(--primary-blue)); border-color: var(--away-secondary-color); }
 
 .team-logo {
   width: 60px;
@@ -101,7 +106,7 @@ body {
   position: absolute;
   top: -8px;
   left: 15px;
-  background: var(--accent-gold);
+  background: var(--away-secondary-color); /* Dynamic away secondary color */
   color: var(--primary-blue);
   font-family: "Alfa Slab One", cursive;
   font-size: 11px;
@@ -143,11 +148,19 @@ body {
 <script>
 const socket = io();
 
+socket.on('connect', function() {
+    fetch('/current').then(r => r.json()).then(updateGraphic);
+});
+
 socket.on('score_update', function(data) {
     updateGraphic(data);
 });
 
 function updateGraphic(data) {
+    const root = document.documentElement;
+    root.style.setProperty('--away-primary-color', data.awayColorPrimary);
+    root.style.setProperty('--away-secondary-color', data.awayColorSecondary);
+
     // Update Away
     document.getElementById("awayName").textContent = data.awayName;
     document.getElementById("awayLogo").style.backgroundImage = `url('${data.awayLogo}')`;
