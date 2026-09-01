@@ -192,13 +192,16 @@ def allowed_file(filename):
 
 def log_score_event(old_score_state, new_score_state):
     """
-    Logs score changes to a CSV file.
+    Logs score changes to a CSV file (all match fields except theme).
+    Daily file appends in order; survives reboot.
     """
     timestamp = datetime.now().isoformat()
     log_entry = {
         "timestamp": timestamp,
         "homeName": new_score_state["homeName"],
         "awayName": new_score_state["awayName"],
+        "matchTitle": new_score_state.get("matchTitle", ""),
+        "currentSet": new_score_state.get("currentSet", 1),
         "oldHomeScore": old_score_state["homeScore"],
         "newHomeScore": new_score_state["homeScore"],
         "oldAwayScore": old_score_state["awayScore"],
@@ -207,6 +210,14 @@ def log_score_event(old_score_state, new_score_state):
         "newHomeSets": new_score_state["homeSets"],
         "oldAwaySets": old_score_state["awaySets"],
         "newAwaySets": new_score_state["awaySets"],
+        "homeTimeouts": new_score_state.get("homeTimeouts", 2),
+        "awayTimeouts": new_score_state.get("awayTimeouts", 2),
+        "homeTimeoutsUsed": 2 - new_score_state.get("homeTimeouts", 2),
+        "awayTimeoutsUsed": 2 - new_score_state.get("awayTimeouts", 2),
+        "timerStarted": new_score_state.get("timerStarted", False),
+        "timerPaused": new_score_state.get("timerPaused", False),
+        "timerElapsed": round(compute_timer_elapsed(new_score_state), 1),
+        "accumulatedTime": new_score_state.get("accumulatedTime", 0),
         "possession": new_score_state["possession"],
         "event": "score_update" # Can be expanded for other events
     }
@@ -307,6 +318,11 @@ def dual_formation():
     Route for dual (both teams) starting lineup overlay.
     """
     return app.send_static_file("dual_formation.html")
+
+@app.route("/guide")
+def guide():
+    """Separate guide page (ITA/ENG switch via localStorage)."""
+    return app.send_static_file("guide.html")
 
 @app.route("/qrcode_image")
 def qrcode_image():
@@ -555,11 +571,18 @@ def update():
             current_score["homeSets"] + current_score["awaySets"] + 1
         )
 
-    # Log score change only if score actually changed
+    # Log when any match-relevant field changes (score/sets/timer/timeouts/currentSet/possession/matchTitle) — daily file, ordered append
     if (current_score["homeScore"] != old_current_score["homeScore"] or
         current_score["awayScore"] != old_current_score["awayScore"] or
         current_score["homeSets"] != old_current_score["homeSets"] or
-        current_score["awaySets"] != old_current_score["awaySets"]):
+        current_score["awaySets"] != old_current_score["awaySets"] or
+        current_score.get("currentSet", 1) != old_current_score.get("currentSet", 1) or
+        current_score.get("homeTimeouts", 2) != old_current_score.get("homeTimeouts", 2) or
+        current_score.get("awayTimeouts", 2) != old_current_score.get("awayTimeouts", 2) or
+        current_score.get("timerStarted", False) != old_current_score.get("timerStarted", False) or
+        current_score.get("timerPaused", False) != old_current_score.get("timerPaused", False) or
+        current_score.get("possession", "none") != old_current_score.get("possession", "none") or
+        current_score.get("matchTitle", "") != old_current_score.get("matchTitle", "")):
         log_score_event(old_current_score, current_score)
 
         # Start timer on first point scored
@@ -612,6 +635,7 @@ def timer_control():
     Endpoint to control the match timer (start, pause, resume, reset).
     """
     global current_score
+    old_current_score = current_score.copy()
     action = request.form.get("action", "")
 
     # PIN verification - reject controls if PIN doesn't match
@@ -649,6 +673,8 @@ def timer_control():
         current_score["scoreHistory"] = []
         current_score["currentSet"] = 1
 
+    if old_current_score != current_score:
+        log_score_event(old_current_score, current_score)
     save_config(current_score)
     socketio.emit('score_update', current_score)
 
@@ -660,6 +686,7 @@ def timeout_control():
     Endpoint to update timeout counts.
     """
     global current_score
+    old_current_score = current_score.copy()
     team = request.form.get("team", "")
     change = int(request.form.get("change", 0))
 
@@ -674,6 +701,8 @@ def timeout_control():
     elif team == "away":
         current_score["awayTimeouts"] = max(0, min(2, current_score["awayTimeouts"] + change))
 
+    if old_current_score != current_score:
+        log_score_event(old_current_score, current_score)
     save_config(current_score)
     socketio.emit('score_update', current_score)
 

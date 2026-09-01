@@ -38,6 +38,13 @@ def baseline_config():
         "awayColorSecondary": "#FFAAAA",
         "homeColorPrimary": "#0000FF",
         "homeColorSecondary": "#AAAAFF",
+        "themeBgPrimary": "#142850",
+        "themeBgSecondary": "#0a1f3c",
+        "themeAccent": "#F0A500",
+        "themeAccentSecondary": "#B87B00",
+        "themeBorder": "#2a406b",
+        "overlayVisibility": {"scorebug_sets": False, "timer": False, "timeouts": False, "score_history": False},
+        "keyboardShortcuts": {"home_point_plus": "1","home_point_minus": "shift+1","away_point_plus": "2","away_point_minus": "shift+2","home_set_plus": "3","home_set_minus": "shift+3","away_set_plus": "4","away_set_minus": "shift+4","possession_cycle": "space","timer_toggle": "t","timer_reset": "shift+t","home_timeout_plus": "u","home_timeout_minus": "shift+u","away_timeout_plus": "i","away_timeout_minus": "shift+i","overlay_sets": "ctrl+1","overlay_timer": "ctrl+2","overlay_timeouts": "ctrl+3","overlay_history": "ctrl+4","tab_match": "alt+1","tab_teams": "alt+2","tab_settings": "alt+3"},
         "matchTitle": "Test Match",
         "pin": "",
         "timerStarted": False,
@@ -51,6 +58,18 @@ def baseline_config():
     }
 
 
+def get_daily_rows(port=PORT, log_dir=None):
+    """Read the last daily CSV for the test server's VOLLEYSCORE_LOG_DIR."""
+    import glob, csv
+    if log_dir is None:
+        log_dir = os.environ.get("VOLLEYSCORE_LOG_DIR", str(LOG_DIR))
+    files = sorted(glob.glob(os.path.join(log_dir, "match_report_*.csv")))
+    if not files:
+        return []
+    with open(files[-1], newline='', encoding='utf-8') as f:
+        return list(csv.DictReader(f))
+
+
 @pytest.fixture(scope="session")
 def server_process():
     backup = Path(tempfile.mkdtemp(prefix="volleyscore_backup_"))
@@ -60,7 +79,10 @@ def server_process():
         shutil.copytree(LOG_DIR, backup / "logs", dirs_exist_ok=True)
 
     log_path = Path(tempfile.mkdtemp(prefix="volleyscore_srv_")) / "server.log"
-    env = {**os.environ, "VOLLEYSCORE_PORT": str(PORT)}
+    isolated_log_dir = Path(tempfile.mkdtemp(prefix="volleyscore_logs_"))
+    # expose for helpers
+    os.environ["VOLLEYSCORE_LOG_DIR"] = str(isolated_log_dir)
+    env = {**os.environ, "VOLLEYSCORE_PORT": str(PORT), "VOLLEYSCORE_LOG_DIR": str(isolated_log_dir)}
     proc = subprocess.Popen(
         [sys.executable, str(SERVER_SCRIPT)],
         cwd=str(BASE_DIR),
@@ -91,6 +113,8 @@ def server_process():
     except subprocess.TimeoutExpired:
         proc.kill()
 
+    shutil.rmtree(isolated_log_dir, ignore_errors=True)
+    os.environ.pop("VOLLEYSCORE_LOG_DIR", None)
     if (backup / "config.json").exists():
         shutil.copy2(backup / "config.json", CONFIG_FILE)
     else:

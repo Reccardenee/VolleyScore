@@ -933,6 +933,11 @@
           <span id="connectionText">Connecting...</span>
         </div>
       </div>
+      <div class="header-right" style="display:flex;gap:8px;align-items:center;">
+        <a href="/guide" class="btn btn-secondary btn-sm" data-i18n="nav.guide">Guide</a>
+        <button class="btn btn-secondary btn-sm" onclick="setLang('en')" title="English">EN</button>
+        <button class="btn btn-secondary btn-sm" onclick="setLang('it')" title="Italiano">IT</button>
+      </div>
     </div>
 
     <!-- Score Summary Bar -->
@@ -954,9 +959,9 @@
 
     <!-- Tabs -->
     <div class="tabs">
-      <button class="tab-btn active" data-tab="match">Match</button>
-      <button class="tab-btn" data-tab="teams">Teams</button>
-      <button class="tab-btn" data-tab="settings">Settings</button>
+      <button class="tab-btn active" data-tab="match" data-i18n="nav.match">Match</button>
+      <button class="tab-btn" data-tab="teams" data-i18n="nav.teams">Teams</button>
+      <button class="tab-btn" data-tab="settings" data-i18n="nav.settings">Settings</button>
     </div>
 
     <!-- MATCH TAB -->

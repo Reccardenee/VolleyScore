@@ -567,6 +567,57 @@ def test_qrcode_image(clean_state):
 
 
 # ============================================
+# DAILY CSV (timeouts/timer all but theme, daily append)
+# ============================================
+
+def test_daily_csv_has_timeout_timer_fields(clean_state):
+    post_update({"homeScore": 1})
+    from conftest import get_daily_rows
+    rows = get_daily_rows()
+    assert len(rows) >= 1
+    header = list(rows[0].keys())
+    for col in ["homeTimeouts", "awayTimeouts", "homeTimeoutsUsed", "awayTimeoutsUsed",
+                "currentSet", "timerStarted", "timerPaused", "timerElapsed", "accumulatedTime",
+                "matchTitle", "possession"]:
+        assert col in header, f"missing {col} in {header}"
+    for theme_col in ["themeBgPrimary", "themeAccent"]:
+        assert theme_col not in header
+
+
+def test_daily_log_on_timeout_change_via_update(clean_state):
+    # currentSet change via /update should log a row (covers widened guard)
+    r = post_update({"homeSets": 1})
+    assert r.status_code == 200
+    from conftest import get_daily_rows
+    rows = get_daily_rows()
+    assert any(str(row.get("currentSet", "")) == "2" for row in rows)
+
+
+def test_daily_log_on_timer_pause(clean_state):
+    post("/timer_control", {"action": "start"})
+    post("/timer_control", {"action": "pause"})
+    from conftest import get_daily_rows
+    rows = get_daily_rows()
+    assert any(row.get("timerPaused") == "True" for row in rows)
+
+
+def test_daily_log_on_timeout_use(clean_state):
+    post("/timeout_control", {"team": "home", "change": -1})
+    from conftest import get_daily_rows
+    rows = get_daily_rows()
+    assert any(row.get("homeTimeouts") == "1" for row in rows)
+
+
+def test_daily_csv_appends_not_overwrites(clean_state):
+    post_update({"homeScore": 1})
+    from conftest import get_daily_rows
+    n1 = len(get_daily_rows())
+    post_update({"homeScore": 2})
+    n2 = len(get_daily_rows())
+    assert n2 == n1 + 1
+
+
+# ============================================
 # RESET EDGE CASES
 # ============================================
 
