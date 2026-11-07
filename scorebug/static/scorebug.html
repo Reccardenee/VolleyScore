@@ -4,13 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VolleyScore</title>
+<link rel="icon" type="image/x-icon" href="/static/icon.ico">
 
 <!-- Fonts: Used for the bold team names and scores -->
 <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
 <!-- Icons: Using Lucide Icons for the service indicator -->
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="/static/lucide.min.js"></script>
 <!-- Socket.IO Client -->
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="/static/socket.io.min.js"></script>
 
 <style>
 /* Define the primary colors from the image (Dark Blue, Red, Yellow/Gold) */
@@ -22,6 +23,12 @@
  --secondary-gold: #B87B00;
  --dark-background: #333;
  --subtle-border-color: #2a406b;
+
+ /* Dynamic Colors - Default values */
+ --home-primary-color: #0000FF;
+ --home-secondary-color: #AAAAFF;
+ --away-primary-color: #FF0000;
+ --away-secondary-color: #FFAAAA;
 }
 
 /* --- GENERAL BODY --- */
@@ -47,6 +54,7 @@ body {
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  margin-bottom: 10px;
 }
 
 /* --- HEADER ROW (Labels like SETS, POINTS) --- */
@@ -68,6 +76,7 @@ body {
 .boxheader-points {
   background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
   color: white;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.6);
   font-family: "Alfa Slab One", cursive;
   font-size: 20px;
   text-align: center;
@@ -93,6 +102,7 @@ body {
 .boxheader-title {
   background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
   color: white;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.6);
   font-family: "Alfa Slab One", cursive;
   font-size: 22px;
   text-align: center;
@@ -101,6 +111,18 @@ body {
   align-items: center;
   justify-content: center;
   border-bottom: 1px solid var(--subtle-border-color);
+  position: relative;
+}
+
+.pin-display {
+  position: absolute;
+  right: 10px;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+  background: rgba(255,255,255,0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+  letter-spacing: 2px;
 }
 
 /* --- LOGO COLUMN (SPLIT) --- */
@@ -130,39 +152,52 @@ body {
 }
 
 /* Vertical Color Bar (Applied as a pseudo-element on the last element of the column) */
+.home-logo-container::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 15px;
+  background: var(--home-primary-color); /* Dynamic home primary color */
+  z-index: 5;
+}
+
 .away-logo-container::after {
   content: "";
   position: absolute;
   right: 0;
-  top: -100%;
+  top: 0;
   bottom: 0;
-  height: 200%;
   width: 15px;
-  background: linear-gradient(to bottom,
-   var(--accent-red) 0%,
-   var(--accent-red) 50%,
-   var(--accent-gold) 50%,
-   var(--accent-gold) 100%);
+  background: var(--away-primary-color); /* Dynamic away primary color */
   z-index: 5;
 }
 
 
 /* --- TEAM NAMES --- */
 .boxhometeam, .boxawayteam {
- text-align: left;
- display: flex;
- align-items: center;
- padding: 10px 15px 10px 25px;
- font-family: "Alfa Slab One", cursive;
- font-size: 50px;
- color: white;
- position: relative;
- background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
- white-space: nowrap;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  padding: 10px 15px 10px 25px;
+  font-family: "Alfa Slab One", cursive;
+  font-size: 50px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.6);
+  position: relative;
+  background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
+  white-space: nowrap;
 }
 
-.boxhometeam { grid-row: 2 / 3; grid-column: 2 / 3; }
-.boxawayteam { grid-row: 3 / 4; grid-column: 2 / 3; }
+.boxhometeam {
+  color: #4a90e2;
+  grid-row: 2 / 3; grid-column: 2 / 3;
+}
+
+.boxawayteam {
+  color: #ef4444;
+  grid-row: 3 / 4; grid-column: 2 / 3;
+}
 
 /* General appearance for boxes */
 .box {
@@ -181,8 +216,11 @@ body {
 .boxhomepoints, .boxawaypoints {
   background: linear-gradient(to bottom, var(--primary-blue), var(--secondary-blue));
   color: white;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.6);
   font-size: 80px;
   font-family: "Alfa Slab One", cursive;
+  position: relative; /* For animation */
+  overflow: hidden; /* Hide overflowing numbers during animation */
 }
 .boxawaypoints { border-bottom-right-radius: 20px; }
 
@@ -193,6 +231,22 @@ body {
   font-weight: bold;
   font-size: 70px;
   font-family: "Alfa Slab One", cursive;
+  position: relative; /* For animation */
+  overflow: hidden; /* Hide overflowing numbers during animation */
+}
+
+/* Score animation number styling */
+.score-anim-number {
+    display: block;
+    position: absolute;
+    width: 100%;
+    height: 100%; /* Take full height of parent */
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease-out; /* Smooth slide animation */
 }
 
 /* --- SERVICE INDICATORS --- */
@@ -215,16 +269,20 @@ body {
 }
 .okservice { opacity: 1; }
 .noservice { opacity: 0; }
+
+
+
 </style>
 </head>
 
 <body>
  <section id="scoreboard">
   <div class="containervolley">
-      <!-- Header Row -->
-   <div class="box boxheader-title" style="grid-column: 1 / 3;">
-     Serie B Maschile – Girone H
-   </div>
+<!-- Header Row -->
+    <div class="box boxheader-title" style="grid-column: 1 / 3;" id="matchTitle">
+      Volleyball Match
+      <span class="pin-display" id="pinDisplay"></span>
+    </div>
    <div class="box boxheader-service"></div> <!-- Empty service column -->
    <div class="box boxheader-sets">SETS</div>
    <div class="box boxheader-points">POINTS</div>
@@ -240,8 +298,8 @@ body {
      <i data-lucide="volleyball"></i>
     </span>
    </div>
-   <div class="box numbers boxhomesets" id="set_1">0</div>
-   <div class="box numbers boxhomepoints" id="points_1">0</div>
+   <div class="box numbers boxhomesets" id="set_1"><span class="score-anim-number is-current">0</span></div>
+   <div class="box numbers boxhomepoints" id="points_1"><span class="score-anim-number is-current">0</span></div>
 
    <!-- Away Logo Column (Row 2, Column 1) -->
    <div class="away-logo-container">
@@ -255,11 +313,11 @@ body {
      <i data-lucide="volleyball"></i>
     </span>
    </div>
-   <div class="box numbers boxawaysets" id="set_2">0</div>
-   <div class="box numbers boxawaypoints" id="points_2">0</div>
+   <div class="box numbers boxawaysets" id="set_2"><span class="score-anim-number is-current">0</span></div>
+   <div class="box numbers boxawaypoints" id="points_2"><span class="score-anim-number is-current">0</span></div>
 
-  </div>
- </section>
+</div>
+</section>
 
  <script>
 // Initialize Lucide icons once when the window loads
@@ -274,18 +332,77 @@ socket.on('score_update', function(data) {
     updateUI(data);
 });
 
+function animateScoreChange(elementId, newValue) {
+    const element = document.getElementById(elementId);
+    let currentSpan = element.querySelector('.score-anim-number.is-current');
+
+    // If no currentSpan (initial load), create one
+    if (!currentSpan) {
+        currentSpan = document.createElement('span');
+        currentSpan.className = 'score-anim-number is-current';
+        currentSpan.textContent = newValue;
+        element.appendChild(currentSpan);
+        return;
+    }
+
+    const oldValue = parseInt(currentSpan.textContent);
+    if (oldValue === newValue) return;
+
+    // Remove any old, non-current spans that might be lingering from previous rapid updates
+    element.querySelectorAll('.score-anim-number:not(.is-current)').forEach(span => span.remove());
+
+    // Create the new span
+    const newSpan = document.createElement('span');
+    newSpan.className = 'score-anim-number';
+    newSpan.textContent = newValue;
+
+    // Determine direction and initial positions
+    const direction = newValue > oldValue ? 'up' : 'down';
+    newSpan.style.transform = direction === 'up' ? 'translateY(100%)' : 'translateY(-100%)';
+
+    // Append new span
+    element.appendChild(newSpan);
+
+    // Force reflow to apply initial transform before transition
+    void newSpan.offsetWidth;
+
+    // Start the animation
+    currentSpan.style.transform = direction === 'up' ? 'translateY(-100%)' : 'translateY(100%)';
+    newSpan.style.transform = 'translateY(0)';
+
+    // Remove 'is-current' from the old span and add to the new one
+    currentSpan.classList.remove('is-current');
+    newSpan.classList.add('is-current');
+
+    // Clean up the old span after its transition
+    currentSpan.addEventListener('transitionend', () => {
+        currentSpan.remove();
+    }, { once: true });
+}
+
+
 function updateUI(data) {
-    // Update team names and scores
+    // Update match title (only the text node, preserving the PIN badge inside)
+    if (data.matchTitle !== previousState.matchTitle) {
+        const titleEl = document.getElementById("matchTitle");
+        if (titleEl && titleEl.childNodes[0]) {
+            titleEl.childNodes[0].textContent = data.matchTitle || "Volleyball Match";
+        }
+    }
+
+    // Update team names
     if (data.homeName !== previousState.homeName) document.getElementById("team_1").textContent = data.homeName;
     if (data.awayName !== previousState.awayName) document.getElementById("team_2").textContent = data.awayName;
 
-    if (data.homeScore !== previousState.homeScore) document.getElementById("points_1").textContent = Number(data.homeScore);
-    if (data.awayScore !== previousState.awayScore) document.getElementById("points_2").textContent = Number(data.awayScore);
+    // Update scores with animation
+    if (data.homeScore !== previousState.homeScore) animateScoreChange("points_1", Number(data.homeScore));
+    if (data.awayScore !== previousState.awayScore) animateScoreChange("points_2", Number(data.awayScore));
     
-    // Set Counts
-    if (data.homeSets !== previousState.homeSets) document.getElementById("set_1").textContent = Number(data.homeSets || 0);
-    if (data.awaySets !== previousState.awaySets) document.getElementById("set_2").textContent = Number(data.awaySets || 0);
+    // Update set counts with animation
+    if (data.homeSets !== previousState.homeSets) animateScoreChange("set_1", Number(data.homeSets || 0));
+    if (data.awaySets !== previousState.awaySets) animateScoreChange("set_2", Number(data.awaySets || 0));
 
+    // Update logos
     if (data.awayLogo !== previousState.awayLogo) {
         const awayLogoPlaceholder = document.querySelector('.away-logo-placeholder');
         if (data.awayLogo) {
@@ -300,11 +417,11 @@ function updateUI(data) {
         }
     }
 
+    // Update possession indicator
     if (data.possession !== previousState.possession) {
         const homeServiceSpan = document.getElementById("homeservice");
         const awayServiceSpan = document.getElementById("awayservice");
 
-        // Helper to toggle classes for visibility
         const toggleService = (element, isServing) => {
             element.classList.toggle('okservice', isServing);
             element.classList.toggle('noservice', !isServing);
@@ -322,8 +439,37 @@ function updateUI(data) {
         }
     }
 
+    // Update dynamic colors
+    const root = document.documentElement;
+    root.style.setProperty('--home-primary-color', data.homeColorPrimary);
+    root.style.setProperty('--home-secondary-color', data.homeColorSecondary);
+    root.style.setProperty('--away-primary-color', data.awayColorPrimary);
+    root.style.setProperty('--away-secondary-color', data.awayColorSecondary);
+
+    // Overlay theme (shared non-team palette)
+    root.style.setProperty('--primary-blue', data.themeBgPrimary || '#142850');
+    root.style.setProperty('--secondary-blue', data.themeBgSecondary || '#0a1f3c');
+    root.style.setProperty('--accent-gold', data.themeAccent || '#F0A500');
+    root.style.setProperty('--secondary-gold', data.themeAccentSecondary || '#B87B00');
+    root.style.setProperty('--subtle-border-color', data.themeBorder || '#2a406b');
+
+    // Update PIN display
+    const pinDisplay = document.getElementById("pinDisplay");
+    if (pinDisplay) {
+        // Never show the PIN on the broadcast overlay
+        pinDisplay.textContent = "";
+    }
+
     previousState = data;
 }
+
+// Initial load of data (if any)
+socket.on('connect', () => {
+    console.log('Connected to WebSocket');
+    // Request current state on connect to ensure UI is up-to-date
+    // The server will emit 'score_update' upon connection, so no explicit request needed here.
+});
+
 </script>
 </body>
 </html>

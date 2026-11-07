@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VolleyScore Guide</title>
+  <link rel="icon" type="image/x-icon" href="/static/icon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg-primary:#1a1a2e; --bg-surface:#1f1f38; --bg-card:#252540; --border-color:#3a3a5c; --text-primary:#fff; --text-secondary:#a0a0b0; --accent-blue:#4a90e2; --accent-gold:#f0a500; --radius-lg:16px; --radius-md:10px; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:system-ui,sans-serif;background:var(--bg-primary);color:var(--text-primary);line-height:1.6}
+    .app-container{max-width:900px;margin:0 auto;padding:16px}
+    .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding:12px 16px;background:var(--bg-surface);border-radius:var(--radius-lg);border:1px solid var(--border-color)}
+    .logo{font-family:"Alfa Slab One",cursive;color:var(--accent-gold)}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border:none;border-radius:8px;font-size:0.875rem;cursor:pointer;text-decoration:none}
+    .btn-secondary{background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border-color)}
+    .btn-primary{background:var(--accent-blue);color:#fff}
+    .card{background:var(--bg-surface);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px}
+    .card-title{font-size:0.875rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
+    h2{font-family:"Alfa Slab One",cursive;color:var(--accent-gold);margin-bottom:8px}
+    p{color:var(--text-secondary);margin-bottom:12px}
+    ul{margin-left:18px;color:var(--text-secondary);margin-bottom:12px}
+    code{background:var(--bg-card);padding:2px 6px;border-radius:4px;color:var(--accent-blue);font-size:0.8rem}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media(max-width:700px){.grid-2{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div class="header">
+      <span class="logo">VolleyScore</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <a href="/control_panel" class="btn btn-primary" data-i18n="back.to.panel">Back to Control Panel</a>
+        <button class="btn btn-secondary" onclick="setLang('en')">EN</button>
+        <button class="btn btn-secondary" onclick="setLang('it')">IT</button>
+      </div>
+    </div>
+
+    <div class="card" style="text-align:center;">
+      <h2 data-i18n="guide.title">VolleyScore Guide</h2>
+      <p data-i18n="guide.subtitle">Quick manual for scoring, overlays and OBS</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-i18n="guide.quickstart">Quick Start</div>
+      <p data-i18n="guide.quickstart.desc">Run the exe, allow firewall, open Control Panel and add browser sources in OBS.</p>
+      <ul>
+        <li><code>http://localhost:8000/control_panel</code> — control from host or phone on same LAN (<code>http://&lt;IP&gt;:8000/control_panel</code>)</li>
+        <li data-i18n="guide.quickstart.desc">Allow Windows Firewall when prompted.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-i18n="guide.scoring">Scoring & Sets</div>
+      <p data-i18n="guide.scoring.desc">Points auto-complete sets at 25 (15 in 5th) with 2-point lead. Use +/- or keys 1-4. Sets auto-increment and reset points.</p>
+      <ul>
+        <li><b>Keys:</b> <code>1/2</code> +1 point, <code>Shift+1/2</code> -1, <code>3/4</code> +1 set</li>
+        <li><code>currentSet</code> advances automatically, timeouts reset to 2.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-i18n="guide.timer">Timer & Timeouts</div>
+      <p data-i18n="guide.timer.desc">Timer auto-starts on first point. Start/Pause/Resume/Reset. Timeouts: 2 per team per set, reset on new set.</p>
+      <ul>
+        <li>Keys: <code>T</code> start/pause/resume, <code>Shift+T</code> reset, <code>U/I</code> timeout +/-</li>
+        <li>All events are appended to <code>logs/match_report_YYYY-MM-DD.csv</code> in order (daily, survives reboot).</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-i18n="guide.overlays">Overlays & Visibility</div>
+      <p data-i18n="guide.overlays.desc">Standard scorebug always visible. Toggle Sets/Timer/Timeouts/History via Overlay Display — they fade in/out. Stack all browser sources in one OBS scene.</p>
+      <div class="grid-2">
+        <div><b>Scoreboard</b><br><code>/</code></div>
+        <div><b>All Sets</b><br><code>/scorebug_sets</code></div>
+        <div><b>Timer</b><br><code>/match_timer</code></div>
+        <div><b>Timeouts</b><br><code>/timeouts</code></div>
+        <div><b>History</b><br><code>/score_history</code></div>
+        <div><b>Formations</b><br><code>/home_formation /away_formation /dual_formation</code></div>
+      </div>
+      <p style="margin-top:12px">Keys: <code>Ctrl+1..4</code> toggle overlays.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-i18n="guide.formations">Formations & Teams</div>
+      <p data-i18n="guide.formations.desc">Set 6 starters per team in Teams tab. Home/Away/Dual formation overlays show them.</p>
+      <ul>
+        <li>Teams tab → names, colors, logos, 6 players → Save Team Settings.</li>
+        <li>Settings → Overlay Theme (5 shared colors, formations keep team colors).</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-i18n="guide.shortcuts">Keyboard Shortcuts</div>
+      <p data-i18n="guide.shortcuts.desc">All match controls have remappable shortcuts (Settings → Keyboard Shortcuts). While typing, shortcuts are ignored.</p>
+      <ul>
+        <li>Settings → click a key → press new combo → Apply.</li>
+        <li>Duplicate combos rejected; <code>×</code> unbinds.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title" data-i18n="guide.log">Daily Log</div>
+      <p data-i18n="guide.log.desc">All points, timeouts and timer events are appended in order to logs/match_report_YYYY-MM-DD.csv per day. Old files kept.</p>
+      <p>One match per day: same file appended even after PC shutoff (header once). Columns include <code>homeTimeouts, timerElapsed, currentSet</code> (all but theme).</p>
+    </div>
+  </div>
+  <script src="/static/volley-ui.js"></script>
+  <script>
+    // apply language on load (volley-ui handles)
+    document.addEventListener('DOMContentLoaded', () => {
+      if (typeof setLang === 'function') {
+        document.documentElement.setAttribute('lang', getLang());
+      }
+    });
+  </script>
+</body>
+</html>

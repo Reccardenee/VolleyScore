@@ -52,6 +52,38 @@ All Python code should follow [PEP 8](https://www.python.org/dev/peps/pep-0008/)
 - Use consistent indentation (2 or 4 spaces)
 - Keep CSS classes semantic and reusable
 
+## Testing
+
+Every change must keep both test suites green. They run automatically in CI (`test` job in `.github/workflows/build.yml`); run them locally before pushing.
+
+### Unit / integration tests (pytest)
+
+These start a real server process on an isolated port (8123). Your `config.json` and `logs/` are backed up and restored automatically, so they are safe to run with a live config.
+
+```bash
+pip install pytest requests
+python -m pytest scorebug/tests -q
+```
+
+### End-to-end tests (Playwright)
+
+These launch a headless Chromium browser, drive the real control panel, and assert that the overlays update live. The suite starts its own isolated server on port 8130 (config/logs under `e2e/.tmp`).
+
+```bash
+cd e2e
+npm install
+npx playwright install chromium
+npx playwright test
+```
+
+On Windows PowerShell you may need to prefix npm/npx with `cmd /c`, e.g. `cmd /c "npx playwright test"`.
+
+### Writing tests
+
+- Add pytest cases in `scorebug/tests/test_server.py`; use the `clean_state` fixture for an isolated server state. The server honors `VOLLEYSCORE_CONFIG` / `VOLLEYSCORE_LOG_DIR` / `VOLLEYSCORE_PORT` environment variables for isolation.
+- Add Playwright specs under `e2e/tests/`; call `page.request.post('/reset_config')` at the start of each test and use the helpers in `e2e/tests/helpers.js`. Keep `workers: 1` (tests share one live server).
+- Never write `(await request.get('/current')).json().field` - `json()` is async, so `.field` would be read off the pending Promise. Await it instead (see `helpers.getState`).
+
 ## Additional Notes
 
 ### Issue and Pull Request Labels
