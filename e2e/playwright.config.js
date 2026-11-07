@@ -16,12 +16,12 @@ module.exports = defineConfig({
   reporter: [['list']],
   use: {
     baseURL: 'http://127.0.0.1:8130',
-    trace: 'retain-on-failure',
+    trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
   webServer: {
-    command: `"${python}" "${path.join(repoRoot, 'scorebug', 'server.py')}"`,
+    command: process.env.E2E_SERVER_CMD || `"${python}" "${path.join(repoRoot, 'scorebug', 'server.py')}"`,
     url: 'http://127.0.0.1:8130/current',
     reuseExistingServer: !process.env.CI,
     timeout: 60000,

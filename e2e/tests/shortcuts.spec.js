@@ -18,7 +18,8 @@ test('keyboard drives points, possession and the timer', async ({ page, request 
   await expectState(request, { possession: 'home' });
 
   // Shift+1 / Shift+2 undo points
-  await page.keyboard.press('Shift+2');
+  // Shift+Digit2 matches a real keyboard (e.key is "@" on US, '"' on IT)
+  await page.keyboard.press('Shift+Digit2');
   await expectState(request, { awayScore: 0 });
 
   // T starts the timer, Shift+T resets it

@@ -7,7 +7,7 @@
   <link rel="icon" type="image/x-icon" href="/static/icon.ico">
 
   <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="/static/socket.io.min.js"></script>
 
   <style>
     :root {
@@ -135,6 +135,10 @@
       updateUI(data);
     });
 
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
     function updateUI(data) {
       applyTheme(data);
       applyVisibility(data);
@@ -149,8 +153,11 @@
 
       // Determine scoring team for each entry
       const items = [];
-      let lastHomeScore = 0;
-      let lastAwayScore = 0;
+      // Baseline = the entry just before the 5-point window, so the first shown point is attributed correctly
+      const all = data.scoreHistory || [];
+      const prev = all.length > history.length ? all[all.length - history.length - 1] : null;
+      let lastHomeScore = prev ? prev.homeScore : 0;
+      let lastAwayScore = prev ? prev.awayScore : 0;
 
       history.forEach((entry, index) => {
         const homeScored = entry.homeScore > lastHomeScore;
@@ -161,7 +168,7 @@
 
         items.push(`
           <li class="history-item ${teamClass}">
-            <span class="team-name">${teamName}</span>
+            <span class="team-name">${escapeHtml(teamName)}</span>
             <span class="score">${entry.homeScore} - ${entry.awayScore}</span>
           </li>
         `);

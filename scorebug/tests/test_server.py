@@ -415,8 +415,21 @@ def test_timer_reset_clears_all_timer_state(clean_state):
     assert s["timerPausedTimestamp"] is None
     assert s["accumulatedTime"] == 0
     assert s["timerElapsed"] == 0
-    assert s["scoreHistory"] == []
-    assert s["currentSet"] == 1
+
+
+def test_timer_reset_only_touches_the_timer(clean_state):
+    post_update({"homeScore": 25, "awayScore": 20})  # set 1 done -> set 2
+    post_update({"homeScore": 3, "awayScore": 1})
+    before = get_state()
+    assert before["currentSet"] == 2
+    r = post("/timer_control", {"action": "reset"})
+    assert r.status_code == 200
+    s = get_state()
+    assert s["timerStarted"] is False
+    assert s["scoreHistory"] == before["scoreHistory"]
+    assert s["currentSet"] == 2
+    assert (s["homeScore"], s["awayScore"], s["homeSets"]) == (3, 1, 1)
+    assert s["previousSetScores"] == before["previousSetScores"]
 
 
 def test_export_match_json_duration_formats(clean_state):
@@ -615,6 +628,63 @@ def test_daily_csv_appends_not_overwrites(clean_state):
     post_update({"homeScore": 2})
     n2 = len(get_daily_rows())
     assert n2 == n1 + 1
+
+
+@pytest.mark.parametrize("field,value", [
+    ("homeScore", "abc"),
+    ("awayScore", "1.5"),
+    ("homeSets", "-1"),
+    ("awaySets", "x"),
+    ("currentSet", "9"),
+    ("currentSet", "zero"),
+])
+def test_update_rejects_invalid_numbers(clean_state, field, value):
+    post_update({"homeScore": 3, "awayScore": 2})
+    before = get_state()
+    r = post_update({field: value, "homeName": "Changed"})
+    assert r.status_code == 400
+    assert r.json()["status"] == "error"
+    after = get_state()
+    # Rejected as a whole: nothing in the request is applied
+    for k in ("homeScore", "awayScore", "homeSets", "awaySets", "currentSet", "homeName"):
+        assert after[k] == before[k]
+
+
+def test_update_ignores_empty_numeric_fields(clean_state):
+    post_update({"homeScore": 3})
+    r = post_update({"homeScore": "", "awayScore": " "})
+    assert r.status_code == 200
+    assert get_state()["homeScore"] == 3
+
+
+@pytest.mark.parametrize("data", [
+    {"team": "home", "change": "x"},
+    {"team": "home", "change": "1.5"},
+    {"team": "nobody", "change": "-1"},
+])
+def test_timeout_control_rejects_invalid_input(clean_state, data):
+    r = post("/timeout_control", data)
+    assert r.status_code == 400
+    assert r.json()["status"] == "error"
+    s = get_state()
+    assert (s["homeTimeouts"], s["awayTimeouts"]) == (2, 2)
+
+
+def test_server_answers_on_ipv6_loopback(clean_state):
+    # "localhost" resolves to ::1 first on Windows: an IPv4-only listener makes
+    # every request wait for the IPv6 attempt to fail (~2s) before falling back.
+    from conftest import PORT
+    r = requests.get(f"http://[::1]:{PORT}/current", timeout=2)
+    assert r.status_code == 200
+
+
+def test_daily_csv_handles_non_latin_team_names(clean_state):
+    r = post_update({"homeName": "Łódź", "homeScore": 1})
+    assert r.status_code == 200
+    r = post_update({"homeScore": 2})  # later updates must keep working
+    assert r.status_code == 200
+    from conftest import get_daily_rows
+    assert get_daily_rows()[-1]["homeName"] == "Łódź"
 
 
 # ============================================

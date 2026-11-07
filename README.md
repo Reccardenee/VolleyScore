@@ -36,6 +36,10 @@ This tool was built for a local volleyball team to use during OBS-based livestre
 - **Service Indicator**: Visual indicator for which team has possession/service.
 - **Customizable Logos**: Upload custom logos for both Home and Away teams directly from the control panel.
 - **Persistent State**: Scores are saved to a local `config.json` file on the server and synced across all connected clients.
+- **Internationalization (i18n)**: One-click Italian (IT) / English (ENG) language toggle across the control panel and guide, remembered in `localStorage`.
+- **Integrated User Guide & Mobile QR Code**: Dedicated `/guide` page with instructions and an auto-generated QR code for instant mobile/tablet connection on the gym Wi-Fi.
+- **Daily Match Event Logging**: Every score change, set transition, timeout, and timer event is automatically logged to daily CSV reports (`logs/match_report_YYYY-MM-DD.csv`) with UTF-8 support for non-Latin team names.
+- **Crash-Resilient State**: Scores and settings are saved atomically (`config.json`), protecting against file corruption during unexpected power cuts or shutdowns.
 - **Single File Executable**: Can be compiled into a single `.exe` file for easy distribution.
 
 ## Quick Start (Using the EXE)
@@ -142,6 +146,9 @@ The control panel also includes **live overlay previews** (in the Match and Team
 **Match Export** (downloads JSON/CSV, not an overlay):
 - **URL**: `http://localhost:8000/export_match`
 
+**Operator Guide & LAN QR Code**:
+- **URL**: `http://localhost:8000/guide`
+
 #### Recommended OBS layout: one scene
 
 Because the timer, timeouts, score history and sets overlays render fully transparent when hidden, you don't need separate scenes per overlay. Add all overlay browser sources to a single scene, stack them at the same position and size, then use the **Overlay Display** toggles on the control panel's Match tab to fade the one you need in and out. The main scorebug (URL `http://localhost:8000/`) is always visible.
@@ -204,7 +211,10 @@ The server will also automatically increment sets when a team reaches 25 points 
 │   │   ├── timeouts.html         # Timeouts overlay
 │   │   ├── score_history.html    # Last 5 points overlay
 │   │   ├── export_match.html     # Match export page
-│   │   └── volley-ui.js          # Shared frontend utilities
+│   │   ├── guide.html            # Operator guide with QR code
+│   │   ├── lucide.min.js         # Bundled offline icons
+│   │   ├── socket.io.min.js      # Bundled offline Socket.IO client
+│   │   └── volley-ui.js          # Shared frontend utilities and i18n
 │   ├── server.py                 # The Flask-SocketIO server
 │   ├── server.spec               # PyInstaller build spec
 │   └── tests/                    # Automated integration tests (pytest)
@@ -260,6 +270,13 @@ cd e2e
 npm install
 npx playwright install chromium
 npx playwright test
+```
+
+To run the Playwright test suite against the compiled `server.exe`:
+```powershell
+$env:E2E_SERVER_CMD = (Resolve-Path "../scorebug/dist/server.exe").Path
+cd e2e
+npx playwright test --workers=1
 ```
 
 > **Windows PowerShell note:** if `npm`/`npx` are blocked by the execution policy, prefix the command with `cmd /c`, e.g. `cmd /c "npx playwright test"`.

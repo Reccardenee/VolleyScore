@@ -89,7 +89,7 @@ const TRANSLATIONS = {
     "dual.formation": "Dual Formation",
     "match.stats": "Match Stats",
     "keyboard.shortcuts": "Keyboard Shortcuts",
-    "keyboard.desc": "Match controls without a mouse. Click a key, then press the new combo.",
+    "keyboard.desc": "Match controls without a mouse. Click a key, then press the new combo. Re-map here if a combo clashes with OBS hotkeys.",
     "apply.shortcuts": "Apply Shortcuts",
     "reset.defaults": "Reset to Defaults",
     "config.backup": "Configuration Backup",
@@ -120,7 +120,58 @@ const TRANSLATIONS = {
     "guide.shortcuts.desc": "All match controls have remappable shortcuts (Settings → Keyboard Shortcuts). While typing, shortcuts are ignored.",
     "guide.log": "Daily Log",
     "guide.log.desc": "All points, timeouts and timer events are appended in order to logs/match_report_YYYY-MM-DD.csv per day. Old files kept.",
-    "back.to.panel": "Back to Control Panel"
+    "back.to.panel": "Back to Control Panel",
+    "summary.set": "Set",
+    "summary.timer": "Timer",
+    "no.pin": "No PIN",
+    "yes.reset.all": "Yes, Reset All",
+    "delete.set": "Delete this set",
+    "unbound": "Unbound",
+    "unbind": "Unbind",
+    "press.key": "Press a key…",
+    "toast.enter.pin": "Enter PIN first",
+    "toast.game.reset": "Game reset",
+    "toast.pin.saved": "PIN saved",
+    "toast.shortcuts.saved": "Shortcuts saved",
+    "toast.config.imported": "Config imported",
+    "toast.select.file": "Select a file",
+    "toast.import.failed": "Import failed",
+    "toast.update.failed": "Update failed",
+    "toast.current.pin.incorrect": "Current PIN is incorrect",
+    "toast.pin.4digits": "PIN must be exactly 4 digits",
+    "toast.pins.mismatch": "PINs do not match",
+    "toast.key.used": "Key already used by:",
+    "srv.Invalid PIN": "Invalid PIN",
+    "srv.Current PIN is incorrect": "Current PIN is incorrect",
+    "srv.New PINs do not match": "New PINs do not match",
+    "srv.PIN must be exactly 4 digits": "PIN must be exactly 4 digits",
+    "srv.Invalid timeout request": "Invalid timeout request",
+    "srv.No file uploaded": "No file uploaded",
+    "srv.No file selected": "No file selected",
+    "srv.Invalid JSON file": "Invalid JSON file",
+    "srv.invalid.value": "Invalid value",
+    "sc.home_point_plus": "Home +1 point",
+    "sc.home_point_minus": "Home -1 point",
+    "sc.away_point_plus": "Away +1 point",
+    "sc.away_point_minus": "Away -1 point",
+    "sc.home_set_plus": "Home +1 set",
+    "sc.home_set_minus": "Home -1 set",
+    "sc.away_set_plus": "Away +1 set",
+    "sc.away_set_minus": "Away -1 set",
+    "sc.possession_cycle": "Possession cycle",
+    "sc.timer_toggle": "Timer start / pause",
+    "sc.timer_reset": "Timer reset",
+    "sc.home_timeout_plus": "Home timeout +1",
+    "sc.home_timeout_minus": "Home timeout -1",
+    "sc.away_timeout_plus": "Away timeout +1",
+    "sc.away_timeout_minus": "Away timeout -1",
+    "sc.overlay_sets": "Toggle All Sets overlay",
+    "sc.overlay_timer": "Toggle Match Timer overlay",
+    "sc.overlay_timeouts": "Toggle Timeouts overlay",
+    "sc.overlay_history": "Toggle Score History overlay",
+    "sc.tab_match": "Go to Match tab",
+    "sc.tab_teams": "Go to Teams tab",
+    "sc.tab_settings": "Go to Settings tab"
   },
   it: {
     "app.name": "VolleyScore",
@@ -135,7 +186,7 @@ const TRANSLATIONS = {
     "points": "Punti",
     "sets": "Set",
     "home.serves": "Servizio Casa",
-    "away.serves": "Servizio Trasferta",
+    "away.serves": "Servizio Ospiti",
     "no.serve": "Nessun Servizio",
     "overlay.display": "Visualizzazione Overlay",
     "overlay.display.desc": "Lo scorebug standard è sempre visibile. Attiva gli altri — appaiono con dissolvenza.",
@@ -203,7 +254,7 @@ const TRANSLATIONS = {
     "dual.formation": "Formazione Doppia",
     "match.stats": "Cronometro",
     "keyboard.shortcuts": "Scorciatoie Tastiera",
-    "keyboard.desc": "Controlli senza mouse. Clicca un tasto e premi la nuova combinazione.",
+    "keyboard.desc": "Controlli senza mouse. Clicca un tasto e premi la nuova combinazione. Rimappa qui se una combinazione è già usata dagli hotkey di OBS.",
     "apply.shortcuts": "Applica Scorciatoie",
     "reset.defaults": "Ripristina Default",
     "config.backup": "Backup Configurazione",
@@ -234,7 +285,58 @@ const TRANSLATIONS = {
     "guide.shortcuts.desc": "Tutti i controlli hanno scorciatoie rimappabili (Impostazioni → Scorciatoie). Durante la digitazione sono ignorate.",
     "guide.log": "Log Giornaliero",
     "guide.log.desc": "Punti, timeout e cronometro sono aggiunti in ordine a logs/match_report_AAAA-MM-GG.csv per giorno. File vecchi mantenuti.",
-    "back.to.panel": "Torna al Pannello"
+    "back.to.panel": "Torna al Pannello",
+    "summary.set": "Set",
+    "summary.timer": "Tempo",
+    "no.pin": "Nessun PIN",
+    "yes.reset.all": "Sì, Reimposta Tutto",
+    "delete.set": "Elimina questo set",
+    "unbound": "Non assegnato",
+    "unbind": "Rimuovi",
+    "press.key": "Premi un tasto…",
+    "toast.enter.pin": "Inserisci prima il PIN",
+    "toast.game.reset": "Partita azzerata",
+    "toast.pin.saved": "PIN salvato",
+    "toast.shortcuts.saved": "Scorciatoie salvate",
+    "toast.config.imported": "Configurazione importata",
+    "toast.select.file": "Seleziona un file",
+    "toast.import.failed": "Importazione fallita",
+    "toast.update.failed": "Aggiornamento fallito",
+    "toast.current.pin.incorrect": "PIN attuale errato",
+    "toast.pin.4digits": "Il PIN deve essere di 4 cifre",
+    "toast.pins.mismatch": "I PIN non coincidono",
+    "toast.key.used": "Tasto già usato da:",
+    "srv.Invalid PIN": "PIN non valido",
+    "srv.Current PIN is incorrect": "PIN attuale errato",
+    "srv.New PINs do not match": "I nuovi PIN non coincidono",
+    "srv.PIN must be exactly 4 digits": "Il PIN deve essere di 4 cifre",
+    "srv.Invalid timeout request": "Richiesta timeout non valida",
+    "srv.No file uploaded": "Nessun file caricato",
+    "srv.No file selected": "Nessun file selezionato",
+    "srv.Invalid JSON file": "File JSON non valido",
+    "srv.invalid.value": "Valore non valido",
+    "sc.home_point_plus": "Casa +1 punto",
+    "sc.home_point_minus": "Casa -1 punto",
+    "sc.away_point_plus": "Ospiti +1 punto",
+    "sc.away_point_minus": "Ospiti -1 punto",
+    "sc.home_set_plus": "Casa +1 set",
+    "sc.home_set_minus": "Casa -1 set",
+    "sc.away_set_plus": "Ospiti +1 set",
+    "sc.away_set_minus": "Ospiti -1 set",
+    "sc.possession_cycle": "Cambia servizio",
+    "sc.timer_toggle": "Cronometro avvia / pausa",
+    "sc.timer_reset": "Azzera cronometro",
+    "sc.home_timeout_plus": "Timeout casa +1",
+    "sc.home_timeout_minus": "Timeout casa -1",
+    "sc.away_timeout_plus": "Timeout ospiti +1",
+    "sc.away_timeout_minus": "Timeout ospiti -1",
+    "sc.overlay_sets": "Mostra/nascondi overlay Tutti i Set",
+    "sc.overlay_timer": "Mostra/nascondi overlay Cronometro",
+    "sc.overlay_timeouts": "Mostra/nascondi overlay Timeout",
+    "sc.overlay_history": "Mostra/nascondi overlay Storico Punti",
+    "sc.tab_match": "Vai alla scheda Partita",
+    "sc.tab_teams": "Vai alla scheda Squadre",
+    "sc.tab_settings": "Vai alla scheda Impostazioni"
   }
 };
 
@@ -246,14 +348,31 @@ function getLang() {
 function setLang(lang) {
   if (lang !== 'it' && lang !== 'en') return;
   localStorage.setItem(LANG_KEY, lang);
-  document.documentElement.setAttribute('lang', lang);
   applyTranslations();
+  // Pages re-render the texts they build in JS
+  document.dispatchEvent(new Event('langchange'));
 }
 function t(key) {
   const lang = getLang();
   return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || (TRANSLATIONS.en[key] || key);
 }
+// Server error messages are English: translate the known ones
+function tServer(message) {
+  if (!message) return t('toast.update.failed');
+  const m = /^Invalid value for (\w+)$/.exec(message);
+  if (m) return t('srv.invalid.value') + ' (' + m[1] + ')';
+  const key = 'srv.' + message;
+  const val = t(key);
+  return val === key ? message : val;
+}
 function applyTranslations() {
+  const lang = getLang();
+  document.documentElement.setAttribute('lang', lang);
+  document.querySelectorAll('[data-lang-btn]').forEach(b => {
+    const active = b.getAttribute('data-lang-btn') === lang;
+    b.classList.toggle('btn-primary', active);
+    b.classList.toggle('btn-secondary', !active);
+  });
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     const val = t(key);
@@ -670,7 +789,7 @@ async function fetchCurrentState() {
 
 // Initialize socket connection on page load
 document.addEventListener('DOMContentLoaded', () => {
-    if (!socketInstance) {
+    if (!socketInstance && typeof io !== 'undefined') {
         connectSocket();
     }
 });

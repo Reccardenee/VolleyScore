@@ -9,9 +9,9 @@
 <!-- Fonts: Used for the bold team names and scores -->
 <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&display=swap" rel="stylesheet">
 <!-- Icons: Using Lucide Icons for the service indicator -->
-<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="/static/lucide.min.js"></script>
 <!-- Socket.IO Client -->
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="/static/socket.io.min.js"></script>
 
 <style>
 /* Define the primary colors from the image (Dark Blue, Red, Yellow/Gold) */
@@ -456,7 +456,8 @@ function updateUI(data) {
     // Update PIN display
     const pinDisplay = document.getElementById("pinDisplay");
     if (pinDisplay) {
-        pinDisplay.textContent = data.pin ? "PIN: " + data.pin : "";
+        // Never show the PIN on the broadcast overlay
+        pinDisplay.textContent = "";
     }
 
     previousState = data;

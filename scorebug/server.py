@@ -15,6 +15,14 @@ import qrcode
 import socket
 from io import BytesIO
 
+# Frozen exe: stdout falls back to cp1252 when not attached to a console, and
+# printing a team name like "Łódź" would crash the request. Never fail on output.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 # Determine base directory for PyInstaller compatibility
 if getattr(sys, 'frozen', False):
     BASE_DIR = sys._MEIPASS
@@ -47,6 +55,7 @@ if not os.path.exists(LOG_FOLDER):
     os.makedirs(LOG_FOLDER)
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB max upload limit
 
 PORT = int(os.environ.get("VOLLEYSCORE_PORT", "8000"))
 
@@ -173,15 +182,27 @@ def compute_timer_elapsed(state):
     return acc
 
 def save_config(config):
-    """Save configuration to file."""
+    """Save configuration to file atomically."""
     config["timerElapsed"] = compute_timer_elapsed(config)
     try:
-        with open(CONFIG_FILE, 'w') as f:
+        tmp_file = f"{CONFIG_FILE}.tmp.{os.getpid()}"
+        with open(tmp_file, 'w', encoding='utf-8') as f:
             json.dump(config, f, indent=4)
+        os.replace(tmp_file, CONFIG_FILE)
     except Exception as e:
         print(f"Error saving config: {e}")
 
 current_score = load_config()
+
+def parse_int(raw, low=None, high=None):
+    """int(raw) if it is a plain integer within [low, high], else None."""
+    try:
+        n = int(raw)
+    except (TypeError, ValueError):
+        return None
+    if (low is not None and n < low) or (high is not None and n > high):
+        return None
+    return n
 
 def allowed_file(filename):
     """
@@ -233,7 +254,7 @@ def log_score_event(old_score_state, new_score_state):
     # Get the daily log file path (in case day changed while server was running)
     current_log_file = get_daily_log_file()
     file_exists = os.path.exists(current_log_file)
-    with open(current_log_file, 'a', newline='') as csvfile:
+    with open(current_log_file, 'a', newline='', encoding='utf-8') as csvfile:
         fieldnames = log_entry.keys()
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
@@ -254,6 +275,26 @@ def get_local_ip():
         return ip_address
     except Exception:
         return "127.0.0.1" # Fallback to localhost
+
+
+def make_listener(port):
+    """
+    Dual-stack (IPv6 + IPv4) listening socket. On Windows "localhost" resolves
+    to ::1 first, and an IPv4-only socket makes each new connection wait for
+    that attempt to fail before falling back to 127.0.0.1.
+    """
+    sock = None
+    try:
+        sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        sock.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+        sock.bind(("::", port))
+    except (OSError, AttributeError):
+        if sock:
+            sock.close()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.bind(("0.0.0.0", port))
+    sock.listen(1024)
+    return sock
 
 
 @app.route("/")
@@ -357,6 +398,15 @@ def update():
     """
     global current_score
     form_data = request.form
+
+    # Validate numbers up front: reject the whole request (no partial update,
+    # no saved upload) instead of crashing with a 500 on int()
+    for key, low, high in (("homeScore", 0, None), ("awayScore", 0, None),
+                           ("homeSets", 0, None), ("awaySets", 0, None),
+                           ("currentSet", 1, 5)):
+        raw = form_data.get(key, "").strip()
+        if raw and parse_int(raw, low, high) is None:
+            return jsonify({"status": "error", "message": f"Invalid value for {key}"}), 400
 
     old_current_score = current_score.copy()
 
@@ -670,8 +720,6 @@ def timer_control():
         current_score["timerStartTimestamp"] = None
         current_score["timerPausedTimestamp"] = None
         current_score["accumulatedTime"] = 0
-        current_score["scoreHistory"] = []
-        current_score["currentSet"] = 1
 
     if old_current_score != current_score:
         log_score_event(old_current_score, current_score)
@@ -688,13 +736,16 @@ def timeout_control():
     global current_score
     old_current_score = current_score.copy()
     team = request.form.get("team", "")
-    change = int(request.form.get("change", 0))
+    change = parse_int(request.form.get("change", "0"))
 
     # PIN verification - reject controls if PIN doesn't match
     submitted_pin = request.form.get("pin", "")
     current_pin = current_score.get("pin", "")
     if current_pin and submitted_pin != current_pin:
         return jsonify({"status": "error", "message": "Invalid PIN"}), 403
+
+    if team not in ("home", "away") or change is None:
+        return jsonify({"status": "error", "message": "Invalid timeout request"}), 400
 
     if team == "home":
         current_score["homeTimeouts"] = max(0, min(2, current_score["homeTimeouts"] + change))
@@ -870,6 +921,7 @@ def uploaded_file(filename):
 @socketio.on('connect')
 def handle_connect():
     """Send current state to client upon connection."""
+    current_score["timerElapsed"] = compute_timer_elapsed(current_score)
     emit('score_update', current_score)
 
 if __name__ == "__main__":
@@ -884,4 +936,8 @@ if __name__ == "__main__":
     print(f"Control Panel: http://{get_local_ip()}:{PORT}/control_panel")
     print("-" * 40)
 
-    socketio.run(app, host="0.0.0.0", port=PORT, log_output=False)
+    # Same gevent server socketio.run() would build, on a dual-stack socket
+    from gevent import pywsgi
+    from geventwebsocket.handler import WebSocketHandler
+    pywsgi.WSGIServer(make_listener(PORT), app,
+                      handler_class=WebSocketHandler, log=None).serve_forever()

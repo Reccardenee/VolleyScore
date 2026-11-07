@@ -930,13 +930,13 @@
         <span class="logo">VolleyScore</span>
         <div class="connection-status">
           <div class="connection-dot" id="connectionDot"></div>
-          <span id="connectionText">Connecting...</span>
+          <span id="connectionText"></span>
         </div>
       </div>
       <div class="header-right" style="display:flex;gap:8px;align-items:center;">
         <a href="/guide" class="btn btn-secondary btn-sm" data-i18n="nav.guide">Guide</a>
-        <button class="btn btn-secondary btn-sm" onclick="setLang('en')" title="English">EN</button>
-        <button class="btn btn-secondary btn-sm" onclick="setLang('it')" title="Italiano">IT</button>
+        <button class="btn btn-secondary btn-sm" onclick="setLang('en')" title="English" data-lang-btn="en">EN</button>
+        <button class="btn btn-secondary btn-sm" onclick="setLang('it')" title="Italiano" data-lang-btn="it">IT</button>
       </div>
     </div>
 
@@ -952,8 +952,8 @@
         <span class="summary-team away" id="summaryAwayName">Away</span>
       </div>
       <div class="summary-meta">
-        <span>Set <b id="summarySet">1</b></span>
-        <span>Timer <b id="summaryTimer">00:00</b></span>
+        <span><span data-i18n="summary.set">Set</span> <b id="summarySet">1</b></span>
+        <span><span data-i18n="summary.timer">Timer</span> <b id="summaryTimer">00:00</b></span>
       </div>
     </div>
 
@@ -967,18 +967,18 @@
     <!-- MATCH TAB -->
     <div class="tab-content active" id="tab-match">
       <div class="card">
-        <div class="card-title">Score Controls</div>
+        <div class="card-title" data-i18n="score.controls">Score Controls</div>
         <div class="score-controls">
           <div class="team-score-control home">
             <h3 id="homeTeamName">Home</h3>
             <div class="score-row">
-              <label>Points</label>
+              <label data-i18n="points">Points</label>
               <button class="btn btn-secondary btn-icon" onclick="changeScore('home', -1)">−</button>
               <input type="number" class="form-input score-input" id="homeScore" value="0" min="0">
               <button class="btn btn-primary btn-icon" onclick="changeScore('home', 1)">+</button>
             </div>
             <div class="score-row">
-              <label>Sets</label>
+              <label data-i18n="sets">Sets</label>
               <button class="btn btn-secondary btn-icon" onclick="changeSet('home', -1)">−</button>
               <input type="number" class="form-input score-input" id="homeSets" value="0" min="0">
               <button class="btn btn-primary btn-icon" onclick="changeSet('home', 1)">+</button>
@@ -987,13 +987,13 @@
           <div class="team-score-control away">
             <h3 id="awayTeamName">Away</h3>
             <div class="score-row">
-              <label>Points</label>
+              <label data-i18n="points">Points</label>
               <button class="btn btn-secondary btn-icon" onclick="changeScore('away', -1)">−</button>
               <input type="number" class="form-input score-input" id="awayScore" value="0" min="0">
               <button class="btn btn-primary btn-icon" onclick="changeScore('away', 1)">+</button>
             </div>
             <div class="score-row">
-              <label>Sets</label>
+              <label data-i18n="sets">Sets</label>
               <button class="btn btn-secondary btn-icon" onclick="changeSet('away', -1)">−</button>
               <input type="number" class="form-input score-input" id="awaySets" value="0" min="0">
               <button class="btn btn-primary btn-icon" onclick="changeSet('away', 1)">+</button>
@@ -1001,39 +1001,39 @@
           </div>
         </div>
         <div class="possession-row">
-          <button class="btn possession-btn home" id="posHome" onclick="setPossession('home')">Home Serves</button>
-          <button class="btn possession-btn none" id="posNone" onclick="setPossession('none')">No Serve</button>
-          <button class="btn possession-btn away" id="posAway" onclick="setPossession('away')">Away Serves</button>
+          <button class="btn possession-btn home" id="posHome" onclick="setPossession('home')" data-i18n="home.serves">Home Serves</button>
+          <button class="btn possession-btn none" id="posNone" onclick="setPossession('none')" data-i18n="no.serve">No Serve</button>
+          <button class="btn possession-btn away" id="posAway" onclick="setPossession('away')" data-i18n="away.serves">Away Serves</button>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-title">Overlay Display</div>
-        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 12px;">
+        <div class="card-title" data-i18n="overlay.display">Overlay Display</div>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 12px;" data-i18n="overlay.display.desc">
           The standard scorebug is always visible. Toggle the others — they fade in on the overlay pages.
         </p>
         <div class="grid-2">
-          <button class="btn btn-secondary" id="overlayToggleSets" onclick="toggleOverlay('sets')">All Sets</button>
-          <button class="btn btn-secondary" id="overlayToggleTimer" onclick="toggleOverlay('timer')">Match Timer</button>
-          <button class="btn btn-secondary" id="overlayToggleTimeouts" onclick="toggleOverlay('timeouts')">Timeouts</button>
-          <button class="btn btn-secondary" id="overlayToggleHistory" onclick="toggleOverlay('history')">Score History</button>
+          <button class="btn btn-secondary" id="overlayToggleSets" onclick="toggleOverlay('sets')" data-i18n="overlay.allSets">All Sets</button>
+          <button class="btn btn-secondary" id="overlayToggleTimer" onclick="toggleOverlay('timer')" data-i18n="overlay.timer">Match Timer</button>
+          <button class="btn btn-secondary" id="overlayToggleTimeouts" onclick="toggleOverlay('timeouts')" data-i18n="overlay.timeouts">Timeouts</button>
+          <button class="btn btn-secondary" id="overlayToggleHistory" onclick="toggleOverlay('history')" data-i18n="overlay.history">Score History</button>
         </div>
       </div>
 
       <div class="cards-2col">
         <div class="card">
-          <div class="card-title">Match Timer</div>
+          <div class="card-title" data-i18n="match.timer">Match Timer</div>
           <div class="timer-display" id="timerDisplay">00:00</div>
           <div class="timer-controls">
-            <button class="btn btn-primary" onclick="timerControl('start')">Start</button>
-            <button class="btn btn-secondary" onclick="timerControl('pause')">Pause</button>
-            <button class="btn btn-primary" onclick="timerControl('resume')">Resume</button>
-            <button class="btn btn-danger" onclick="timerControl('reset')">Reset</button>
+            <button class="btn btn-primary" onclick="timerControl('start')" data-i18n="timer.start">Start</button>
+            <button class="btn btn-secondary" onclick="timerControl('pause')" data-i18n="timer.pause">Pause</button>
+            <button class="btn btn-primary" onclick="timerControl('resume')" data-i18n="timer.resume">Resume</button>
+            <button class="btn btn-danger" onclick="timerControl('reset')" data-i18n="timer.reset">Reset</button>
           </div>
         </div>
 
         <div class="card">
-          <div class="card-title">Timeouts</div>
+          <div class="card-title" data-i18n="overlay.timeouts">Timeouts</div>
           <div class="timeout-controls">
             <div class="timeout-team home">
               <h4 id="homeTimeoutTeam">Home</h4>
@@ -1059,57 +1059,57 @@
 
       <div class="cards-2col">
         <div class="card">
-          <div class="card-title">Last 5 Points</div>
+          <div class="card-title" data-i18n="last.points">Last 5 Points</div>
           <ul class="score-history-list" id="scoreHistoryList">
-            <li style="color: var(--text-muted);">No points scored yet</li>
+            <li style="color: var(--text-muted);" data-i18n="no.points">No points scored yet</li>
           </ul>
         </div>
 
         <div class="card">
-          <div class="card-title">Previous Sets</div>
+          <div class="card-title" data-i18n="previous.sets">Previous Sets</div>
           <div id="previousSetsContainer">
-            <p style="color: var(--text-muted); font-size: 0.875rem;">No sets completed yet.</p>
+            <p style="color: var(--text-muted); font-size: 0.875rem;" data-i18n="no.sets">No sets completed yet.</p>
           </div>
-          <button class="btn btn-secondary btn-block" id="addPreviousSetBtn" onclick="addPreviousSet()">Add Set Score</button>
+          <button class="btn btn-secondary btn-block" id="addPreviousSetBtn" onclick="addPreviousSet()" data-i18n="add.set.score">Add Set Score</button>
         </div>
       </div>
 
       <div class="card">
         <div class="grid-2">
-          <button class="btn btn-primary" onclick="sendScoreUpdate()">Update Scoreboard</button>
-          <button class="btn btn-danger" onclick="showResetModal()">Reset Game</button>
+          <button class="btn btn-primary" onclick="sendScoreUpdate()" data-i18n="update.scoreboard">Update Scoreboard</button>
+          <button class="btn btn-danger" onclick="showResetModal()" data-i18n="reset.game">Reset Game</button>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-title">Overlay Previews</div>
+        <div class="card-title" data-i18n="overlay.previews">Overlay Previews</div>
         <div class="preview-grid">
           <div class="preview-item">
-            <div class="preview-label"><span>Scoreboard</span><a href="/" target="_blank" rel="noopener">open in new tab</a></div>
+            <div class="preview-label"><span data-i18n="preview.scoreboard">Scoreboard</span><a href="/" target="_blank" rel="noopener" data-i18n="open.new.tab">open in new tab</a></div>
             <div class="overlay-preview" id="preview-scoreboard-container">
               <iframe id="preview-scoreboard" src="/" title="Scoreboard preview"></iframe>
             </div>
           </div>
           <div class="preview-item">
-            <div class="preview-label"><span>All Sets</span><a href="/scorebug_sets" target="_blank" rel="noopener">open in new tab</a></div>
+            <div class="preview-label"><span data-i18n="preview.allSets">All Sets</span><a href="/scorebug_sets" target="_blank" rel="noopener" data-i18n="open.new.tab">open in new tab</a></div>
             <div class="overlay-preview" id="preview-sets-container">
               <iframe id="preview-sets" src="/scorebug_sets" title="All sets preview"></iframe>
             </div>
           </div>
           <div class="preview-item">
-            <div class="preview-label"><span>Match Timer</span><a href="/match_timer" target="_blank" rel="noopener">open in new tab</a></div>
+            <div class="preview-label"><span data-i18n="preview.timer">Match Timer</span><a href="/match_timer" target="_blank" rel="noopener" data-i18n="open.new.tab">open in new tab</a></div>
             <div class="overlay-preview" id="preview-timer-container">
               <iframe id="preview-timer" src="/match_timer" title="Timer preview"></iframe>
             </div>
           </div>
           <div class="preview-item">
-            <div class="preview-label"><span>Timeouts</span><a href="/timeouts" target="_blank" rel="noopener">open in new tab</a></div>
+            <div class="preview-label"><span data-i18n="preview.timeouts">Timeouts</span><a href="/timeouts" target="_blank" rel="noopener" data-i18n="open.new.tab">open in new tab</a></div>
             <div class="overlay-preview" id="preview-timeouts-container">
               <iframe id="preview-timeouts" src="/timeouts" title="Timeouts preview"></iframe>
             </div>
           </div>
           <div class="preview-item">
-            <div class="preview-label"><span>Score History</span><a href="/score_history" target="_blank" rel="noopener">open in new tab</a></div>
+            <div class="preview-label"><span data-i18n="preview.history">Score History</span><a href="/score_history" target="_blank" rel="noopener" data-i18n="open.new.tab">open in new tab</a></div>
             <div class="overlay-preview" id="preview-history-container">
               <iframe id="preview-history" src="/score_history" title="Score history preview"></iframe>
             </div>
@@ -1119,41 +1119,41 @@
 
       <div class="card qr-container">
         <img src="/qrcode_image" alt="QR Code" />
-        <p>Scan with phone to access control panel</p>
+        <p data-i18n="scan.qr">Scan with phone to access control panel</p>
       </div>
     </div>
 
     <!-- TEAMS TAB -->
     <div class="tab-content" id="tab-teams">
       <div class="card">
-        <div class="card-title">Match Info</div>
+        <div class="card-title" data-i18n="match.info">Match Info</div>
         <div class="form-group">
-          <label class="form-label">Match Title</label>
+          <label class="form-label" data-i18n="match.title">Match Title</label>
           <input type="text" class="form-input" id="matchTitle" value="Volleyball Match">
         </div>
       </div>
 
       <div class="team-settings">
         <div class="team-config home">
-          <h3>Home Team</h3>
+          <h3 data-i18n="team.home">Home Team</h3>
           <div class="form-group">
-            <label class="form-label">Team Name</label>
+            <label class="form-label" data-i18n="team.name">Team Name</label>
             <input type="text" class="form-input" id="homeName" value="Home">
           </div>
           <div class="form-group">
-            <label class="form-label">Logo</label>
+            <label class="form-label" data-i18n="team.logo">Logo</label>
             <input type="file" class="form-input" id="homeLogoFile" accept="image/*" style="padding: 8px;">
             <input type="hidden" id="homeLogo" value="/static/home_logo_placeholder.jpg">
           </div>
           <div class="form-group">
-            <label class="form-label">Colors</label>
+            <label class="form-label" data-i18n="team.colors">Colors</label>
             <div class="color-row">
               <input type="color" class="color-input" id="homeColorPrimary" value="#0000FF">
               <input type="color" class="color-input" id="homeColorSecondary" value="#AAAAFF">
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Players</label>
+            <label class="form-label" data-i18n="team.players">Players</label>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
               <input type="text" class="form-input" id="homeP1" placeholder="Pos 1" maxlength="24">
               <input type="text" class="form-input" id="homeP2" placeholder="Pos 2" maxlength="24">
@@ -1165,25 +1165,25 @@
           </div>
         </div>
         <div class="team-config away">
-          <h3>Away Team</h3>
+          <h3 data-i18n="team.away">Away Team</h3>
           <div class="form-group">
-            <label class="form-label">Team Name</label>
+            <label class="form-label" data-i18n="team.name">Team Name</label>
             <input type="text" class="form-input" id="awayName" value="Away">
           </div>
           <div class="form-group">
-            <label class="form-label">Logo</label>
+            <label class="form-label" data-i18n="team.logo">Logo</label>
             <input type="file" class="form-input" id="awayLogoFile" accept="image/*" style="padding: 8px;">
             <input type="hidden" id="awayLogo" value="/static/away_logo.jpg">
           </div>
           <div class="form-group">
-            <label class="form-label">Colors</label>
+            <label class="form-label" data-i18n="team.colors">Colors</label>
             <div class="color-row">
               <input type="color" class="color-input" id="awayColorPrimary" value="#FF0000">
               <input type="color" class="color-input" id="awayColorSecondary" value="#FFAAAA">
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Players</label>
+            <label class="form-label" data-i18n="team.players">Players</label>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
               <input type="text" class="form-input" id="awayP1" placeholder="Pos 1" maxlength="24">
               <input type="text" class="form-input" id="awayP2" placeholder="Pos 2" maxlength="24">
@@ -1197,20 +1197,20 @@
       </div>
 
       <div class="card">
-        <div class="card-title">Formation Preview</div>
-        <div class="preview-label"><span>Dual Formation (both teams)</span><a href="/dual_formation" target="_blank" rel="noopener">open in new tab</a></div>
+        <div class="card-title" data-i18n="formation.preview">Formation Preview</div>
+        <div class="preview-label"><span data-i18n="preview.formation">Dual Formation (both teams)</span><a href="/dual_formation" target="_blank" rel="noopener" data-i18n="open.new.tab">open in new tab</a></div>
         <div class="overlay-preview" id="preview-formation-container">
           <iframe id="preview-formation" src="/dual_formation" title="Dual formation preview"></iframe>
         </div>
       </div>
 
-      <button class="btn btn-primary btn-block" onclick="sendTeamSettings()">Save Team Settings</button>
+      <button class="btn btn-primary btn-block" onclick="sendTeamSettings()" data-i18n="save.team">Save Team Settings</button>
     </div>
 
     <!-- SETTINGS TAB -->
     <div class="tab-content" id="tab-settings">
       <div class="card">
-        <div class="card-title">PIN Protection</div>
+        <div class="card-title" data-i18n="pin.protection">PIN Protection</div>
         <div class="pin-section">
           <div class="pin-status">
             <div class="pin-indicator" id="pinStatus">
@@ -1220,115 +1220,115 @@
           </div>
           <div class="pin-form" id="pinForm">
             <div id="currentPinSection" style="display: none;">
-              <input type="password" class="form-input" id="currentPin" maxlength="4" placeholder="Current PIN">
+              <input type="password" class="form-input" id="currentPin" maxlength="4" placeholder="Current PIN" data-i18n-placeholder="current.pin">
             </div>
-            <input type="password" class="form-input" id="newPin" maxlength="4" placeholder="New 4-digit PIN">
-            <input type="password" class="form-input" id="confirmPin" maxlength="4" placeholder="Confirm PIN">
+            <input type="password" class="form-input" id="newPin" maxlength="4" placeholder="New 4-digit PIN" data-i18n-placeholder="new.pin">
+            <input type="password" class="form-input" id="confirmPin" maxlength="4" placeholder="Confirm PIN" data-i18n-placeholder="confirm.pin">
             <div class="grid-2" style="margin-top: 12px;">
-              <button class="btn btn-primary" onclick="savePin()">Save</button>
-              <button class="btn btn-secondary" onclick="cancelPinSetup()">Cancel</button>
+              <button class="btn btn-primary" onclick="savePin()" data-i18n="save">Save</button>
+              <button class="btn btn-secondary" onclick="cancelPinSetup()" data-i18n="cancel">Cancel</button>
             </div>
           </div>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-title">Overlay Theme</div>
-        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 12px;">
+        <div class="card-title" data-i18n="overlay.theme">Overlay Theme</div>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 12px;" data-i18n="overlay.theme.desc">
           Shared colors for scorebug, sets, timer, timeouts &amp; history. Team formations keep their team colors.
         </p>
         <div class="form-group">
-          <label class="form-label">Background (top)</label>
+          <label class="form-label" data-i18n="bg.top">Background (top)</label>
           <input type="color" class="color-input" id="themeBgPrimary" value="#142850">
         </div>
         <div class="form-group">
-          <label class="form-label">Background (bottom)</label>
+          <label class="form-label" data-i18n="bg.bottom">Background (bottom)</label>
           <input type="color" class="color-input" id="themeBgSecondary" value="#0a1f3c">
         </div>
         <div class="form-group">
-          <label class="form-label">Accent</label>
+          <label class="form-label" data-i18n="accent">Accent</label>
           <input type="color" class="color-input" id="themeAccent" value="#F0A500">
         </div>
         <div class="form-group">
-          <label class="form-label">Accent (secondary)</label>
+          <label class="form-label" data-i18n="accent.secondary">Accent (secondary)</label>
           <input type="color" class="color-input" id="themeAccentSecondary" value="#B87B00">
         </div>
         <div class="form-group">
-          <label class="form-label">Border</label>
+          <label class="form-label" data-i18n="border">Border</label>
           <input type="color" class="color-input" id="themeBorder" value="#2a406b">
         </div>
-        <button class="btn btn-primary" onclick="saveTheme()">Apply Theme</button>
+        <button class="btn btn-primary" onclick="saveTheme()" data-i18n="apply.theme">Apply Theme</button>
       </div>
 
       <div class="card">
-        <div class="card-title">OBS Overlay URLs</div>
+        <div class="card-title" data-i18n="obs.urls">OBS Overlay URLs</div>
         <div class="obs-urls">
           <div class="obs-url">
-            <span>Scoreboard</span>
+            <span data-i18n="scoreboard">Scoreboard</span>
             <code>/</code>
           </div>
           <div class="obs-url">
-            <span>All Sets</span>
+            <span data-i18n="overlay.allSets">All Sets</span>
             <code>/scorebug_sets</code>
           </div>
           <div class="obs-url">
-            <span>Home Formation</span>
+            <span data-i18n="home.formation">Home Formation</span>
             <code>/home_formation</code>
           </div>
           <div class="obs-url">
-            <span>Away Formation</span>
+            <span data-i18n="away.formation">Away Formation</span>
             <code>/away_formation</code>
           </div>
           <div class="obs-url">
-            <span>Dual Formation</span>
+            <span data-i18n="dual.formation">Dual Formation</span>
             <code>/dual_formation</code>
           </div>
           <div class="obs-url">
-            <span>Match Stats</span>
+            <span data-i18n="overlay.timer">Match Timer</span>
             <code>/match_timer</code>
           </div>
           <div class="obs-url">
-            <span>Timeouts</span>
+            <span data-i18n="overlay.timeouts">Timeouts</span>
             <code>/timeouts</code>
           </div>
           <div class="obs-url">
-            <span>Score History</span>
+            <span data-i18n="overlay.history">Score History</span>
             <code>/score_history</code>
           </div>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-title">Keyboard Shortcuts</div>
-        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 12px;">
+        <div class="card-title" data-i18n="keyboard.shortcuts">Keyboard Shortcuts</div>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 12px;" data-i18n="keyboard.desc">
           Match controls without a mouse. Click a key, then press the new combo.
           Re-map here if a combo clashes with OBS hotkeys.
         </p>
         <div class="shortcut-list" id="shortcutList"></div>
         <div class="grid-2" style="margin-top: 12px;">
-          <button class="btn btn-primary" onclick="saveShortcuts()">Apply Shortcuts</button>
-          <button class="btn btn-secondary" onclick="resetShortcutsUI()">Reset to Defaults</button>
+          <button class="btn btn-primary" onclick="saveShortcuts()" data-i18n="apply.shortcuts">Apply Shortcuts</button>
+          <button class="btn btn-secondary" onclick="resetShortcutsUI()" data-i18n="reset.defaults">Reset to Defaults</button>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-title">Configuration Backup</div>
-        <button class="btn btn-primary btn-block" onclick="exportConfig()">Export Configuration</button>
+        <div class="card-title" data-i18n="config.backup">Configuration Backup</div>
+        <button class="btn btn-primary btn-block" onclick="exportConfig()" data-i18n="export.config">Export Configuration</button>
         <div style="margin-top: 16px;">
           <input type="file" class="form-input" id="importConfigFile" accept=".json" style="padding: 8px;">
-          <button class="btn btn-secondary btn-block" onclick="importConfig()">Import Configuration</button>
+          <button class="btn btn-secondary btn-block" onclick="importConfig()" data-i18n="import.config">Import Configuration</button>
         </div>
       </div>
 
       <div class="card">
-        <div class="card-title">Export Match</div>
-        <button class="btn btn-secondary btn-block" onclick="window.location.href='/export_match'">Go to Export Match</button>
+        <div class="card-title" data-i18n="export.match">Export Match</div>
+        <button class="btn btn-secondary btn-block" onclick="window.location.href='/export_match'" data-i18n="go.export">Go to Export Match</button>
       </div>
 
       <div class="card">
-        <div class="card-title">Reset to Defaults</div>
-        <p style="color: var(--danger); font-size: 0.875rem; margin-bottom: 12px;">Warning: This will reset all settings to defaults.</p>
-        <button class="btn btn-danger btn-block" onclick="showResetConfigModal()">Reset All Settings</button>
+        <div class="card-title" data-i18n="reset.defaults">Reset to Defaults</div>
+        <p style="color: var(--danger); font-size: 0.875rem; margin-bottom: 12px;" data-i18n="reset.all.warn">Warning: This will reset all settings to defaults.</p>
+        <button class="btn btn-danger btn-block" onclick="showResetConfigModal()" data-i18n="reset.all">Reset All Settings</button>
       </div>
     </div>
   </div>
@@ -1336,12 +1336,12 @@
   <!-- PIN Modal -->
   <div class="modal-overlay" id="pinModal">
     <div class="modal">
-      <h2>Enter PIN</h2>
-      <p>Enter the 4-digit PIN to control the scoreboard</p>
+      <h2 data-i18n="enter.pin">Enter PIN</h2>
+      <p data-i18n="enter.pin.desc">Enter the 4-digit PIN to control the scoreboard</p>
       <input type="password" id="pinInput" maxlength="4" placeholder="----">
       <p class="error" id="pinError"></p>
       <div class="modal-actions">
-        <button class="btn btn-primary" onclick="verifyPin()">Submit</button>
+        <button class="btn btn-primary" onclick="verifyPin()" data-i18n="submit">Submit</button>
       </div>
     </div>
   </div>
@@ -1349,11 +1349,11 @@
   <!-- Reset Game Modal -->
   <div class="modal-overlay" id="resetModal">
     <div class="modal">
-      <h2>Reset Game?</h2>
-      <p>This will clear all scores, sets, and match history. This cannot be undone.</p>
+      <h2 data-i18n="reset.game.title">Reset Game?</h2>
+      <p data-i18n="reset.game.desc">This will clear all scores, sets, and match history. This cannot be undone.</p>
       <div class="modal-actions">
-        <button class="btn btn-danger" onclick="confirmReset()">Yes, Reset</button>
-        <button class="btn btn-secondary" onclick="hideResetModal()">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmReset()" data-i18n="yes.reset">Yes, Reset</button>
+        <button class="btn btn-secondary" onclick="hideResetModal()" data-i18n="cancel">Cancel</button>
       </div>
     </div>
   </div>
@@ -1361,16 +1361,16 @@
   <!-- Reset Config Modal -->
   <div class="modal-overlay" id="resetConfigModal">
     <div class="modal">
-      <h2>Reset All Settings?</h2>
-      <p>This will reset everything to default values including PIN. This cannot be undone.</p>
+      <h2 data-i18n="reset.all.title">Reset All Settings?</h2>
+      <p data-i18n="reset.all.desc">This will reset everything to default values including PIN. This cannot be undone.</p>
       <div class="modal-actions">
-        <button class="btn btn-danger" onclick="confirmResetConfig()">Yes, Reset All</button>
-        <button class="btn btn-secondary" onclick="hideResetConfigModal()">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmResetConfig()" data-i18n="yes.reset.all">Yes, Reset All</button>
+        <button class="btn btn-secondary" onclick="hideResetConfigModal()" data-i18n="cancel">Cancel</button>
       </div>
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+  <script src="/static/socket.io.min.js"></script>
   <script src="/static/volley-ui.js"></script>
   <script>
     // ============================================
@@ -1399,6 +1399,12 @@
     let timerDisplayAnchor = Date.now() / 1000;
 
     const socket = io();
+    let connectionKey = 'connecting';
+
+    function renderConnection() {
+      document.getElementById('connectionText').textContent = t(connectionKey);
+    }
+    renderConnection();
 
     // ============================================
     // TAB NAVIGATION
@@ -1421,12 +1427,14 @@
     // ============================================
     socket.on('connect', () => {
       document.getElementById('connectionDot').classList.add('connected');
-      document.getElementById('connectionText').textContent = 'Connected';
+      connectionKey = 'connected';
+      renderConnection();
     });
 
     socket.on('disconnect', () => {
       document.getElementById('connectionDot').classList.remove('connected');
-      document.getElementById('connectionText').textContent = 'Disconnected';
+      connectionKey = 'disconnected';
+      renderConnection();
     });
 
     // ============================================
@@ -1490,11 +1498,37 @@
     }
 
     function setColor(id, value, fallback) {
-      const el = document.getElementById(id);
-      if (el) el.value = value || fallback;
+      setField(id, value || fallback);
     }
 
+    // Fields the operator has edited but not sent yet: live updates from other
+    // operators must not overwrite them (cleared once the value is sent)
+    const dirtyFields = new Set();
+    const SCORE_FIELDS = ['homeScore', 'awayScore', 'homeSets', 'awaySets'];
+    const TEAM_FIELDS = ['matchTitle', 'homeName', 'awayName',
+      'homeColorPrimary', 'homeColorSecondary', 'awayColorPrimary', 'awayColorSecondary',
+      'homeP1', 'homeP2', 'homeP3', 'homeP4', 'homeP5', 'homeP6',
+      'awayP1', 'awayP2', 'awayP3', 'awayP4', 'awayP5', 'awayP6'];
+    const THEME_FIELDS = ['themeBgPrimary', 'themeBgSecondary', 'themeAccent',
+      'themeAccentSecondary', 'themeBorder'];
+    TEAM_FIELDS.concat(THEME_FIELDS).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', () => dirtyFields.add(id));
+    });
+
+    function clearDirty(ids) {
+      ids.forEach(id => dirtyFields.delete(id));
+    }
+
+    function setField(id, value) {
+      const el = document.getElementById(id);
+      if (el && !dirtyFields.has(id)) el.value = value;
+    }
+
+    let lastState = null;
+
     function restoreState(state) {
+      lastState = state;
       // Score summary
       setText('summaryHomeName', state.homeName || 'Home');
       setText('summaryAwayName', state.awayName || 'Away');
@@ -1503,33 +1537,31 @@
       setText('summarySet', state.currentSet || 1);
 
       // Score controls
-      document.getElementById('homeScore').value = state.homeScore || 0;
-      document.getElementById('awayScore').value = state.awayScore || 0;
-      document.getElementById('homeSets').value = state.homeSets || 0;
-      document.getElementById('awaySets').value = state.awaySets || 0;
+      setField('homeScore', state.homeScore || 0);
+      setField('awayScore', state.awayScore || 0);
+      setField('homeSets', state.homeSets || 0);
+      setField('awaySets', state.awaySets || 0);
       homeSets = parseInt(state.homeSets, 10) || 0;
       awaySets = parseInt(state.awaySets, 10) || 0;
 
       // Team names
       document.getElementById('homeTeamName').textContent = state.homeName || 'Home';
       document.getElementById('awayTeamName').textContent = state.awayName || 'Away';
-      document.getElementById('homeName').value = state.homeName || 'Home';
-      document.getElementById('awayName').value = state.awayName || 'Away';
-      document.getElementById('matchTitle').value = state.matchTitle || 'Volleyball Match';
+      setField('homeName', state.homeName || 'Home');
+      setField('awayName', state.awayName || 'Away');
+      setField('matchTitle', state.matchTitle || 'Volleyball Match');
 
       // Players
       for (let i = 1; i <= 6; i++) {
-        const homeInput = document.getElementById('homeP' + i);
-        const awayInput = document.getElementById('awayP' + i);
-        if (homeInput) homeInput.value = (state.homePlayers && state.homePlayers[i - 1]) || '';
-        if (awayInput) awayInput.value = (state.awayPlayers && state.awayPlayers[i - 1]) || '';
+        setField('homeP' + i, (state.homePlayers && state.homePlayers[i - 1]) || '');
+        setField('awayP' + i, (state.awayPlayers && state.awayPlayers[i - 1]) || '');
       }
 
       // Colors
-      document.getElementById('homeColorPrimary').value = state.homeColorPrimary || '#0000FF';
-      document.getElementById('homeColorSecondary').value = state.homeColorSecondary || '#AAAAFF';
-      document.getElementById('awayColorPrimary').value = state.awayColorPrimary || '#FF0000';
-      document.getElementById('awayColorSecondary').value = state.awayColorSecondary || '#FFAAAA';
+      setField('homeColorPrimary', state.homeColorPrimary || '#0000FF');
+      setField('homeColorSecondary', state.homeColorSecondary || '#AAAAFF');
+      setField('awayColorPrimary', state.awayColorPrimary || '#FF0000');
+      setField('awayColorSecondary', state.awayColorSecondary || '#FFAAAA');
 
       // Theme colors
       setColor('themeBgPrimary', state.themeBgPrimary, '#142850');
@@ -1539,14 +1571,17 @@
       setColor('themeBorder', state.themeBorder, '#2a406b');
       updateOverlayButtons(state.overlayVisibility);
 
-      // Keyboard shortcuts (server config wins; fall back to defaults)
-      if (state.keyboardShortcuts && typeof state.keyboardShortcuts === 'object') {
-        shortcuts = { ...state.keyboardShortcuts };
-      } else {
-        shortcuts = { ...DEFAULT_SHORTCUTS };
+      // Keyboard shortcuts (server config wins; fall back to defaults), unless
+      // the operator has unsaved remaps or is capturing a key right now
+      if (!shortcutsDirty && !awaitingCapture) {
+        if (state.keyboardShortcuts && typeof state.keyboardShortcuts === 'object') {
+          shortcuts = { ...state.keyboardShortcuts };
+        } else {
+          shortcuts = { ...DEFAULT_SHORTCUTS };
+        }
+        buildComboToAction();
+        if (document.getElementById('shortcutList')) renderShortcutList();
       }
-      buildComboToAction();
-      if (document.getElementById('shortcutList')) renderShortcutList();
 
       // Logos
       if (state.homeLogo) document.getElementById('homeLogo').value = state.homeLogo;
@@ -1559,8 +1594,10 @@
       possession = state.possession || "none";
       updatePossessionUI();
 
-      // Previous sets
-      updatePreviousSetsUI(state.previousSetScores || []);
+      // Previous sets (not while the operator is editing one of them)
+      if (!document.getElementById('previousSetsContainer').contains(document.activeElement)) {
+        updatePreviousSetsUI(state.previousSetScores || []);
+      }
 
       // Timer
       syncTimerState(state);
@@ -1593,7 +1630,7 @@
         hidePinModal();
         document.getElementById('pinError').textContent = '';
       } else {
-        document.getElementById('pinError').textContent = 'Incorrect PIN';
+        document.getElementById('pinError').textContent = t('incorrect.pin');
         document.getElementById('pinInput').value = '';
       }
     }
@@ -1607,12 +1644,12 @@
       currentPin = pin || "";
       if (pin) {
         status.className = 'pin-indicator active';
-        status.innerHTML = '<span>● PIN Active</span>';
-        status.nextElementSibling.textContent = 'Change PIN';
+        status.innerHTML = '<span>● ' + t('pin.active') + '</span>';
+        status.nextElementSibling.textContent = t('change.pin');
       } else {
         status.className = 'pin-indicator inactive';
-        status.innerHTML = '<span>○ No PIN</span>';
-        status.nextElementSibling.textContent = 'Set PIN';
+        status.innerHTML = '<span>○ ' + t('no.pin') + '</span>';
+        status.nextElementSibling.textContent = t('set.pin');
       }
     }
 
@@ -1635,17 +1672,17 @@
       const confirmPin = document.getElementById('confirmPin').value;
 
       if (currentPin && currentPinInput !== currentPin) {
-        showToast('Current PIN is incorrect', 'error');
+        showToast(t('toast.current.pin.incorrect'), 'error');
         return;
       }
 
       if (!/^\d{4}$/.test(newPin)) {
-        showToast('PIN must be exactly 4 digits', 'error');
+        showToast(t('toast.pin.4digits'), 'error');
         return;
       }
 
       if (newPin !== confirmPin) {
-        showToast('PINs do not match', 'error');
+        showToast(t('toast.pins.mismatch'), 'error');
         return;
       }
 
@@ -1656,7 +1693,7 @@
     // SCORE FUNCTIONS
     // ============================================
     function changeScore(team, delta) {
-      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      if (!isAuthenticated) { showToast(t('toast.enter.pin'), 'warning'); return; }
       const input = document.getElementById(team + 'Score');
       input.value = Math.max(0, (parseInt(input.value, 10) || 0) + delta);
       if (delta > 0) possession = team;
@@ -1664,7 +1701,7 @@
     }
 
     function changeSet(team, delta) {
-      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      if (!isAuthenticated) { showToast(t('toast.enter.pin'), 'warning'); return; }
       const input = document.getElementById(team + 'Sets');
       input.value = Math.max(0, (parseInt(input.value, 10) || 0) + delta);
       sendScoreUpdate();
@@ -1682,18 +1719,28 @@
       document.getElementById('posAway').className = 'btn possession-btn away' + (possession === 'away' ? ' active' : '');
     }
 
-    // Manual typing: score/set inputs apply on Enter/blur, and shortly after typing
+    // Manual typing: score/set inputs apply on Enter/blur, and shortly after typing.
+    // One shared debounce for the four inputs, and only unsent typing is sent,
+    // so a value is never posted twice (a stale second post could undo a set).
+    let scoreDebounce = null;
+
+    function sendTypedScores() {
+      if (scoreDebounce) clearTimeout(scoreDebounce);
+      scoreDebounce = null;
+      if (SCORE_FIELDS.some(id => dirtyFields.has(id))) sendScoreUpdate();
+    }
+
     function wireInputListener(id) {
       const el = document.getElementById(id);
       if (!el) return;
-      let debounce = null;
       el.addEventListener('input', () => {
-        if (debounce) clearTimeout(debounce);
-        debounce = setTimeout(sendScoreUpdate, 350);
+        dirtyFields.add(id);
+        if (scoreDebounce) clearTimeout(scoreDebounce);
+        scoreDebounce = setTimeout(sendTypedScores, 350);
       });
-      el.addEventListener('change', sendScoreUpdate);
+      el.addEventListener('change', sendTypedScores);
     }
-    ['homeScore', 'awayScore', 'homeSets', 'awaySets'].forEach(wireInputListener);
+    SCORE_FIELDS.forEach(wireInputListener);
 
     // ============================================
     // PREVIOUS SETS
@@ -1716,11 +1763,11 @@
     function previousSetItemHTML(slot, home, away) {
       return `
         <div class="set-item" data-slot="${slot}">
-          <span class="set-label">Set ${slot + 1}</span>
+          <span class="set-label">${t('summary.set')} ${slot + 1}</span>
           <input type="number" value="${home}" data-slot="${slot}" data-team="home" class="form-input" style="width: 60px;" onchange="updateSetScore(this)">
           <span>-</span>
           <input type="number" value="${away}" data-slot="${slot}" data-team="away" class="form-input" style="width: 60px;" onchange="updateSetScore(this)">
-          <button type="button" class="btn btn-sm btn-danger" title="Delete this set" onclick="removePreviousSet(${slot})">✕</button>
+          <button type="button" class="btn btn-sm btn-danger" title="${t('delete.set')}" onclick="removePreviousSet(${slot})">✕</button>
         </div>
       `;
     }
@@ -1734,7 +1781,7 @@
 
       container.innerHTML = filled.length
         ? filled.map(f => previousSetItemHTML(f.slot, f.home, f.away)).join('')
-        : '<p style="color: var(--text-muted); font-size: 0.875rem;">No sets completed yet.</p>';
+        : '<p style="color: var(--text-muted); font-size: 0.875rem;">' + t('no.sets') + '</p>';
 
       const addBtn = document.getElementById('addPreviousSetBtn');
       if (addBtn) addBtn.disabled = filled.length >= 5;
@@ -1749,11 +1796,11 @@
       div.className = 'set-item';
       div.dataset.slot = String(emptyIdx);
       div.innerHTML = `
-        <span class="set-label">Set ${emptyIdx + 1}</span>
+        <span class="set-label">${t('summary.set')} ${emptyIdx + 1}</span>
         <input type="number" value="0" data-slot="${emptyIdx}" data-team="home" class="form-input" style="width: 60px;" onchange="updateSetScore(this)">
         <span>-</span>
         <input type="number" value="0" data-slot="${emptyIdx}" data-team="away" class="form-input" style="width: 60px;" onchange="updateSetScore(this)">
-        <button type="button" class="btn btn-sm btn-danger" title="Delete this set" onclick="removePreviousSet(${emptyIdx})">✕</button>
+        <button type="button" class="btn btn-sm btn-danger" title="${t('delete.set')}" onclick="removePreviousSet(${emptyIdx})">✕</button>
       `;
       container.appendChild(div);
       const addBtn = document.getElementById('addPreviousSetBtn');
@@ -1771,7 +1818,7 @@
       const item = container.querySelector('.set-item[data-slot="' + slotIndex + '"]');
       if (item) item.remove();
       if (!container.querySelector('.set-item')) {
-        container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.875rem;">No sets completed yet.</p>';
+        container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.875rem;">' + t('no.sets') + '</p>';
       }
       const addBtn = document.getElementById('addPreviousSetBtn');
       if (addBtn) addBtn.disabled = false;
@@ -1836,7 +1883,7 @@
     }
 
     function timerControl(action) {
-      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      if (!isAuthenticated) { showToast(t('toast.enter.pin'), 'warning'); return; }
       const formData = new FormData();
       formData.append('action', action);
       if (serverPin) formData.append('pin', serverPin);
@@ -1844,7 +1891,7 @@
       fetch('/timer_control', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => {
-          if (data.status === 'error') showToast(data.message, 'error');
+          if (data.status === 'error') showToast(tServer(data.message), 'error');
         });
     }
 
@@ -1852,7 +1899,7 @@
     // TIMEOUT FUNCTIONS
     // ============================================
     function timeoutChange(team, delta) {
-      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      if (!isAuthenticated) { showToast(t('toast.enter.pin'), 'warning'); return; }
       const formData = new FormData();
       formData.append('team', team);
       formData.append('change', delta);
@@ -1861,7 +1908,7 @@
       fetch('/timeout_control', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(data => {
-          if (data.status === 'error') showToast(data.message, 'error');
+          if (data.status === 'error') showToast(tServer(data.message), 'error');
         });
     }
 
@@ -1887,11 +1934,14 @@
       const history = (data.scoreHistory || []).slice(-5);
 
       if (!history.length) {
-        list.innerHTML = '<li style="color: var(--text-muted);">No points scored yet</li>';
+        list.innerHTML = '<li style="color: var(--text-muted);">' + t('no.points') + '</li>';
         return;
       }
 
-      let lastHome = 0, lastAway = 0;
+      // Baseline = the entry just before the 5-point window, so the first shown point is attributed correctly
+      const all = data.scoreHistory || [];
+      const prev = all.length > history.length ? all[all.length - history.length - 1] : null;
+      let lastHome = prev ? prev.homeScore : 0, lastAway = prev ? prev.awayScore : 0;
       let items = [];
       history.forEach(entry => {
         const homeScored = entry.homeScore > lastHome;
@@ -1911,7 +1961,7 @@
     // RESET MODALS
     // ============================================
     function showResetModal() {
-      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      if (!isAuthenticated) { showToast(t('toast.enter.pin'), 'warning'); return; }
       document.getElementById('resetModal').classList.add('active');
     }
 
@@ -1963,17 +2013,18 @@
       formData.append('awayP5', '');
       formData.append('awayP6', '');
       if (serverPin) formData.append('pin', serverPin);
+      clearDirty(SCORE_FIELDS.concat(TEAM_FIELDS));
 
       fetch('/update', { method: 'POST', body: formData })
         .then(r => r.json())
         .then(() => {
           hideResetModal();
-          showToast('Game reset', 'success');
+          showToast(t('toast.game.reset'), 'success');
         });
     }
 
     function showResetConfigModal() {
-      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      if (!isAuthenticated) { showToast(t('toast.enter.pin'), 'warning'); return; }
       document.getElementById('resetConfigModal').classList.add('active');
     }
 
@@ -1989,7 +2040,7 @@
             localStorage.removeItem(PIN_STORAGE_KEY);
             location.reload();
           } else {
-            showToast(data.message, 'error');
+            showToast(tServer(data.message), 'error');
           }
         });
     }
@@ -2002,9 +2053,9 @@
     }
 
     async function importConfig() {
-      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      if (!isAuthenticated) { showToast(t('toast.enter.pin'), 'warning'); return; }
       const file = document.getElementById('importConfigFile').files[0];
-      if (!file) { showToast('Select a file', 'warning'); return; }
+      if (!file) { showToast(t('toast.select.file'), 'warning'); return; }
 
       const formData = new FormData();
       formData.append('configFile', file);
@@ -2013,14 +2064,14 @@
         const res = await fetch('/import_config', { method: 'POST', body: formData });
         const result = await res.json();
         if (result.status === 'ok') {
-          showToast('Config imported', 'success');
+          showToast(t('toast.config.imported'), 'success');
           document.getElementById('importConfigFile').value = '';
           location.reload();
         } else {
-          showToast(result.message, 'error');
+          showToast(tServer(result.message), 'error');
         }
       } catch (e) {
-        showToast('Import failed', 'error');
+        showToast(t('toast.import.failed'), 'error');
       }
     }
 
@@ -2041,7 +2092,7 @@
         const res = await fetch('/update', { method: 'POST', body: formData });
         const result = await res.json();
         if (result.status === 'error') {
-          showToast(result.message, 'error');
+          showToast(tServer(result.message), 'error');
           return null;
         }
         if (result.newLogoUrl) {
@@ -2054,13 +2105,13 @@
         }
         return result;
       } catch (e) {
-        showToast('Update failed', 'error');
+        showToast(t('toast.update.failed'), 'error');
         return null;
       }
     }
 
     function sendScoreUpdate() {
-      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      if (!isAuthenticated) { showToast(t('toast.enter.pin'), 'warning'); return; }
       const formData = new FormData();
       formData.append('homeScore', sanitizeNumber(document.getElementById('homeScore').value));
       formData.append('awayScore', sanitizeNumber(document.getElementById('awayScore').value));
@@ -2068,11 +2119,13 @@
       formData.append('awaySets', sanitizeNumber(document.getElementById('awaySets').value));
       formData.append('possession', possession);
       appendPin(formData);
+      // Sent: from now on the server's answer is authoritative for these inputs
+      clearDirty(SCORE_FIELDS);
       postUpdate(formData);
     }
 
     function sendPossessionUpdate() {
-      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      if (!isAuthenticated) { showToast(t('toast.enter.pin'), 'warning'); return; }
       const formData = new FormData();
       formData.append('possession', possession);
       appendPin(formData);
@@ -2080,7 +2133,7 @@
     }
 
     function sendPreviousSetUpdate() {
-      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      if (!isAuthenticated) { showToast(t('toast.enter.pin'), 'warning'); return; }
       const formData = new FormData();
       formData.append('previousSetScores', JSON.stringify(collectPreviousSetSlots()));
       appendPin(formData);
@@ -2088,7 +2141,7 @@
     }
 
     function sendTeamSettings() {
-      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      if (!isAuthenticated) { showToast(t('toast.enter.pin'), 'warning'); return; }
       const formData = new FormData();
       formData.append('homeName', document.getElementById('homeName').value);
       formData.append('awayName', document.getElementById('awayName').value);
@@ -2112,11 +2165,13 @@
         formData.append('awayP' + i, awayInput ? awayInput.value : '');
       }
       appendPin(formData);
-      postUpdate(formData);
+      postUpdate(formData).then(result => {
+        if (result) clearDirty(TEAM_FIELDS);
+      });
     }
 
     function saveTheme() {
-      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      if (!isAuthenticated) { showToast(t('toast.enter.pin'), 'warning'); return; }
       const formData = new FormData();
       formData.append('themeBgPrimary', document.getElementById('themeBgPrimary').value);
       formData.append('themeBgSecondary', document.getElementById('themeBgSecondary').value);
@@ -2124,7 +2179,9 @@
       formData.append('themeAccentSecondary', document.getElementById('themeAccentSecondary').value);
       formData.append('themeBorder', document.getElementById('themeBorder').value);
       appendPin(formData);
-      postUpdate(formData);
+      postUpdate(formData).then(result => {
+        if (result) clearDirty(THEME_FIELDS);
+      });
     }
 
     let overlayFlags = { sets: false, timer: false, timeouts: false, history: false };
@@ -2150,7 +2207,7 @@
     }
 
     function toggleOverlay(name) {
-      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      if (!isAuthenticated) { showToast(t('toast.enter.pin'), 'warning'); return; }
       overlayFlags[name] = !overlayFlags[name];
       updateOverlayButtons({
         scorebug_sets: overlayFlags.sets,
@@ -2180,7 +2237,7 @@
           localStorage.setItem(PIN_STORAGE_KEY, newPin);
           cancelPinSetup();
           updatePinStatus(newPin);
-          showToast('PIN saved', 'success');
+          showToast(t('toast.pin.saved'), 'success');
         }
       });
     }
@@ -2250,6 +2307,8 @@
     let shortcuts = { ...DEFAULT_SHORTCUTS };
     let comboToAction = {};
     let awaitingCapture = false;
+    // Remaps not applied yet: live updates must not discard them
+    let shortcutsDirty = false;
 
     function buildComboToAction() {
       comboToAction = {};
@@ -2264,12 +2323,14 @@
       if (e.ctrlKey) mods.push('ctrl');
       if (e.shiftKey) mods.push('shift');
       if (e.altKey) mods.push('alt');
-      const key = e.key === ' ' ? 'space' : e.key.toLowerCase();
+      // Shift+digit yields "!"/"@"/'"' in e.key depending on layout: use the physical digit
+      const digit = /^Digit(\d)$/.exec(e.code || '');
+      const key = digit ? digit[1] : (e.key === ' ' ? 'space' : e.key.toLowerCase());
       return mods.length ? mods.join('+') + '+' + key : key;
     }
 
     function formatCombo(combo) {
-      if (!combo) return 'Unbound';
+      if (!combo) return t('unbound');
       return combo.split('+').map(p => {
         if (p === 'ctrl') return 'Ctrl';
         if (p === 'shift') return 'Shift';
@@ -2283,13 +2344,13 @@
       const list = document.getElementById('shortcutList');
       if (!list) return;
       list.innerHTML = '';
-      for (const [action, label] of Object.entries(SHORTCUT_LABELS)) {
+      for (const action of Object.keys(SHORTCUT_LABELS)) {
         const row = document.createElement('div');
         row.className = 'shortcut-row';
 
         const name = document.createElement('span');
         name.className = 'shortcut-label';
-        name.textContent = label;
+        name.textContent = t('sc.' + action);
 
         const bindBtn = document.createElement('button');
         bindBtn.className = 'btn btn-sm shortcut-bind' + (shortcuts[action] ? ' bound' : '');
@@ -2300,10 +2361,11 @@
         const clearBtn = document.createElement('button');
         clearBtn.className = 'btn btn-sm btn-secondary shortcut-clear';
         clearBtn.textContent = '×';
-        clearBtn.title = 'Unbind';
+        clearBtn.title = t('unbind');
         clearBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           shortcuts[action] = '';
+          shortcutsDirty = true;
           renderShortcutList();
         });
 
@@ -2319,7 +2381,7 @@
       awaitingCapture = true;
       btn.classList.add('capturing');
       const original = btn.textContent;
-      btn.textContent = 'Press a key…';
+      btn.textContent = t('press.key');
       let timer = null;
 
       const finish = (combo) => {
@@ -2342,11 +2404,12 @@
         if (combo) {
           const clash = Object.entries(shortcuts).find(([a, c]) => c === combo && a !== action);
           if (clash) {
-            showToast('Key already used by: ' + SHORTCUT_LABELS[clash[0]], 'error');
+            showToast(t('toast.key.used') + ' ' + t('sc.' + clash[0]), 'error');
             renderShortcutList();
             return;
           }
           shortcuts[action] = combo;
+          shortcutsDirty = true;
           renderShortcutList();
         }
       };
@@ -2355,20 +2418,22 @@
     }
 
     function saveShortcuts() {
-      if (!isAuthenticated) { showToast('Enter PIN first', 'warning'); return; }
+      if (!isAuthenticated) { showToast(t('toast.enter.pin'), 'warning'); return; }
       const formData = new FormData();
       formData.append('keyboardShortcuts', JSON.stringify(shortcuts));
       appendPin(formData);
       postUpdate(formData).then(result => {
         if (result && result.status === 'ok') {
+          shortcutsDirty = false;
           buildComboToAction();
-          showToast('Shortcuts saved', 'success');
+          showToast(t('toast.shortcuts.saved'), 'success');
         }
       });
     }
 
     function resetShortcutsUI() {
       shortcuts = { ...DEFAULT_SHORTCUTS };
+      shortcutsDirty = true;
       renderShortcutList();
     }
 
@@ -2443,6 +2508,17 @@
 
     buildComboToAction();
     renderShortcutList();
+
+    // Language switch: re-render the texts built by JS
+    document.addEventListener('langchange', () => {
+      renderConnection();
+      updatePinStatus(currentPin);
+      if (lastState) updateScoreHistoryUI(lastState);
+      if (!document.getElementById('previousSetsContainer').contains(document.activeElement)) {
+        updatePreviousSetsUI(collectPreviousSetSlots());
+      }
+      if (!awaitingCapture) renderShortcutList();
+    });
 
     // ============================================
     // OVERLAY PREVIEWS
